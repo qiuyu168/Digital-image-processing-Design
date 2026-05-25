@@ -2,14 +2,14 @@
 
 ## 配置环境
 
-先前往 https://node.org.cn/en 下载**Node.js**，打开cmd然后依次执行：
+先前往 https://node.org.cn/en 下载**Node.js**，打开cmd，进入项目根目录，依次执行：
 
 ```bash
-# 全局安装 pnpm 包管理器
-npm install -g pnpm
+npm install -g pnpm                     # 全局安装 pnpm 包管理器
 
-# 根据package.json中的内容安装依赖
-pnpm install
+cd frontened                            # 进入前端项目对应的文件夹
+
+pnpm install                            # 根据package.json中的内容安装依赖
 ```
 
 完成后便可成功配置项目环境。
@@ -19,6 +19,9 @@ pnpm install
 ```bash
 # 全局安装 pnpm 包管理器
 npm install -g pnpm
+
+# 进入前端项目对应的文件夹
+cd frontened                            
 
 # 状态管理
 pnpm add pinia                           # Pinia 状态管理库
@@ -47,7 +50,7 @@ pnpm add echarts vue-echarts
 
 ## 运行
 
-打开cmd，进入项目文件夹，执行：
+打开cmd，进入项目根目录，执行：
 
 ```bash
 cd frontened                            # 进入前端项目对应的文件夹
@@ -56,3 +59,5 @@ pnpm dev                                # 运行项目，但只能在本地运�
 
 pnpm dev --host                         # 运行项目，但可以在网络环境中运行
 ```
+
+运行成功后，在浏览器打开显示的url地址，能看到五个按钮。
