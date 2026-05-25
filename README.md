@@ -70,160 +70,94 @@ Vue 前端即时展示处理结果
 ## 4. 项目目录结构
 
 ```text
-anime-image-processing/
+Digital-image-processing-Design/
 ├─ README.md
 ├─ requirements.txt
 │
 ├─ backend/
-│  ├─ main.py
-│  ├─ run_backend.bat
+│  ├─ 后端运行环境配置说明.md
 │  ├─ app/
 │  │  ├─ __init__.py
-│  │  ├─ api/
-│  │  │  ├─ __init__.py
-│  │  │  ├─ health.py
-│  │  │  ├─ upload.py
-│  │  │  ├─ library.py
-│  │  │  ├─ algorithms.py
-│  │  │  └─ process.py
-│  │  │
 │  │  ├─ core/
 │  │  │  ├─ __init__.py
-│  │  │  ├─ config.py
-│  │  │  ├─ cors.py
-│  │  │  ├─ image_io.py
-│  │  │  ├─ image_codec.py
-│  │  │  └─ validators.py
+│  │  │  └─ algorithm_framework.py          # 算法通用工具函数
 │  │  │
-│  │  ├─ schemas/
-│  │  │  ├─ __init__.py
-│  │  │  ├─ image_schema.py
-│  │  │  ├─ algorithm_schema.py
-│  │  │  └─ response_schema.py
-│  │  │
-│  │  ├─ services/
-│  │  │  ├─ __init__.py
-│  │  │  ├─ image_store.py
-│  │  │  ├─ algorithm_registry.py
-│  │  │  ├─ process_service.py
-│  │  │  ├─ step_service.py
-│  │  │  └─ analysis_service.py
-│  │  │
-│  │  ├─ algorithms/
-│  │  │  ├─ __init__.py
-│  │  │  │
-│  │  │  ├─ basic_operations/
-│  │  │  │  ├─ __init__.py
-│  │  │  │  ├─ image_add.py
-│  │  │  │  ├─ image_subtract.py
-│  │  │  │  ├─ image_blend.py
-│  │  │  │  ├─ logic_and.py
-│  │  │  │  ├─ logic_or.py
-│  │  │  │  ├─ logic_not.py
-│  │  │  │  └─ mask_apply.py
-│  │  │  │
-│  │  │  ├─ geometry/
-│  │  │  │  ├─ __init__.py
-│  │  │  │  ├─ resize.py
-│  │  │  │  ├─ rotate.py
-│  │  │  │  ├─ translate.py
-│  │  │  │  ├─ affine.py
-│  │  │  │  └─ perspective.py
-│  │  │  │
-│  │  │  ├─ gray_transform/
-│  │  │  │  ├─ __init__.py
-│  │  │  │  ├─ grayscale.py
-│  │  │  │  ├─ binary_threshold.py
-│  │  │  │  ├─ linear_transform.py
-│  │  │  │  ├─ gamma_transform.py
-│  │  │  │  ├─ log_transform.py
-│  │  │  │  ├─ histogram_equalization.py
-│  │  │  │  └─ clahe.py
-│  │  │  │
-│  │  │  ├─ spatial_filter/
-│  │  │  │  ├─ __init__.py
-│  │  │  │  ├─ mean_filter.py
-│  │  │  │  ├─ gaussian_filter.py
-│  │  │  │  ├─ median_filter.py
-│  │  │  │  ├─ bilateral_filter.py
-│  │  │  │  ├─ laplacian_sharpen.py
-│  │  │  │  └─ unsharp_mask.py
-│  │  │  │
-│  │  │  ├─ frequency_filter/
-│  │  │  │  ├─ __init__.py
-│  │  │  │  ├─ dft_spectrum.py
-│  │  │  │  ├─ ideal_low_pass.py
-│  │  │  │  ├─ ideal_high_pass.py
-│  │  │  │  ├─ gaussian_low_pass.py
-│  │  │  │  ├─ gaussian_high_pass.py
-│  │  │  │  └─ homomorphic_filter.py
-│  │  │  │
-│  │  │  ├─ color_processing/
-│  │  │  │  ├─ __init__.py
-│  │  │  │  ├─ rgb_channel.py
-│  │  │  │  ├─ hsv_adjust.py
-│  │  │  │  ├─ color_balance.py
-│  │  │  │  ├─ pseudo_color.py
-│  │  │  │  └─ anime_color_enhance.py
-│  │  │  │
-│  │  │  ├─ restoration/
-│  │  │  │  ├─ __init__.py
-│  │  │  │  ├─ motion_blur.py
-│  │  │  │  ├─ inverse_filter.py
-│  │  │  │  ├─ wiener_filter.py
-│  │  │  │  ├─ denoise.py
-│  │  │  │  └─ inpaint.py
-│  │  │  │
-│  │  │  ├─ morphology/
-│  │  │  │  ├─ __init__.py
-│  │  │  │  ├─ erode.py
-│  │  │  │  ├─ dilate.py
-│  │  │  │  ├─ open_operation.py
-│  │  │  │  ├─ close_operation.py
-│  │  │  │  ├─ top_hat.py
-│  │  │  │  ├─ black_hat.py
-│  │  │  │  └─ connected_components.py
-│  │  │  │
-│  │  │  ├─ edge_detection/
-│  │  │  │  ├─ __init__.py
-│  │  │  │  ├─ sobel.py
-│  │  │  │  ├─ scharr.py
-│  │  │  │  ├─ laplace.py
-│  │  │  │  ├─ log_edge.py
-│  │  │  │  ├─ canny.py
-│  │  │  │  ├─ hough_line.py
-│  │  │  │  └─ hough_circle.py
-│  │  │  │
-│  │  │  └─ anime_recognition/
-│  │  │     ├─ __init__.py
-│  │  │     ├─ anime_face_detect.py
-│  │  │     ├─ dominant_color_extract.py
-│  │  │     ├─ line_style_analyze.py
-│  │  │     ├─ feature_extract.py
-│  │  │     └─ gallery_match.py
-│  │  │
-│  │  └─ analysis/
+│  │  └─ algorithms/
 │  │     ├─ __init__.py
-│  │     ├─ histogram.py
-│  │     ├─ metrics.py
-│  │     ├─ image_quality.py
-│  │     └─ text_explanation.py
+│  │     ├─ 算法框架填写说明.md
+│  │     │
+│  │     ├─ grayscale_image/                # 8.1 灰度图像类
+│  │     │  ├─ __init__.py
+│  │     │  ├─ grayscale.py                 # 灰度化
+│  │     │  ├─ binary_threshold.py          # 二值化
+│  │     │  ├─ histogram_equalization.py    # 直方图均衡化
+│  │     │  ├─ edge_detection_basic.py      # 边缘检测（Canny）
+│  │     │  ├─ erode.py                     # 腐蚀
+│  │     │  ├─ dilate.py                    # 膨胀
+│  │     │  ├─ open_operation.py            # 开运算
+│  │     │  └─ close_operation.py           # 闭运算
+│  │     │
+│  │     ├─ color_image/                    # 8.2 彩色图像类
+│  │     │  ├─ __init__.py
+│  │     │  ├─ color_space_convert.py       # 颜色空间转换
+│  │     │  ├─ saturation_adjust.py         # 饱和度调整
+│  │     │  ├─ anime_color_enhance.py       # 动漫色彩增强
+│  │     │  └─ dominant_color_extract.py    # 主色调提取
+│  │     │
+│  │     ├─ geometric_transform/            # 8.3 几何变换类
+│  │     │  ├─ __init__.py
+│  │     │  ├─ resize.py                    # 图像缩放
+│  │     │  ├─ rotate.py                    # 图像旋转
+│  │     │  └─ flip.py                      # 图像翻转
+│  │     │
+│  │     ├─ spatial_filter/                 # 8.4 空域滤波类
+│  │     │  ├─ __init__.py
+│  │     │  ├─ mean_filter.py               # 均值滤波
+│  │     │  ├─ gaussian_filter.py           # 高斯滤波
+│  │     │  ├─ median_filter.py             # 中值滤波
+│  │     │  ├─ bilateral_filter.py          # 双边滤波
+│  │     │  └─ laplacian_sharpen.py         # 拉普拉斯锐化
+│  │     │
+│  │     ├─ frequency_analysis/             # 8.5 频域分析类
+│  │     │  ├─ __init__.py
+│  │     │  ├─ dft_spectrum.py              # 傅里叶频谱显示
+│  │     │  ├─ spectrum_shift.py            # 频谱中心化
+│  │     │  └─ magnitude_spectrum.py        # 幅度谱显示
+│  │     │
+│  │     └─ frequency_filter/               # 8.6 频域滤波类
+│  │        ├─ __init__.py
+│  │        ├─ low_pass_filter.py           # 低通滤波
+│  │        ├─ high_pass_filter.py          # 高通滤波
+│  │        ├─ ideal_low_pass.py            # 理想低通滤波
+│  │        ├─ ideal_high_pass.py           # 理想高通滤波
+│  │        ├─ gaussian_low_pass.py         # 高斯低通滤波
+│  │        └─ gaussian_high_pass.py        # 高斯高通滤波
 │  │
 │  ├─ data/
-│  │  ├─ library/
-│  │  │  ├─ anime_character/
-│  │  │  ├─ anime_scene/
-│  │  │  ├─ anime_avatar/
-│  │  │  ├─ course_samples/
-│  │  │  └─ other/
-│  │  ├─ uploads/
-│  │  └─ outputs/
+│  │  ├─ uploads/                           # 用户上传图片
+│  │  ├─ library/                           # 内置图片库
+│  │  │  ├─ anime_character/                #   动漫人物图像
+│  │  │  ├─ anime_scene/                    #   动漫场景图像
+│  │  │  ├─ anime_avatar/                   #   动漫头像图像
+│  │  │  ├─ course_samples/                 #   课程实验素材
+│  │  │  └─ other/                          #   其他测试图像
+│  │  ├─ test_images/                       # 测试输入图片
+│  │  ├─ test_outputs/                      # 测试输出图片
+│  │  └─ outputs/                           # 算法处理输出
 │  │
 │  └─ tests/
-│     ├─ test_health.py
-│     ├─ test_image_io.py
-│     ├─ test_algorithms_basic.py
-│     └─ test_process_api.py
+│     ├─ README.md
+│     ├─ manual_test_algorithm.py
+│     ├─ algorithm_test_examples.md
+│     └─ sample_test_configs/
+│        ├─ saturation_adjust_example.json
+│        ├─ grayscale_example.json
+│        ├─ binary_threshold_example.json
+│        ├─ canny_example.json
+│        ├─ gaussian_filter_example.json
+│        ├─ dft_spectrum_example.json
+│        ├─ ideal_low_pass_example.json
+│        └─ ideal_high_pass_example.json
 │
 └─ frontend/
    ├─ package.json
@@ -273,10 +207,11 @@ anime-image-processing/
 正确示例：
 
 ```text
-algorithms/edge_detection/canny.py
-algorithms/edge_detection/sobel.py
+algorithms/grayscale_image/edge_detection_basic.py
+algorithms/grayscale_image/binary_threshold.py
 algorithms/spatial_filter/median_filter.py
-algorithms/gray_transform/gamma_transform.py
+algorithms/frequency_analysis/dft_spectrum.py
+algorithms/frequency_filter/low_pass_filter.py
 ```
 
 错误示例：
@@ -293,7 +228,7 @@ algorithms/all_algorithms.py
 Python 文件示例：
 
 ```python
-# 本文件用于实现动漫图像的 Canny 边缘检测功能
+# 本文件用于实现动漫图像的通用边缘检测功能
 ```
 
 Vue 文件示例：
@@ -326,9 +261,9 @@ import numpy as np
 
 
 ALGORITHM_META = {
-    "module": "edge_detection",
-    "name": "canny",
-    "display_name": "Canny 边缘检测",
+    "module": "grayscale_image",
+    "name": "edge_detection",
+    "display_name": "边缘检测",
     "description": "用于提取动漫人物轮廓、发丝边缘、场景建筑线条等边缘信息。",
     "params": {
         "threshold1": {"type": "int", "default": 80, "min": 0, "max": 255},
@@ -355,8 +290,13 @@ def run(image: np.ndarray, params: dict) -> dict:
         "steps": [
             {"name": "灰度化", "image": gray},
             {"name": "高斯平滑", "image": blurred},
-            {"name": "Canny 边缘检测", "image": edge}
+            {"name": "边缘检测", "image": edge}
         ],
+        "metrics": {
+            "threshold1": threshold1,
+            "threshold2": threshold2,
+            "blur_size": blur_size
+        },
         "analysis": "Canny 算法可以突出动漫图像中的人物轮廓、头发边缘和服装线条。阈值越低，边缘越丰富，但噪声也越明显。"
     }
 ```
@@ -379,12 +319,12 @@ GET /api/algorithms
 {
   "modules": [
     {
-      "module": "edge_detection",
-      "display_name": "边缘检测",
+      "module": "grayscale_image",
+      "display_name": "灰度图像类",
       "algorithms": [
         {
-          "name": "canny",
-          "display_name": "Canny 边缘检测",
+          "name": "edge_detection",
+          "display_name": "边缘检测",
           "params": {
             "threshold1": {"type": "int", "default": 80, "min": 0, "max": 255},
             "threshold2": {"type": "int", "default": 160, "min": 0, "max": 255}
@@ -408,8 +348,8 @@ POST /api/process/run
 {
   "source_type": "upload",
   "image_id": "upload_20260525_001.png",
-  "module": "edge_detection",
-  "algorithm": "canny",
+  "module": "grayscale_image",
+  "algorithm": "edge_detection",
   "params": {
     "threshold1": 80,
     "threshold2": 160,
@@ -515,69 +455,78 @@ GET /api/library/image/{image_id}
 
 ---
 
-## 8. 推荐功能清单
+## 8. 功能模块清单
 
-### 8.1 基础图像处理功能
+当前后端算法主目录按 6 类组织，所有列出的功能均需要实现。
 
-| 分类 | 功能文件 | 功能说明 | 是否必做 |
-|---|---|---|---|
-| 基础运算 | `image_add.py` | 图像加法、亮度增加 | 必做 |
-| 基础运算 | `image_subtract.py` | 图像减法、差异检测 | 必做 |
-| 基础运算 | `image_blend.py` | 图像融合 | 必做 |
-| 逻辑运算 | `logic_and.py` | 图像与运算 | 必做 |
-| 逻辑运算 | `logic_or.py` | 图像或运算 | 必做 |
-| 逻辑运算 | `logic_not.py` | 图像反相 | 必做 |
-| 几何变换 | `resize.py` | 缩放 | 必做 |
-| 几何变换 | `rotate.py` | 旋转 | 必做 |
-| 几何变换 | `translate.py` | 平移 | 必做 |
-| 几何变换 | `affine.py` | 仿射变换 | 推荐 |
-| 几何变换 | `perspective.py` | 透视变换 | 推荐 |
-| 灰度变换 | `grayscale.py` | 灰度化 | 必做 |
-| 灰度变换 | `binary_threshold.py` | 二值化 | 必做 |
-| 灰度变换 | `gamma_transform.py` | 伽马变换 | 必做 |
-| 灰度变换 | `histogram_equalization.py` | 直方图均衡化 | 必做 |
-| 灰度变换 | `clahe.py` | 自适应直方图均衡化 | 推荐 |
+### 8.1 `grayscale_image/` 灰度图像类
 
-### 8.2 滤波、复原、形态学与边缘检测
+| 功能名称     | 文件名                      | 功能说明                                                     |
+| ------------ | --------------------------- | ------------------------------------------------------------ |
+| 灰度化       | `grayscale.py`              | 将彩色图像转换为灰度图像，作为二值化、边缘检测、频域分析等算法的基础输入 |
+| 二值化       | `binary_threshold.py`       | 将灰度图转换为黑白二值图，可支持固定阈值和自适应阈值         |
+| 直方图均衡化 | `histogram_equalization.py` | 增强灰度图像整体对比度，使灰度分布更加均衡                   |
+| 边缘检测     | `edge_detection_basic.py`   | 提取图像中的主要轮廓，可用于动漫人物线稿、角色轮廓和场景边界提取 |
+| 腐蚀         | `erode.py`                  | 缩小前景区域，去除小白点或细小噪声                           |
+| 膨胀         | `dilate.py`                 | 扩大前景区域，连接断裂区域或增强目标区域                     |
+| 开运算       | `open_operation.py`         | 先腐蚀后膨胀，适合去除小噪声                                 |
+| 闭运算       | `close_operation.py`        | 先膨胀后腐蚀，适合填补小孔洞、连接断裂区域                   |
 
-| 分类 | 功能文件 | 功能说明 | 是否必做 |
-|---|---|---|---|
-| 空域滤波 | `mean_filter.py` | 均值滤波 | 必做 |
-| 空域滤波 | `gaussian_filter.py` | 高斯滤波 | 必做 |
-| 空域滤波 | `median_filter.py` | 中值滤波 | 必做 |
-| 空域滤波 | `bilateral_filter.py` | 双边滤波 | 推荐 |
-| 空域锐化 | `laplacian_sharpen.py` | 拉普拉斯锐化 | 必做 |
-| 空域锐化 | `unsharp_mask.py` | 反锐化掩蔽 | 推荐 |
-| 频域滤波 | `dft_spectrum.py` | 傅里叶频谱显示 | 必做 |
-| 频域滤波 | `ideal_low_pass.py` | 理想低通滤波 | 必做 |
-| 频域滤波 | `ideal_high_pass.py` | 理想高通滤波 | 必做 |
-| 频域滤波 | `gaussian_low_pass.py` | 高斯低通滤波 | 推荐 |
-| 频域滤波 | `homomorphic_filter.py` | 同态滤波 | 推荐 |
-| 图像复原 | `motion_blur.py` | 运动模糊模拟 | 推荐 |
-| 图像复原 | `wiener_filter.py` | 维纳滤波 | 推荐 |
-| 图像复原 | `inpaint.py` | 图像修复 | 推荐 |
-| 形态学 | `erode.py` | 腐蚀 | 必做 |
-| 形态学 | `dilate.py` | 膨胀 | 必做 |
-| 形态学 | `open_operation.py` | 开运算 | 必做 |
-| 形态学 | `close_operation.py` | 闭运算 | 必做 |
-| 形态学 | `connected_components.py` | 连通域分析 | 推荐 |
-| 边缘检测 | `sobel.py` | Sobel 边缘检测 | 必做 |
-| 边缘检测 | `laplace.py` | Laplace 边缘检测 | 必做 |
-| 边缘检测 | `canny.py` | Canny 边缘检测 | 必做 |
-| 边缘检测 | `hough_line.py` | Hough 直线检测 | 推荐 |
+---
 
-### 8.3 动漫图像识别与主题化功能
+### 8.2 `color_image/` 彩色图像类
 
-| 功能文件 | 功能说明 | 实现难度 | 建议 |
-|---|---|---:|---|
-| `anime_face_detect.py` | 检测动漫头像或人物主体区域 | 中 | 可先用边缘、肤色/亮色区域、轮廓近似实现 |
-| `dominant_color_extract.py` | 提取动漫角色主色调 | 低 | 适合分析头发、服装、背景色彩 |
-| `line_style_analyze.py` | 分析动漫线稿边缘密度和线条风格 | 低 | 可基于 Canny + 边缘密度实现 |
-| `feature_extract.py` | 提取颜色直方图、HOG、边缘特征 | 中 | 为图库匹配服务 |
-| `gallery_match.py` | 将上传图片与图库图片做相似度匹配 | 中 | 可用颜色直方图 + ORB/SIFT/HOG 特征 |
-| `anime_color_enhance.py` | 动漫图像色彩增强 | 低 | 用 HSV 饱和度、亮度和 CLAHE 实现 |
+| 功能名称     | 文件名                      | 功能说明                                                     |
+| ------------ | --------------------------- | ------------------------------------------------------------ |
+| 颜色空间转换 | `color_space_convert.py`    | 实现 RGB 与 HSV 颜色空间转换，为颜色分析和饱和度调整提供基础 |
+| 饱和度调整   | `saturation_adjust.py`      | 调整动漫图像色彩鲜艳程度，使人物和场景颜色更突出             |
+| 动漫色彩增强 | `anime_color_enhance.py`    | 综合亮度、饱和度和对比度调整，突出动漫图像的主题风格         |
+| 主色调提取   | `dominant_color_extract.py` | 提取动漫人物头发、服装、背景等区域的主要颜色                 |
 
-推荐先实现轻量级识别，不要一开始引入深度学习大模型。课程设计重点是数字图像处理，识别模块主要用于强化主题，不要让项目复杂到难以完成。
+---
+
+### 8.3 `geometric_transform/` 几何变换类
+
+| 功能名称 | 文件名      | 功能说明                                   |
+| -------- | ----------- | ------------------------------------------ |
+| 缩放     | `resize.py` | 改变图像尺寸，支持按比例缩放和指定宽高缩放 |
+| 旋转     | `rotate.py` | 按指定角度旋转图像，支持边界填充和中心旋转 |
+| 翻转     | `flip.py`   | 实现水平翻转、垂直翻转和中心翻转           |
+
+---
+
+### 8.4 `spatial_filter/` 空域滤波类
+
+| 功能名称     | 文件名                 | 功能说明                                                     |
+| ------------ | ---------------------- | ------------------------------------------------------------ |
+| 均值滤波     | `mean_filter.py`       | 使用邻域平均值进行平滑处理，可降低随机噪声，但会造成一定模糊 |
+| 高斯滤波     | `gaussian_filter.py`   | 使用高斯核进行平滑处理，适合去除一般噪声并保留较自然的过渡   |
+| 中值滤波     | `median_filter.py`     | 使用邻域中值替代中心像素，对椒盐噪声有较好去除效果           |
+| 双边滤波     | `bilateral_filter.py`  | 在平滑图像的同时尽量保留边缘，适合动漫线条图像降噪           |
+| 拉普拉斯锐化 | `laplacian_sharpen.py` | 增强图像边缘和细节，使轮廓更清晰                             |
+
+---
+
+### 8.5 `frequency_analysis/` 频域分析类
+
+| 功能名称           | 文件名                  | 功能说明                                                     |
+| ------------------ | ----------------------- | ------------------------------------------------------------ |
+| 傅里叶变换显示频谱 | `dft_spectrum.py`       | 将图像转换到频域并显示频谱图，用于观察图像低频和高频信息分布 |
+| 频谱中心化         | `spectrum_shift.py`     | 将低频分量移动到频谱中心，便于观察和构造频域滤波器           |
+| 幅度谱显示         | `magnitude_spectrum.py` | 显示傅里叶变换后的幅度谱，辅助说明频域特征                   |
+
+---
+
+### 8.6 `frequency_filter/` 频域滤波类
+
+| 功能名称     | 文件名                  | 功能说明                                             |
+| ------------ | ----------------------- | ---------------------------------------------------- |
+| 低通滤波     | `low_pass_filter.py`    | 保留低频信息，抑制高频信息，实现图像平滑和降噪       |
+| 高通滤波     | `high_pass_filter.py`   | 保留高频信息，抑制低频信息，用于增强边缘和细节       |
+| 理想低通滤波 | `ideal_low_pass.py`     | 使用理想圆形掩膜进行低通滤波，效果直观但可能产生振铃 |
+| 理想高通滤波 | `ideal_high_pass.py`    | 使用理想圆形掩膜进行高通滤波，用于突出边缘变化       |
+| 高斯低通滤波 | `gaussian_low_pass.py`  | 使用高斯频域掩膜进行平滑，过渡更自然                 |
+| 高斯高通滤波 | `gaussian_high_pass.py` | 使用高斯频域掩膜增强边缘，减少理想滤波带来的振铃问题 |
 
 ---
 
