@@ -1,7 +1,7 @@
 <script setup></script>
 
 <template>
-  <RouterView />
+    <div>WorkSpace</div>
 </template>
 
 <style scoped></style>

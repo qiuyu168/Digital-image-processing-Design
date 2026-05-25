@@ -1,7 +1,7 @@
 <script setup></script>
 
 <template>
-  <RouterView />
+    <div>Gallery</div>
 </template>
 
 <style scoped></style>
