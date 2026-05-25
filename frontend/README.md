@@ -7,7 +7,7 @@
 ```bash
 npm install -g pnpm                     # 全局安装 pnpm 包管理器
 
-cd frontened                            # 进入前端项目对应的文件夹
+cd frontend                             # 进入前端项目对应的文件夹
 
 pnpm install                            # 根据package.json中的内容安装依赖
 ```
