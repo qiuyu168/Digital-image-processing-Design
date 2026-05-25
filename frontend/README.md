@@ -21,7 +21,7 @@ pnpm install                            # 根据package.json中的内容安装�
 npm install -g pnpm
 
 # 进入前端项目对应的文件夹
-cd frontened                            
+cd frontend
 
 # 状态管理
 pnpm add pinia                           # Pinia 状态管理库
@@ -53,7 +53,7 @@ pnpm add echarts vue-echarts
 打开cmd，进入项目根目录，执行：
 
 ```bash
-cd frontened                            # 进入前端项目对应的文件夹
+cd frontend                             # 进入前端项目对应的文件夹
 
 pnpm dev                                # 运行项目，但只能在本地运行
 
