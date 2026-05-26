@@ -1,0 +1,1 @@
+{"说明":"本文件用于配置 Canny 边缘检测算法的本地测试示例。","algorithm_import_path":"app.algorithms.edge_detection.canny","input_image_path":"data/test_images/anime_test.png","output_image_path":"data/test_outputs/canny_result.png","params":{"threshold1":80,"threshold2":160,"blur_size":3}}
