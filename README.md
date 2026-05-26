@@ -73,82 +73,146 @@ Vue 前端即时展示处理结果
 Digital-image-processing-Design/
 ├─ README.md
 ├─ requirements.txt
+├─ LICENSE
+├─ .gitignore
+│
+├─ docs/
+│  ├─ CHANGELOG01.md
+│  ├─ CHANGELOG02.md
+│  ├─ CHANGELOG03.md
+│  └─ 算法书写规范说明文档.docx
 │
 ├─ backend/
+│  ├─ main.py                                # FastAPI 应用入口
 │  ├─ 后端运行环境配置说明.md
+│  │
 │  ├─ app/
 │  │  ├─ __init__.py
-│  │  ├─ core/
-│  │  │  ├─ __init__.py
-│  │  │  └─ algorithm_framework.py          # 算法通用工具函数
 │  │  │
-│  │  └─ algorithms/
+│  │  ├─ core/                               # 核心配置与工具模块
+│  │  │  ├─ __init__.py
+│  │  │  ├─ algorithm_framework.py           # 算法手动测试脚本（旧版，基于 argparse）
+│  │  │  ├─ config.py                        # 应用全局配置
+│  │  │  ├─ cors.py                          # CORS 跨域配置
+│  │  │  ├─ image_codec.py                   # 图像编解码工具
+│  │  │  ├─ image_io.py                      # 图像文件读写（含中文路径支持）
+│  │  │  ├─ upload_config.py                 # 上传配置
+│  │  │  └─ upload_validator.py              # 上传文件校验
+│  │  │
+│  │  ├─ api/                                # API 路由层（均委托 services 层处理业务逻辑）
+│  │  │  ├─ __init__.py
+│  │  │  ├─ algorithms.py                    # GET /api/algorithms 算法元数据查询
+│  │  │  ├─ analysis.py                      # POST /api/analysis/metrics 图片指标计算
+│  │  │  ├─ health.py                        # GET /api/health 健康检查
+│  │  │  ├─ library.py                       # 内置图片库分类/列表/文件接口
+│  │  │  ├─ process.py                       # POST /api/process/run 算法处理主入口
+│  │  │  ├─ upload.py                        # 图片上传与预览接口
+│  │  │  └─ algorithm_modules/               # 六大分类独立子路由（GET 列表 + POST 执行）
+│  │  │     ├─ __init__.py
+│  │  │     ├─ color_image.py
+│  │  │     ├─ common.py                     # 共享常量和通用处理逻辑
+│  │  │     ├─ frequency_analysis.py
+│  │  │     ├─ frequency_filter.py
+│  │  │     ├─ geometric_transform.py
+│  │  │     ├─ grayscale_image.py
+│  │  │     └─ spatial_filter.py
+│  │  │
+│  │  ├─ schemas/                            # Pydantic 数据校验模型
+│  │  │  ├─ __init__.py
+│  │  │  ├─ algorithm_schema.py
+│  │  │  ├─ image_schema.py
+│  │  │  ├─ process_schema.py
+│  │  │  └─ response_schema.py
+│  │  │
+│  │  ├─ services/                           # 业务逻辑服务层
+│  │  │  ├─ __init__.py
+│  │  │  ├─ algorithm_registry.py            # 算法注册与发现
+│  │  │  ├─ analysis_service.py              # 图像分析服务
+│  │  │  ├─ image_store.py                   # 图像存储管理
+│  │  │  ├─ process_service.py               # 算法处理调度
+│  │  │  └─ step_service.py                  # 分步执行服务
+│  │  │
+│  │  ├─ analysis/                           # 分析模块（扩展预留）
+│  │  │  └─ .gitkeep
+│  │  │
+│  │  └─ algorithms/                         # 图像处理算法模块
 │  │     ├─ __init__.py
 │  │     ├─ 算法框架填写说明.md
+│  │     ├─ 分工文档.md
+│  │     ├─ algorithm_improvement_prompts_7_models/  # 7 种大模型算法改进提示词
+│  │     │  ├─ chatgpt_algorithm_improvement_slider_prompt.md
+│  │     │  ├─ claude_algorithm_improvement_slider_prompt.md
+│  │     │  ├─ deepseek_algorithm_improvement_slider_prompt.md
+│  │     │  ├─ doubao_algorithm_improvement_slider_prompt.md
+│  │     │  ├─ gemini_algorithm_improvement_slider_prompt.md
+│  │     │  ├─ glm_algorithm_improvement_slider_prompt.md
+│  │     │  └─ kimi_algorithm_improvement_slider_prompt.md
 │  │     │
-│  │     ├─ grayscale_image/                # 8.1 灰度图像类
+│  │     ├─ grayscale_image/                 # 8.1 灰度图像类
 │  │     │  ├─ __init__.py
-│  │     │  ├─ grayscale.py                 # 灰度化
-│  │     │  ├─ binary_threshold.py          # 二值化
-│  │     │  ├─ histogram_equalization.py    # 直方图均衡化
-│  │     │  ├─ edge_detection_basic.py      # 边缘检测（Canny）
-│  │     │  ├─ erode.py                     # 腐蚀
-│  │     │  ├─ dilate.py                    # 膨胀
-│  │     │  ├─ open_operation.py            # 开运算
-│  │     │  └─ close_operation.py           # 闭运算
+│  │     │  ├─ grayscale.py                  # 灰度化
+│  │     │  ├─ binary_threshold.py           # 二值化
+│  │     │  ├─ histogram_equalization.py     # 直方图均衡化
+│  │     │  ├─ edge_detection_basic.py       # 边缘检测（Canny）
+│  │     │  ├─ erode.py                      # 腐蚀
+│  │     │  ├─ dilate.py                     # 膨胀
+│  │     │  ├─ open_operation.py             # 开运算
+│  │     │  └─ close_operation.py            # 闭运算
 │  │     │
-│  │     ├─ color_image/                    # 8.2 彩色图像类
+│  │     ├─ color_image/                     # 8.2 彩色图像类
 │  │     │  ├─ __init__.py
-│  │     │  ├─ color_space_convert.py       # 颜色空间转换
-│  │     │  ├─ saturation_adjust.py         # 饱和度调整
-│  │     │  ├─ anime_color_enhance.py       # 动漫色彩增强
-│  │     │  └─ dominant_color_extract.py    # 主色调提取
+│  │     │  ├─ color_space_convert.py        # 颜色空间转换
+│  │     │  ├─ saturation_adjust.py          # 饱和度调整
+│  │     │  ├─ anime_color_enhance.py        # 动漫色彩增强
+│  │     │  └─ dominant_color_extract.py     # 主色调提取
 │  │     │
-│  │     ├─ geometric_transform/            # 8.3 几何变换类
+│  │     ├─ geometric_transform/             # 8.3 几何变换类
 │  │     │  ├─ __init__.py
-│  │     │  ├─ resize.py                    # 图像缩放
-│  │     │  ├─ rotate.py                    # 图像旋转
-│  │     │  └─ flip.py                      # 图像翻转
+│  │     │  ├─ resize.py                     # 图像缩放
+│  │     │  ├─ rotate.py                     # 图像旋转
+│  │     │  └─ flip.py                       # 图像翻转
 │  │     │
-│  │     ├─ spatial_filter/                 # 8.4 空域滤波类
+│  │     ├─ spatial_filter/                  # 8.4 空域滤波类
 │  │     │  ├─ __init__.py
-│  │     │  ├─ mean_filter.py               # 均值滤波
-│  │     │  ├─ gaussian_filter.py           # 高斯滤波
-│  │     │  ├─ median_filter.py             # 中值滤波
-│  │     │  ├─ bilateral_filter.py          # 双边滤波
-│  │     │  └─ laplacian_sharpen.py         # 拉普拉斯锐化
+│  │     │  ├─ mean_filter.py                # 均值滤波
+│  │     │  ├─ gaussian_filter.py            # 高斯滤波
+│  │     │  ├─ median_filter.py              # 中值滤波
+│  │     │  ├─ bilateral_filter.py           # 双边滤波
+│  │     │  └─ laplacian_sharpen.py          # 拉普拉斯锐化
 │  │     │
-│  │     ├─ frequency_analysis/             # 8.5 频域分析类
+│  │     ├─ frequency_analysis/              # 8.5 频域分析类
 │  │     │  ├─ __init__.py
-│  │     │  ├─ dft_spectrum.py              # 傅里叶频谱显示
-│  │     │  ├─ spectrum_shift.py            # 频谱中心化
-│  │     │  └─ magnitude_spectrum.py        # 幅度谱显示
+│  │     │  ├─ dft_spectrum.py               # 傅里叶频谱显示
+│  │     │  ├─ spectrum_shift.py             # 频谱中心化
+│  │     │  └─ magnitude_spectrum.py         # 幅度谱显示
 │  │     │
-│  │     └─ frequency_filter/               # 8.6 频域滤波类
+│  │     └─ frequency_filter/                # 8.6 频域滤波类
 │  │        ├─ __init__.py
-│  │        ├─ low_pass_filter.py           # 低通滤波
-│  │        ├─ high_pass_filter.py          # 高通滤波
-│  │        ├─ ideal_low_pass.py            # 理想低通滤波
-│  │        ├─ ideal_high_pass.py           # 理想高通滤波
-│  │        ├─ gaussian_low_pass.py         # 高斯低通滤波
-│  │        └─ gaussian_high_pass.py        # 高斯高通滤波
+│  │        ├─ low_pass_filter.py            # 低通滤波
+│  │        ├─ high_pass_filter.py           # 高通滤波
+│  │        ├─ ideal_low_pass.py             # 理想低通滤波
+│  │        ├─ ideal_high_pass.py            # 理想高通滤波
+│  │        ├─ gaussian_low_pass.py          # 高斯低通滤波
+│  │        └─ gaussian_high_pass.py         # 高斯高通滤波
 │  │
 │  ├─ data/
-│  │  ├─ uploads/                           # 用户上传图片
-│  │  ├─ library/                           # 内置图片库
-│  │  │  ├─ anime_character/                #   动漫人物图像
-│  │  │  ├─ anime_scene/                    #   动漫场景图像
-│  │  │  ├─ anime_avatar/                   #   动漫头像图像
-│  │  │  ├─ course_samples/                 #   课程实验素材
-│  │  │  └─ other/                          #   其他测试图像
-│  │  ├─ test_images/                       # 测试输入图片
-│  │  ├─ test_outputs/                      # 测试输出图片
-│  │  └─ outputs/                           # 算法处理输出
+│  │  ├─ image_limit.md                      # 图片限制说明文档
+│  │  ├─ uploads/                            # 用户上传图片
+│  │  ├─ library/                            # 内置图片库
+│  │  │  ├─ anime_character/                 #   动漫人物图像
+│  │  │  ├─ anime_scene/                     #   动漫场景图像
+│  │  │  ├─ anime_avatar/                    #   动漫头像图像
+│  │  │  ├─ course_samples/                  #   课程实验素材
+│  │  │  └─ other/                           #   其他测试图像
+│  │  ├─ test_images/                        # 测试输入图片
+│  │  ├─ test_outputs/                       # 测试输出图片
+│  │  └─ outputs/                            # 算法处理输出
 │  │
 │  └─ tests/
 │     ├─ README.md
-│     ├─ manual_test_algorithm.py
-│     ├─ algorithm_test_examples.md
+│     ├─ manual_test_algorithm.py             # 算法手动测试脚本
+│     ├─ test_backend_framework.py            # 后端框架自动化测试
+│     ├─ 算法测试脚本使用说明文档.md
 │     └─ sample_test_configs/
 │        ├─ saturation_adjust_example.json
 │        ├─ grayscale_example.json
@@ -266,9 +330,33 @@ ALGORITHM_META = {
     "display_name": "边缘检测",
     "description": "用于提取动漫人物轮廓、发丝边缘、场景建筑线条等边缘信息。",
     "params": {
-        "threshold1": {"type": "int", "default": 80, "min": 0, "max": 255},
-        "threshold2": {"type": "int", "default": 160, "min": 0, "max": 255},
-        "blur_size": {"type": "odd_int", "default": 3, "min": 1, "max": 15}
+        "threshold1": {
+            "type": "int",
+            "default": 80,
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "label": "阈值1",
+            "component": "slider"
+        },
+        "threshold2": {
+            "type": "int",
+            "default": 160,
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "label": "阈值2",
+            "component": "slider"
+        },
+        "blur_size": {
+            "type": "int",
+            "default": 3,
+            "min": 1,
+            "max": 15,
+            "step": 2,
+            "label": "模糊核大小",
+            "component": "slider"
+        }
     }
 }
 
@@ -326,8 +414,14 @@ GET /api/algorithms
           "name": "edge_detection",
           "display_name": "边缘检测",
           "params": {
-            "threshold1": {"type": "int", "default": 80, "min": 0, "max": 255},
-            "threshold2": {"type": "int", "default": 160, "min": 0, "max": 255}
+            "threshold1": {
+              "type": "int", "default": 80, "min": 0, "max": 255,
+              "step": 1, "label": "阈值1", "component": "slider"
+            },
+            "threshold2": {
+              "type": "int", "default": 160, "min": 0, "max": 255,
+              "step": 1, "label": "阈值2", "component": "slider"
+            }
           }
         }
       ]
@@ -347,7 +441,7 @@ POST /api/process/run
 ```json
 {
   "source_type": "upload",
-  "image_id": "upload_20260525_001.png",
+  "image_path": "upload_20260525_001.png",
   "module": "grayscale_image",
   "algorithm": "edge_detection",
   "params": {
@@ -364,6 +458,10 @@ POST /api/process/run
 ```json
 {
   "success": true,
+  "module": "grayscale_image",
+  "module_display_name": "灰度图像类",
+  "algorithm": "edge_detection",
+  "algorithm_display_name": "边缘检测",
   "result_image": "data:image/png;base64,...",
   "steps": [
     {
@@ -415,8 +513,12 @@ jpg、jpeg、png、bmp、tif、tiff、webp
 ```json
 {
   "success": true,
-  "image_id": "upload_xxx.png",
-  "preview_url": "/api/upload/preview/upload_xxx.png"
+  "image_path": "upload_xxx.png",
+  "filename": "upload_xxx.png",
+  "width": 800,
+  "height": 600,
+  "preview_url": "/api/upload/preview/upload_xxx.png",
+  "message": "图片上传成功"
 }
 ```
 
@@ -457,93 +559,115 @@ GET /api/library/image/{image_id}
 
 ## 8. 功能模块清单
 
-当前后端算法主目录按 6 类组织，所有列出的功能均需要实现。
+当前后端算法主目录按 6 类组织，29 个算法已全部实现。
 
 ### 8.1 `grayscale_image/` 灰度图像类
 
-| 功能名称     | 文件名                      | 功能说明                                                     |
-| ------------ | --------------------------- | ------------------------------------------------------------ |
-| 灰度化       | `grayscale.py`              | 将彩色图像转换为灰度图像，作为二值化、边缘检测、频域分析等算法的基础输入 |
-| 二值化       | `binary_threshold.py`       | 将灰度图转换为黑白二值图，可支持固定阈值和自适应阈值         |
-| 直方图均衡化 | `histogram_equalization.py` | 增强灰度图像整体对比度，使灰度分布更加均衡                   |
-| 边缘检测     | `edge_detection_basic.py`   | 提取图像中的主要轮廓，可用于动漫人物线稿、角色轮廓和场景边界提取 |
-| 腐蚀         | `erode.py`                  | 缩小前景区域，去除小白点或细小噪声                           |
-| 膨胀         | `dilate.py`                 | 扩大前景区域，连接断裂区域或增强目标区域                     |
-| 开运算       | `open_operation.py`         | 先腐蚀后膨胀，适合去除小噪声                                 |
-| 闭运算       | `close_operation.py`        | 先膨胀后腐蚀，适合填补小孔洞、连接断裂区域                   |
+| 功能名称     | 文件名                      | 功能说明                                                     | 状态     |
+| ------------ | --------------------------- | ------------------------------------------------------------ | -------- |
+| 灰度化       | `grayscale.py`              | 将彩色图像转换为灰度图像，作为二值化、边缘检测、频域分析等算法的基础输入 | 已实现 |
+| 二值化       | `binary_threshold.py`       | 将灰度图转换为黑白二值图，可支持固定阈值和自适应阈值         | 已实现 |
+| 直方图均衡化 | `histogram_equalization.py` | 增强灰度图像整体对比度，使灰度分布更加均衡                   | 已实现 |
+| 边缘检测     | `edge_detection_basic.py`   | 使用 Canny 算子提取图像中的主要轮廓和边界                    | 已实现 |
+| 腐蚀         | `erode.py`                  | 缩小前景区域，去除小白点或细小噪声                           | 已实现 |
+| 膨胀         | `dilate.py`                 | 扩大前景区域，连接断裂区域或增强目标区域                     | 已实现 |
+| 开运算       | `open_operation.py`         | 先腐蚀后膨胀，适合去除小噪声                                 | 已实现 |
+| 闭运算       | `close_operation.py`        | 先膨胀后腐蚀，适合填补小孔洞、连接断裂区域                   | 已实现 |
 
 ---
 
 ### 8.2 `color_image/` 彩色图像类
 
-| 功能名称     | 文件名                      | 功能说明                                                     |
-| ------------ | --------------------------- | ------------------------------------------------------------ |
-| 颜色空间转换 | `color_space_convert.py`    | 实现 RGB 与 HSV 颜色空间转换，为颜色分析和饱和度调整提供基础 |
-| 饱和度调整   | `saturation_adjust.py`      | 调整动漫图像色彩鲜艳程度，使人物和场景颜色更突出             |
-| 动漫色彩增强 | `anime_color_enhance.py`    | 综合亮度、饱和度和对比度调整，突出动漫图像的主题风格         |
-| 主色调提取   | `dominant_color_extract.py` | 提取动漫人物头发、服装、背景等区域的主要颜色                 |
+| 功能名称     | 文件名                      | 功能说明                                                     | 状态   |
+| ------------ | --------------------------- | ------------------------------------------------------------ | ------ |
+| 颜色空间转换 | `color_space_convert.py`    | 将 BGR 图像转换为灰度、HSV 或 Lab 表示，并生成便于展示的可视化结果 | 已实现 |
+| 饱和度调整   | `saturation_adjust.py`      | 基于 HSV 色彩空间调整动漫图像的色相、饱和度和明度，使人物和场景颜色更突出 | 已实现 |
+| 动漫色彩增强 | `anime_color_enhance.py`    | 综合调整饱和度、对比度、亮度和轻微锐化，突出动漫图像的明快色彩与线条层次 | 已实现 |
+| 主色调提取   | `dominant_color_extract.py` | 使用 K-Means 聚类提取动漫图像中的主要颜色，并生成主色调量化可视化结果 | 已实现 |
 
 ---
 
 ### 8.3 `geometric_transform/` 几何变换类
 
-| 功能名称 | 文件名      | 功能说明                                   |
-| -------- | ----------- | ------------------------------------------ |
-| 缩放     | `resize.py` | 改变图像尺寸，支持按比例缩放和指定宽高缩放 |
-| 旋转     | `rotate.py` | 按指定角度旋转图像，支持边界填充和中心旋转 |
-| 翻转     | `flip.py`   | 实现水平翻转、垂直翻转和中心翻转           |
+| 功能名称 | 文件名      | 功能说明                                   | 状态     |
+| -------- | ----------- | ------------------------------------------ | -------- |
+| 缩放     | `resize.py` | 改变图像尺寸，支持按比例缩放和指定宽高缩放 | 已实现 |
+| 旋转     | `rotate.py` | 按指定角度旋转图像，支持边界填充和中心旋转 | 已实现 |
+| 翻转     | `flip.py`   | 实现水平翻转、垂直翻转和中心翻转           | 已实现 |
 
 ---
 
 ### 8.4 `spatial_filter/` 空域滤波类
 
-| 功能名称     | 文件名                 | 功能说明                                                     |
-| ------------ | ---------------------- | ------------------------------------------------------------ |
-| 均值滤波     | `mean_filter.py`       | 使用邻域平均值进行平滑处理，可降低随机噪声，但会造成一定模糊 |
-| 高斯滤波     | `gaussian_filter.py`   | 使用高斯核进行平滑处理，适合去除一般噪声并保留较自然的过渡   |
-| 中值滤波     | `median_filter.py`     | 使用邻域中值替代中心像素，对椒盐噪声有较好去除效果           |
-| 双边滤波     | `bilateral_filter.py`  | 在平滑图像的同时尽量保留边缘，适合动漫线条图像降噪           |
-| 拉普拉斯锐化 | `laplacian_sharpen.py` | 增强图像边缘和细节，使轮廓更清晰                             |
+| 功能名称     | 文件名                 | 功能说明                                                     | 状态     |
+| ------------ | ---------------------- | ------------------------------------------------------------ | -------- |
+| 均值滤波     | `mean_filter.py`       | 使用邻域平均值进行平滑处理，可降低随机噪声，但会造成一定模糊 | 已实现 |
+| 高斯滤波     | `gaussian_filter.py`   | 使用高斯核进行平滑处理，适合去除一般噪声并保留较自然的过渡   | 已实现 |
+| 中值滤波     | `median_filter.py`     | 使用邻域中值替代中心像素，对椒盐噪声有较好去除效果           | 已实现 |
+| 双边滤波     | `bilateral_filter.py`  | 在平滑图像的同时尽量保留边缘，适合动漫线条图像降噪           | 已实现 |
+| 拉普拉斯锐化 | `laplacian_sharpen.py` | 增强图像边缘和细节，使轮廓更清晰                             | 已实现 |
 
 ---
 
 ### 8.5 `frequency_analysis/` 频域分析类
 
-| 功能名称           | 文件名                  | 功能说明                                                     |
-| ------------------ | ----------------------- | ------------------------------------------------------------ |
-| 傅里叶变换显示频谱 | `dft_spectrum.py`       | 将图像转换到频域并显示频谱图，用于观察图像低频和高频信息分布 |
-| 频谱中心化         | `spectrum_shift.py`     | 将低频分量移动到频谱中心，便于观察和构造频域滤波器           |
-| 幅度谱显示         | `magnitude_spectrum.py` | 显示傅里叶变换后的幅度谱，辅助说明频域特征                   |
+| 功能名称           | 文件名                  | 功能说明                                                     | 状态     |
+| ------------------ | ----------------------- | ------------------------------------------------------------ | -------- |
+| 傅里叶变换显示频谱 | `dft_spectrum.py`       | 将图像转换到频域并显示频谱图，用于观察图像低频和高频信息分布 | 已实现 |
+| 频谱中心化         | `spectrum_shift.py`     | 对傅里叶频谱进行中心化，将低频成分移动到频谱中心             | 已实现 |
+| 幅度谱显示         | `magnitude_spectrum.py` | 计算并显示图像傅里叶变换后的幅度谱                           | 已实现 |
 
 ---
 
 ### 8.6 `frequency_filter/` 频域滤波类
 
-| 功能名称     | 文件名                  | 功能说明                                             |
-| ------------ | ----------------------- | ---------------------------------------------------- |
-| 低通滤波     | `low_pass_filter.py`    | 保留低频信息，抑制高频信息，实现图像平滑和降噪       |
-| 高通滤波     | `high_pass_filter.py`   | 保留高频信息，抑制低频信息，用于增强边缘和细节       |
-| 理想低通滤波 | `ideal_low_pass.py`     | 使用理想圆形掩膜进行低通滤波，效果直观但可能产生振铃 |
-| 理想高通滤波 | `ideal_high_pass.py`    | 使用理想圆形掩膜进行高通滤波，用于突出边缘变化       |
-| 高斯低通滤波 | `gaussian_low_pass.py`  | 使用高斯频域掩膜进行平滑，过渡更自然                 |
-| 高斯高通滤波 | `gaussian_high_pass.py` | 使用高斯频域掩膜增强边缘，减少理想滤波带来的振铃问题 |
+| 功能名称     | 文件名                  | 功能说明                                             | 状态     |
+| ------------ | ----------------------- | ---------------------------------------------------- | -------- |
+| 低通滤波     | `low_pass_filter.py`    | 保留低频信息，抑制高频信息，实现图像平滑和降噪       | 已实现 |
+| 高通滤波     | `high_pass_filter.py`   | 保留高频信息，抑制低频信息，用于增强边缘和细节       | 已实现 |
+| 理想低通滤波 | `ideal_low_pass.py`     | 使用理想圆形掩膜进行低通滤波，效果直观但可能产生振铃 | 已实现 |
+| 理想高通滤波 | `ideal_high_pass.py`    | 使用理想圆形掩膜进行高通滤波，用于突出边缘变化       | 已实现 |
+| 高斯低通滤波 | `gaussian_low_pass.py`  | 使用高斯频域掩膜进行平滑，过渡更自然                 | 已实现 |
+| 高斯高通滤波 | `gaussian_high_pass.py` | 使用高斯频域掩膜增强边缘，减少理想滤波带来的振铃问题 | 已实现 |
 
 ---
 
 ## 9. 后端 API 清单
 
-| 接口 | 方法 | 功能 |
+### 9.1 核心接口
+
+| 接口 | 方法 | 功能 | 状态 |
+|---|---|---|---|
+| `/api/health` | GET | 检查后端是否运行 | 已实现 |
+| `/api/upload/image` | POST | 上传用户图片，校验后保存到 data/uploads | 已实现 |
+| `/api/upload/preview/{image_path}` | GET | 返回已上传图片文件 | 已实现 |
+| `/api/library/categories` | GET | 返回内置图片库所有分类及图片数量 | 已实现 |
+| `/api/library/images` | GET | 返回指定分类下的图片列表 | 已实现 |
+| `/api/library/image/{image_path}` | GET | 返回内置图片库中的图片文件 | 已实现 |
+| `/api/algorithms` | GET | 获取全部可用算法模块和参数元数据 | 已实现 |
+| `/api/process/run` | POST | 对指定图片执行选择的算法，返回结果/分步/指标 | 已实现 |
+| `/api/analysis/metrics` | POST | 计算图片基础指标（均值/标准差/直方图等） | 已实现 |
+
+### 9.2 分类算法子路由
+
+每个算法分类提供独立的子路由，均包含列表查询和执行接口：
+
+| 接口 | 方法 | 说明 |
 |---|---|---|
-| `/api/health` | GET | 检查后端是否运行 |
-| `/api/upload/image` | POST | 上传用户图片 |
-| `/api/upload/preview/{image_id}` | GET | 获取上传图片预览 |
-| `/api/library/categories` | GET | 获取图库分类 |
-| `/api/library/images` | GET | 获取指定分类下的图片列表 |
-| `/api/library/image/{image_id}` | GET | 获取图库图片 |
-| `/api/algorithms` | GET | 获取全部可用算法模块和参数 |
-| `/api/process/run` | POST | 对指定图片执行当前选择的算法 |
-| `/api/process/steps` | POST | 返回算法分步执行过程 |
-| `/api/analysis/metrics` | POST | 返回图像指标与分析结果 |
+| `/api/algorithms/grayscale-image` | GET | 灰度图像类算法列表 |
+| `/api/algorithms/grayscale-image/run` | POST | 执行灰度图像类下的指定算法 |
+| `/api/algorithms/color-image` | GET | 彩色图像类算法列表 |
+| `/api/algorithms/color-image/run` | POST | 执行彩色图像类下的指定算法 |
+| `/api/algorithms/geometric-transform` | GET | 几何变换类算法列表 |
+| `/api/algorithms/geometric-transform/run` | POST | 执行几何变换类下的指定算法 |
+| `/api/algorithms/spatial-filter` | GET | 空域滤波类算法列表 |
+| `/api/algorithms/spatial-filter/run` | POST | 执行空域滤波类下的指定算法 |
+| `/api/algorithms/frequency-analysis` | GET | 频域分析类算法列表 |
+| `/api/algorithms/frequency-analysis/run` | POST | 执行频域分析类下的指定算法 |
+| `/api/algorithms/frequency-filter` | GET | 频域滤波类算法列表 |
+| `/api/algorithms/frequency-filter/run` | POST | 执行频域滤波类下的指定算法 |
+
+所有 POST 请求体格式与 `/api/process/run` 一致，其中 `module` 字段由路由自动注入，无需前端传递。
 
 ---
 
@@ -651,13 +775,13 @@ pip install -r requirements.txt
 
 ```bat
 cd backend
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+uvicorn main:app --reload --host 127.0.0.1 --port 8050
 ```
 
 浏览器打开：
 
 ```text
-http://127.0.0.1:8000/docs
+http://127.0.0.1:8050/docs
 ```
 
 ### 12.2 前端启动

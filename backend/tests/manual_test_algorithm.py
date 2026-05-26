@@ -20,7 +20,7 @@ if str(BACKEND_ROOT) not in sys.path:
 
 # 小组成员常用配置区
 
-ALGORITHM_IMPORT_PATH = "app.algorithms.color_processing.hsv_adjust"
+ALGORITHM_IMPORT_PATH = "app.algorithms.color_image.saturation_adjust"
 INPUT_IMAGE_PATH = "data/test_images/anime_test.png"
 OUTPUT_IMAGE_PATH = "data/test_outputs/result.png"
 PARAMS = {
