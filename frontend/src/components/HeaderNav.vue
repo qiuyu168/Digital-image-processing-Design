@@ -114,11 +114,7 @@ function goPage(path) {
 }
 
 function handleLogout() {
-  if (typeof authStore.logout === 'function') {
-    authStore.logout()
-  } else if (typeof authStore.clearLoginInfo === 'function') {
-    authStore.clearLoginInfo()
-  }
+  authStore.clearLoginInfo()
   router.push('/login')
 }
 </script>
@@ -161,6 +157,7 @@ $border-light: rgba(79, 172, 254, 0.3);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     animation: ripple1 4s ease-out infinite;
+    pointer-events: none;
   }
 
   // 水波波纹2（延迟启动，形成叠加）
@@ -175,6 +172,7 @@ $border-light: rgba(79, 172, 254, 0.3);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     animation: ripple2 4s ease-out 1.5s infinite;
+    pointer-events: none;
   }
 }
 
