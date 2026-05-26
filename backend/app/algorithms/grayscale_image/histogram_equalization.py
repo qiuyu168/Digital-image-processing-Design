@@ -1,20 +1,30 @@
-# 本文件用于实现图像处理算法。
-from __future__ import annotations
+# 本文件用于实现直方图均衡化增强图像对比度的功能
 
 import cv2
 import numpy as np
 
-from app.core.algorithm_framework import build_algorithm_meta, run_standard_algorithm
 
-
-ALGORITHM_META = build_algorithm_meta("grayscale_image", "histogram_equalization")
+ALGORITHM_META = {
+    "module": "grayscale_image",
+    "name": "histogram_equalization",
+    "display_name": "直方图均衡化",
+    "description": "增强灰度图像整体对比度，使灰度分布更加均衡。",
+    "params": {},
+}
 
 
 def run(image: np.ndarray, params: dict | None = None) -> dict:
-    """统一算法入口函数，小组成员后续只需要替换本函数内部的正式算法逻辑。"""
     if image is None:
         raise ValueError("输入图像不能为空")
     if params is None:
         params = {}
 
-    return run_standard_algorithm(image, params, ALGORITHM_META)
+    result = image.copy()
+    return {
+        "result": result,
+        "steps": [
+            {"name": "原始图像", "image": result},
+        ],
+        "metrics": {},
+        "analysis": "当前为框架占位实现，小组成员可直接替换 run(image, params) 内部逻辑。",
+    }
