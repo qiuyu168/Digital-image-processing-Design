@@ -5,7 +5,7 @@ import numpy as np
 
 
 ALGORITHM_META = {
-    "module": "color_processing",
+    "module": "color_image",
     "name": "dominant_color_extract",
     "display_name": "主色调提取",
     "description": "通过 K-Means 聚类提取动漫人物的头发、服装、背景等区域的主要颜色，生成色板与色彩占比分析。",
@@ -15,7 +15,9 @@ ALGORITHM_META = {
             "default": 5,
             "min": 2,
             "max": 10,
-            "label": "提取颜色数量"
+            "step": 1,
+            "label": "提取颜色数量",
+            "component": "slider"
         }
     }
 }
@@ -34,12 +36,14 @@ def _create_palette_image(colors_bgr: list, percentages: list,
     Args:
         colors_bgr: BGR 颜色列表，每个颜色为 (3,) 的 uint8 ndarray。
         percentages: 对应的占比列表（0~100）。
-        bar_height: 色板高度。
-        bar_width: 色板宽度。
+        bar_height: 色板高度（>0）。
+        bar_width: 色板宽度（>0）。
 
     Returns:
         色板 BGR 图像，shape (bar_height, bar_width, 3)。
     """
+    bar_height = max(1, bar_height)
+    bar_width = max(1, bar_width)
     palette = np.zeros((bar_height, bar_width, 3), dtype=np.uint8)
     x_start = 0
     for color, pct in zip(colors_bgr, percentages):
@@ -50,23 +54,37 @@ def _create_palette_image(colors_bgr: list, percentages: list,
     return palette
 
 
-def run(image: np.ndarray, params: dict) -> dict:
+def run(image: np.ndarray, params: dict = None) -> dict:
     """统一算法入口函数。"""
     if image is None:
         raise ValueError("输入图像不能为空")
 
-    # 1. 读取并校验参数
+    # 防御：params 可能为 None
+    if params is None:
+        params = {}
+
+    # 1. 读取并校验参数，使用 ALGORITHM_META 中的默认值
     n_colors = int(params.get("n_colors", 5))
+    # 严格限制范围 [2, 10]
     if n_colors < 2:
         n_colors = 2
     if n_colors > 10:
         n_colors = 10
 
-    # 2. 确保为三通道彩色图像
-    if len(image.shape) == 2:
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    # 2. 处理灰度与 Alpha 通道
+    has_alpha = (len(image.shape) == 3 and image.shape[2] == 4)
+    if has_alpha:
+        bgr = image[:, :, :3]
+        alpha = image[:, :, 3]
+    elif len(image.shape) == 2 or (len(image.shape) == 3 and image.shape[2] == 1):
+        # 灰度图转换为三通道 BGR，便于统一处理
+        bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        alpha = None
+    else:
+        bgr = image
+        alpha = None
 
-    h, w = image.shape[:2]
+    h, w = bgr.shape[:2]
 
     # 3. 降采样以加速 K-Means（最多处理约 20000 像素）
     max_pixels = 20000
@@ -74,12 +92,13 @@ def run(image: np.ndarray, params: dict) -> dict:
     if total_pixels > max_pixels:
         scale = (max_pixels / total_pixels) ** 0.5
         small_h, small_w = int(h * scale), int(w * scale)
-        small_img = cv2.resize(image, (small_w, small_h), interpolation=cv2.INTER_AREA)
+        small_img = cv2.resize(bgr, (small_w, small_h), interpolation=cv2.INTER_AREA)
+        # 防止聚类数超过像素总数
         n_colors = min(n_colors, small_h * small_w)
     else:
-        small_img = image
+        small_img = bgr
 
-    # 4. 重塑为二维像素数组并做 K-Means 聚类
+    # 4. 重塑为二维像素数组并执行 K-Means
     pixels = small_img.reshape(-1, 3).astype(np.float32)
 
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
@@ -96,7 +115,6 @@ def run(image: np.ndarray, params: dict) -> dict:
         pct = round(count / total * 100, 2)
         hex_color = _bgr_to_hex(centers[idx])
         color_data.append({
-            "color_bgr": centers[idx].tolist(),
             "color_hex": hex_color,
             "percentage": pct,
             "pixel_count": int(count)
@@ -112,26 +130,33 @@ def run(image: np.ndarray, params: dict) -> dict:
     else:
         quantized = quantized_small
 
-    # 7. 生成色板图像
-    palette_colors = [
-        np.array(c["color_bgr"], dtype=np.uint8) for c in color_data
-    ]
-    palette_pcts = [c["percentage"] for c in color_data]
-    palette_img = _create_palette_image(palette_colors, palette_pcts)
+    # 7. 如有 Alpha 通道，将其合并回量化图像
+    if has_alpha:
+        quantized = np.dstack((quantized, alpha))
 
-    # 8. 组织色彩描述文本
+    # 8. 生成色板图像（始终基于 BGR 颜色）
+    palette_colors = [
+        np.array([int(centers[idx][0]), int(centers[idx][1]), int(centers[idx][2])], dtype=np.uint8)
+        for idx, _ in zip(unique, counts)
+    ]
+    # 根据排序后的 color_data 重新整理色板和占比顺序
+    sorted_centers = []
+    sorted_pcts = []
+    for c in color_data:
+        # 通过 hex 匹配到对应的 BGR 中心
+        for idx, center in enumerate(centers):
+            if _bgr_to_hex(center) == c["color_hex"]:
+                sorted_centers.append(center)
+                sorted_pcts.append(c["percentage"])
+                break
+    palette_img = _create_palette_image(sorted_centers, sorted_pcts)
+
+    # 9. 组织色彩描述文本
     color_info_lines = []
     for i, c in enumerate(color_data):
         color_info_lines.append(
             f"第{i + 1}主色 {c['color_hex']} 占比 {c['percentage']:.1f}%"
         )
-
-    # 9. 组织分步结果
-    steps = [
-        {"name": "原始图像", "image": image},
-        {"name": "色彩量化结果", "image": quantized},
-        {"name": "主色调色板", "image": palette_img}
-    ]
 
     analysis = (
         f"提取了 {len(color_data)} 种主色调。" + "；".join(color_info_lines) + "。"
@@ -139,15 +164,24 @@ def run(image: np.ndarray, params: dict) -> dict:
         f"色彩量化图将原图简化为有限的几种主色，直观展示图像的整体色彩构成。"
     )
 
+    # 10. 组织分步结果
+    steps = [
+        {"name": "原始图像", "image": bgr.copy()},
+        {"name": "色彩量化结果", "image": quantized.copy()},
+        {"name": "主色调色板", "image": palette_img}
+    ]
+
+    # 11. 将主色调信息放入 metrics 中
+    metrics = {
+        "dominant_colors": [
+            {"hex": c["color_hex"], "percentage": c["percentage"]}
+            for c in color_data
+        ]
+    }
+
     return {
         "result": quantized,
         "steps": steps,
-        "metrics": {},
-        "analysis": analysis,
-        "extra": {
-            "dominant_colors": [
-                {"hex": c["color_hex"], "percentage": c["percentage"]}
-                for c in color_data
-            ]
-        }
+        "metrics": metrics,
+        "analysis": analysis
     }
