@@ -5,34 +5,16 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from app.api.algorithm_modules.common import (
+    ALGORITHM_MODULES,
+    MODULE_DISPLAY_NAMES,
+    MODULE_ORDER,
+)
+
 
 router = APIRouter(prefix="/api", tags=["algorithms"])
 
-# TODO: 后续迁移到 services/algorithm_registry.py 或 core/config.py 中统一管理。
-MODULE_DISPLAY_NAMES = {
-    "grayscale_image": "灰度图像类",
-    "color_image": "彩色图像类",
-    "geometric_transform": "几何变换类",
-    "spatial_filter": "空域滤波类",
-    "frequency_analysis": "频域分析类",
-    "frequency_filter": "频域滤波类",
-}
-
-MODULE_ORDER = [
-    "grayscale_image",
-    "color_image",
-    "geometric_transform",
-    "spatial_filter",
-    "frequency_analysis",
-    "frequency_filter",
-]
-
-COLOR_IMAGE_ALGORITHM_MODULES = [
-    "anime_color_enhance",
-    "color_space_convert",
-    "dominant_color_extract",
-    "saturation_adjust",
-]
+COLOR_IMAGE_ALGORITHM_MODULES = ALGORITHM_MODULES["color_image"]
 
 
 def _empty_module_response() -> list[dict[str, Any]]:
