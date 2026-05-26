@@ -11,27 +11,41 @@ const router = createRouter({
         {
             path: '/login',
             name: 'Login',
-            component: () => import('../views/LoginView.vue'),
-            meta: { title: '登录' }
+            component: () => import('@/views/LoginView.vue'),
+            meta: {
+              title: '登录注册'
+            }
         },
         {
-            path: '/home',
-            name: 'Home',
-            component: () => import('../views/HomeView.vue'),
-            meta: { title: '首页' }
-        },
-        {
-            path: '/workspace',
-            name: 'Workspace',
-            component: () => import('../views/WorkspaceView.vue'),
-            meta: { title: '图像处理' }
-        },
-        {
-            path: '/gallery',
-            name: 'Gallery',
-            component: () => import('../views/GalleryView.vue'),
-            meta: { title: '图片库' }
-          }
+            path: '/',
+            component: () => import('@/components/MainLayout.vue'),
+            children: [
+                {
+                    path: 'home',
+                    name: 'Home',
+                    component: () => import('@/views/HomeView.vue'),
+                    meta: {
+                        title: '首页'
+                    }
+                },
+                {
+                    path: 'workspace',
+                    name: 'Workspace',
+                    component: () => import('@/views/WorkspaceView.vue'),
+                    meta: {
+                        title: '图像处理'
+                    }
+                },
+                {
+                    path: 'profile',
+                    name: 'UserProfile',
+                    component: () => import('@/views/UserProfileView.vue'),
+                    meta: {
+                        title: '用户个人信息'
+                    }
+                }
+            ]
+        }
     ]
 })
 
