@@ -28,10 +28,7 @@ def run(image: np.ndarray, params: dict) -> dict:
 
     # 1. 读取并校验参数
     factor = float(params.get("saturation_factor", 1.5))
-    if factor < 0.0:
-        factor = 0.0
-    if factor > 3.0:
-        factor = 3.0
+    factor = max(0.0, min(3.0, factor))  # 限制范围
 
     # 2. BGR 转 HSV，使用浮点避免溢出
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).astype(np.float32)
@@ -45,18 +42,21 @@ def run(image: np.ndarray, params: dict) -> dict:
     # 5. 记录调整后的平均饱和度
     mean_s_after = float(np.mean(hsv[:, :, 1]))
 
-    # 6. 转换回 BGR
+    # 6. 提取饱和度通道图像（转为 uint8 以便步骤图正常保存/显示）
+    s_channel_display = np.clip(hsv[:, :, 1], 0, 255).astype(np.uint8)
+
+    # 7. 转换回 BGR
     hsv = np.clip(hsv, 0.0, 255.0).astype(np.uint8)
     result = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
-    # 7. 组织分步结果（包含饱和度通道可视化）
+    # 8. 组织分步结果（确保中间步骤图像为 uint8 类型）
     steps = [
         {"name": "原始图像", "image": image},
-        {"name": "饱和度通道（S 通道）", "image": hsv[:, :, 1]},
+        {"name": "饱和度通道（S 通道）", "image": s_channel_display},
         {"name": "饱和度调整结果", "image": result}
     ]
 
-    # 8. 返回统一结构
+    # 9. 返回统一结构
     return {
         "result": result,
         "steps": steps,
