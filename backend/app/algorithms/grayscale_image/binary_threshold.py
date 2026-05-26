@@ -1,32 +1,51 @@
-# 本文件用于实现将灰度图转换为黑白二值图像的功能
+# 本文件用于实现图像二值化处理功能
 
 import cv2
 import numpy as np
-
 
 ALGORITHM_META = {
     "module": "grayscale_image",
     "name": "binary_threshold",
     "display_name": "二值化",
-    "description": "将灰度图转换为黑白二值图，支持固定阈值和自适应阈值。",
+    "description": "将灰度图像转换为黑白二值图像",
     "params": {
-        "threshold": {"type": "int", "default": 127, "min": 0, "max": 255, "label": "阈值"},
-    },
+        "threshold": {"type": "int", "default": 127, "min": 0, "max": 255},
+        "max_value": {"type": "int", "default": 255, "min": 0, "max": 255}
+    }
 }
 
-
-def run(image: np.ndarray, params: dict | None = None) -> dict:
-    if image is None:
-        raise ValueError("输入图像不能为空")
+def run(image: np.ndarray, params: dict = None) -> dict:
+    # 参数处理
     if params is None:
         params = {}
-
-    result = image.copy()
+    threshold = params.get("threshold", 127)
+    max_value = params.get("max_value", 255)
+    
+    # 参数校验
+    threshold = max(0, min(255, threshold))
+    max_value = max(0, min(255, max_value))
+    
+    # 输入校验
+    if image is None:
+        raise ValueError("输入图像为空")
+    
+    # 如果是彩色图，先转为灰度图
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image.copy()
+    
+    # 二值化
+    _, result = cv2.threshold(gray, threshold, max_value, cv2.THRESH_BINARY)
+    
     return {
         "result": result,
         "steps": [
-            {"name": "原始图像", "image": result},
+            {"name": "二值化", "image": result}
         ],
-        "metrics": {},
-        "analysis": "当前为框架占位实现，小组成员可直接替换 run(image, params) 内部逻辑。",
+        "metrics": {
+            "threshold": threshold,
+            "max_value": max_value
+        },
+        "analysis": f"使用阈值{threshold}将灰度图像二值化，大于阈值的像素设为{max_value}，其余设为0"
     }
