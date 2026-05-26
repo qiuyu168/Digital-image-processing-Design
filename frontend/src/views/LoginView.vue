@@ -8,6 +8,7 @@ import bg1 from '@/assets/background/bg1.jpg'
 import bg2 from '@/assets/background/bg2.jpg'
 import bg3 from '@/assets/background/bg3.jpg'
 import bg4 from '@/assets/background/bg4.jpg'
+import { generateTestToken } from '@/utils/token'
 
 const images = [bg1, bg2, bg3, bg4]
 const currentIndex = ref(0)
@@ -85,6 +86,10 @@ const register = async () => {
 
 const login = async () => {
   await form.value.validate()
+  const token = generateTestToken(formModel.value)
+  userStore.setLoginInfo(token, {
+    username: formModel.value.username
+  })
   ElMessage.success('登录成功！')
   router.push('/')
 }
