@@ -11,16 +11,12 @@ ALGORITHM_META = {
         "angle": {
             "type": "float",
             "default": 45.0,
-            "min": -360.0,
-            "max": 360.0,
             "label": "旋转角度（度）",
             "description": "正值表示逆时针旋转，负值表示顺时针旋转"
         },
         "scale": {
             "type": "float",
             "default": 1.0,
-            "min": 0.1,
-            "max": 3.0,
             "label": "缩放比例",
             "description": "旋转同时进行缩放，1.0 表示不缩放"
         },
@@ -65,9 +61,9 @@ def run(image: np.ndarray, params: dict = None) -> dict:
     border_mode = params.get("border_mode", "constant")
     border_value = params.get("border_value", 0)
     
-    # 参数校验
-    angle = max(-360.0, min(360.0, angle))
-    scale = max(0.1, min(3.0, scale))
+    # 参数校验（只校验边界颜色范围，angle和scale不设上下限）
+    if scale <= 0:
+        scale = 1.0
     border_value = max(0, min(255, border_value))
     
     valid_border_modes = ["constant", "replicate", "reflect", "wrap"]

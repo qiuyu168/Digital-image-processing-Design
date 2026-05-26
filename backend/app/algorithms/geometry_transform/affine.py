@@ -18,32 +18,24 @@ ALGORITHM_META = {
         "angle": {
             "type": "float",
             "default": 30.0,
-            "min": -180.0,
-            "max": 180.0,
             "label": "旋转角度（度）",
             "description": "仅 rotate_scale 模式有效"
         },
         "scale": {
             "type": "float",
             "default": 1.0,
-            "min": 0.1,
-            "max": 3.0,
             "label": "缩放比例",
             "description": "仅 rotate_scale 模式有效"
         },
         "shear_x": {
             "type": "float",
             "default": 0.5,
-            "min": -2.0,
-            "max": 2.0,
             "label": "水平剪切因子",
             "description": "仅 shear 模式有效，表示水平方向的倾斜程度"
         },
         "shear_y": {
             "type": "float",
             "default": 0.0,
-            "min": -2.0,
-            "max": 2.0,
             "label": "垂直剪切因子",
             "description": "仅 shear 模式有效，表示垂直方向的倾斜程度"
         },
@@ -91,11 +83,9 @@ def run(image: np.ndarray, params: dict = None) -> dict:
     border_value = params.get("border_value", 0)
     auto_crop = params.get("auto_crop", True)
     
-    # 参数校验
-    angle = max(-180.0, min(180.0, angle))
-    scale = max(0.1, min(3.0, scale))
-    shear_x = max(-2.0, min(2.0, shear_x))
-    shear_y = max(-2.0, min(2.0, shear_y))
+    # 参数校验（只校验边界颜色范围，其他不设上下限）
+    if scale <= 0:
+        scale = 1.0
     border_value = max(0, min(255, border_value))
     
     valid_transform_types = ["rotate_scale", "shear", "custom_points", "custom_matrix"]

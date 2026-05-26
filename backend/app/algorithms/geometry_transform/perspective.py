@@ -18,24 +18,18 @@ ALGORITHM_META = {
         "top_offset": {
             "type": "float",
             "default": 0.2,
-            "min": 0.0,
-            "max": 0.5,
             "label": "顶部偏移比例",
             "description": "仅 tilt 模式有效，控制顶部收缩程度"
         },
         "bottom_offset": {
             "type": "float",
             "default": 0.0,
-            "min": 0.0,
-            "max": 0.5,
             "label": "底部偏移比例",
             "description": "仅 tilt 模式有效，控制底部收缩程度"
         },
         "side_offset": {
             "type": "float",
             "default": 0.15,
-            "min": 0.0,
-            "max": 0.5,
             "label": "侧边偏移比例",
             "description": "仅 corner 模式有效，控制侧边收缩程度"
         },
@@ -75,10 +69,7 @@ def run(image: np.ndarray, params: dict = None) -> dict:
     border_mode = params.get("border_mode", "constant")
     border_value = params.get("border_value", 0)
     
-    # 参数校验
-    top_offset = max(0.0, min(0.5, top_offset))
-    bottom_offset = max(0.0, min(0.5, bottom_offset))
-    side_offset = max(0.0, min(0.5, side_offset))
+    # 参数校验（只校验边界颜色范围，偏移比例不设上下限）
     border_value = max(0, min(255, border_value))
     
     valid_presets = ["tilt", "corner", "custom"]

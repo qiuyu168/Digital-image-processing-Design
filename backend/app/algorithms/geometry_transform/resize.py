@@ -18,32 +18,24 @@ ALGORITHM_META = {
         "width_ratio": {
             "type": "float",
             "default": 0.5,
-            "min": 0.05,
-            "max": 5.0,
             "label": "宽度缩放比例",
-            "description": "仅 by_ratio 模式有效，0.05-5.0 之间"
+            "description": "仅 by_ratio 模式有效"
         },
         "height_ratio": {
             "type": "float",
             "default": 0.5,
-            "min": 0.05,
-            "max": 5.0,
             "label": "高度缩放比例",
-            "description": "仅 by_ratio 模式有效，0.05-5.0 之间"
+            "description": "仅 by_ratio 模式有效"
         },
         "target_width": {
             "type": "int",
             "default": 512,
-            "min": 1,
-            "max": 4096,
             "label": "目标宽度",
             "description": "仅 by_size 模式有效，单位：像素"
         },
         "target_height": {
             "type": "int",
             "default": 512,
-            "min": 1,
-            "max": 4096,
             "label": "目标高度",
             "description": "仅 by_size 模式有效，单位：像素"
         },
@@ -79,10 +71,16 @@ def run(image: np.ndarray, params: dict = None) -> dict:
     if resize_type not in ["by_ratio", "by_size"]:
         resize_type = "by_ratio"
     
-    width_ratio = max(0.05, min(5.0, width_ratio))
-    height_ratio = max(0.05, min(5.0, height_ratio))
-    target_width = max(1, min(4096, target_width))
-    target_height = max(1, min(4096, target_height))
+    # 只校验正数，不设上下限
+    if width_ratio <= 0:
+        width_ratio = 0.5
+    if height_ratio <= 0:
+        height_ratio = 0.5
+    
+    if target_width <= 0:
+        target_width = 512
+    if target_height <= 0:
+        target_height = 512
     
     # 插值方法映射
     interpolation_map = {
@@ -104,7 +102,6 @@ def run(image: np.ndarray, params: dict = None) -> dict:
     
     # 获取原始尺寸
     h, w = image.shape[:2]
-    original_size = (w, h)
     
     steps.append({
         "name": f"原始尺寸: {w} x {h}",
@@ -122,8 +119,10 @@ def run(image: np.ndarray, params: dict = None) -> dict:
         analysis = f"指定尺寸缩放：目标宽度 {target_width}，目标高度 {target_height}。"
     
     # 确保尺寸至少为1
-    new_width = max(1, new_width)
-    new_height = max(1, new_height)
+    if new_width < 1:
+        new_width = 1
+    if new_height < 1:
+        new_height = 1
     
     # 执行缩放
     result = cv2.resize(image, (new_width, new_height), interpolation=interp)

@@ -11,16 +11,12 @@ ALGORITHM_META = {
         "tx": {
             "type": "int",
             "default": 50,
-            "min": -1000,
-            "max": 1000,
             "label": "水平平移量（像素）",
             "description": "正值向右移动，负值向左移动"
         },
         "ty": {
             "type": "int",
             "default": 50,
-            "min": -1000,
-            "max": 1000,
             "label": "垂直平移量（像素）",
             "description": "正值向下移动，负值向上移动"
         },
@@ -65,9 +61,7 @@ def run(image: np.ndarray, params: dict = None) -> dict:
     border_value = params.get("border_value", 0)
     keep_size = params.get("keep_size", True)
     
-    # 参数校验
-    tx = max(-1000, min(1000, tx))
-    ty = max(-1000, min(1000, ty))
+    # 参数校验（只校验边界颜色范围，tx和ty不设上下限）
     border_value = max(0, min(255, border_value))
     
     valid_border_modes = ["constant", "replicate", "reflect", "wrap"]
