@@ -1,0 +1,1 @@
+{"说明":"本文件用于配置理想低通滤波算法的本地测试示例。","algorithm_import_path":"app.algorithms.frequency_filter.ideal_low_pass","input_image_path":"data/test_images/anime_test.png","output_image_path":"data/test_outputs/ideal_low_pass_result.png","params":{"radius":30}}
