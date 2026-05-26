@@ -18,9 +18,7 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 
-# ============================================================
 # 小组成员常用配置区
-# ============================================================
 
 ALGORITHM_IMPORT_PATH = "app.algorithms.color_processing.color_space_convert"
 INPUT_IMAGE_PATH = "data/test_images/anime_test.png"
