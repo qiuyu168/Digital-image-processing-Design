@@ -1,20 +1,32 @@
-# 本文件用于实现图像处理算法。
-from __future__ import annotations
+# 本文件用于实现频域高通滤波的功能
 
 import cv2
 import numpy as np
 
-from app.core.algorithm_framework import build_algorithm_meta, run_standard_algorithm
 
-
-ALGORITHM_META = build_algorithm_meta("frequency_filter", "high_pass_filter")
+ALGORITHM_META = {
+    "module": "frequency_filter",
+    "name": "high_pass_filter",
+    "display_name": "高通滤波",
+    "description": "保留高频信息，抑制低频信息，用于增强边缘和细节。",
+    "params": {
+        "radius": {"type": "int", "default": 30, "min": 1, "max": 300, "label": "频域滤波半径"},
+    },
+}
 
 
 def run(image: np.ndarray, params: dict | None = None) -> dict:
-    """统一算法入口函数，小组成员后续只需要替换本函数内部的正式算法逻辑。"""
     if image is None:
         raise ValueError("输入图像不能为空")
     if params is None:
         params = {}
 
-    return run_standard_algorithm(image, params, ALGORITHM_META)
+    result = image.copy()
+    return {
+        "result": result,
+        "steps": [
+            {"name": "原始图像", "image": result},
+        ],
+        "metrics": {},
+        "analysis": "当前为框架占位实现，小组成员可直接替换 run(image, params) 内部逻辑。",
+    }

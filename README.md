@@ -620,7 +620,7 @@ GET /api/library/image/{image_id}
 进入项目根目录：
 
 ```bat
-cd anime-image-processing
+cd Digital-image-processing-Design
 ```
 
 创建虚拟环境：
@@ -688,30 +688,52 @@ http://127.0.0.1:5173
 
 ---
 
-## 13. 协作开发分工建议
+## 13. 协作开发分工
 
-本项目多人协作主要集中在后端，因此建议按算法模块分工：
+本项目多人协作主要集中在后端算法模块，因此建议直接按照 `backend/app/algorithms/` 下的算法目录进行分工。每个成员负责一个算法类别，并完成该目录下对应 `.py` 文件的算法实现、本地测试和结果检查。
 
-| 成员 | 负责模块 | 主要任务 |
-|---|---|---|
-| 成员 A | 基础运算、灰度变换 | 图像加减、逻辑运算、灰度化、二值化、直方图均衡化 |
-| 成员 B | 空域滤波、图像复原 | 均值、高斯、中值、双边、锐化、维纳滤波 |
-| 成员 C | 频域滤波 | DFT、频谱图、低通、高通、同态滤波 |
-| 成员 D | 形态学、边缘检测 | 腐蚀、膨胀、开闭运算、Sobel、Canny、Hough |
-| 成员 E | 动漫识别、结果分析 | 主色调、线条风格、图库匹配、指标与分析文本 |
-| 成员 F | 前端整合 | 页面、接口调用、参数面板、结果展示 |
+| 成员   | 负责算法目录                      | 需要完成的算法文件          | 对应功能           |
+| ------ | --------------------------------- | --------------------------- | ------------------ |
+| 任可   | `grayscale_image/` 灰度图像类     | `grayscale.py`              | 灰度化             |
+| 任可   | `grayscale_image/` 灰度图像类     | `binary_threshold.py`       | 二值化             |
+| 任可   | `grayscale_image/` 灰度图像类     | `histogram_equalization.py` | 直方图均衡化       |
+| 雍晨   | `grayscale_image/` 灰度图像类     | `edge_detection_basic.py`   | 边缘检测           |
+| 雍晨   | `grayscale_image/` 灰度图像类     | `erode.py`                  | 腐蚀               |
+| 雍晨   | `grayscale_image/` 灰度图像类     | `dilate.py`                 | 膨胀               |
+| 雍晨   | `grayscale_image/` 灰度图像类     | `open_operation.py`         | 开运算             |
+| 雍晨   | `grayscale_image/` 灰度图像类     | `close_operation.py`        | 闭运算             |
+| 毛思涵 | `color_image/` 彩色图像类         | `color_space_convert.py`    | 颜色空间转换       |
+| 毛思涵 | `color_image/` 彩色图像类         | `saturation_adjust.py`      | 饱和度调整         |
+| 毛思涵 | `color_image/` 彩色图像类         | `anime_color_enhance.py`    | 动漫色彩增强       |
+| 毛思涵 | `color_image/` 彩色图像类         | `dominant_color_extract.py` | 主色调提取         |
+| 任可   | `geometric_transform/` 几何变换类 | `resize.py`                 | 缩放               |
+| 任可   | `geometric_transform/` 几何变换类 | `rotate.py`                 | 旋转               |
+| 任可   | `geometric_transform/` 几何变换类 | `flip.py`                   | 翻转               |
+| 周恩丞 | `spatial_filter/` 空域滤波类      | `mean_filter.py`            | 均值滤波           |
+| 周恩丞 | `spatial_filter/` 空域滤波类      | `gaussian_filter.py`        | 高斯滤波           |
+| 周恩丞 | `spatial_filter/` 空域滤波类      | `median_filter.py`          | 中值滤波           |
+| 周恩丞 | `spatial_filter/` 空域滤波类      | `bilateral_filter.py`       | 双边滤波           |
+| 周恩丞 | `spatial_filter/` 空域滤波类      | `laplacian_sharpen.py`      | 拉普拉斯锐化       |
+| 高艳阳 | `frequency_analysis/` 频域分析类  | `dft_spectrum.py`           | 傅里叶变换显示频谱 |
+| 高艳阳 | `frequency_analysis/` 频域分析类  | `spectrum_shift.py`         | 频谱中心化         |
+| 高艳阳 | `frequency_analysis/` 频域分析类  | `magnitude_spectrum.py`     | 幅度谱显示         |
+| 高艳阳 | `frequency_filter/` 频域滤波类    | `low_pass_filter.py`        | 低通滤波           |
+| 高艳阳 | `frequency_filter/` 频域滤波类    | `high_pass_filter.py`       | 高通滤波           |
+| 高艳阳 | `frequency_filter/` 频域滤波类    | `ideal_low_pass.py`         | 理想低通滤波       |
+| 高艳阳 | `frequency_filter/` 频域滤波类    | `ideal_high_pass.py`        | 理想高通滤波       |
+| 高艳阳 | `frequency_filter/` 频域滤波类    | `gaussian_low_pass.py`      | 高斯低通滤波       |
+| 高艳阳 | `frequency_filter/` 频域滤波类    | `gaussian_high_pass.py`     | 高斯高通滤波       |
 
 每个成员提交代码时必须保证：
 
-1. 文件第一行有中文功能说明。
-2. 新算法文件有 `ALGORITHM_META`。
-3. 新算法文件有统一 `run(image, params)` 接口。
-4. 不在算法文件中写前端逻辑。
+1. 对应算法文件第一行有中文功能说明。
+2. 每个算法文件包含 `ALGORITHM_META`。
+3. 每个算法文件提供统一的 `run(image, params)` 接口。
+4. 返回结果必须包含 `result`、`steps`、`metrics`、`analysis`。
 5. 不在算法文件中使用 `cv2.imshow()`。
-6. 不修改其他成员负责模块的接口格式。
-7. 至少准备 1 张测试图片和 1 个测试参数组合。
-
----
+6. 不使用本机绝对路径。
+7. 使用 `backend/tests/manual_test_algorithm.py` 完成本地测试。
+8. 测试通过后，确认 `backend/data/test_outputs/` 中能够生成结果图片。
 
 ## 14. 关键实现注意事项
 
@@ -830,37 +852,3 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 4. 动漫人脸检测。
 5. 批量处理。
 6. 报告一键导出。
-
----
-
-## 17. 最终验收标准
-
-项目最终至少应达到以下效果：
-
-1. 用户可以选择"上传图片"或"项目图库图片"。
-2. 用户可以在前端自由选择算法分类和算法名称。
-3. 用户调整参数后，可以立即看到处理后的图片。
-4. 后端每个具体算法都是单独文件。
-5. 每个文件第一行都有中文功能说明。
-6. 系统可以展示处理前后对比图。
-7. 系统可以展示部分算法的分步执行过程。
-8. 系统可以输出基本结果分析。
-9. 项目可以在 Windows 11 + Python venv 环境下运行。
-10. 不依赖 Docker。
-11. 项目结构适合多人协作开发。
-12. 课程报告可以直接引用系统页面截图、算法结果和分析文字。
-
----
-
-## 18. 不建议做的内容
-
-为了保证项目可落地，不建议一开始加入以下内容：
-
-1. 不建议使用 Docker。
-2. 不建议一开始接入大型深度学习模型。
-3. 不建议把所有算法写在一个文件里。
-4. 不建议前端写死算法列表。
-5. 不建议直接使用 `cv2.imshow()` 展示结果。
-6. 不建议使用绝对路径读取图片。
-7. 不建议只做网页，不做结果分析。
-8. 不建议只做动漫识别，不覆盖数字图像处理课程要求。
