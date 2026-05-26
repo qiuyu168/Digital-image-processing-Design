@@ -20,9 +20,9 @@ if str(BACKEND_ROOT) not in sys.path:
 
 # 小组成员常用配置区
 
-ALGORITHM_IMPORT_PATH = "app.algorithms.color_processing.color_space_convert"
-INPUT_IMAGE_PATH = "data/test_images/anime_test.png"
-OUTPUT_IMAGE_PATH = "data/test_outputs/result.png"
+ALGORITHM_IMPORT_PATH = "app.algorithms.frequency_filter.gaussian_high_pass"  # 例如 "app.algorithms.edge_detection.canny"
+INPUT_IMAGE_PATH = "data/test_images/image.png"
+OUTPUT_IMAGE_PATH = "data/test_outputs/result_gaussian_high_pass.png"
 PARAMS = {
     "saturation_factor": 0.1
 }
