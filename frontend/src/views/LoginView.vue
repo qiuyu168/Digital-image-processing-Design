@@ -9,6 +9,8 @@ import bg2 from '@/assets/background/bg2.jpg'
 import bg3 from '@/assets/background/bg3.jpg'
 import bg4 from '@/assets/background/bg4.jpg'
 import { generateTestToken } from '@/utils/token'
+import http from '@/api/http'
+import { chech_health } from '@/utils/check_health'
 
 const images = [bg1, bg2, bg3, bg4]
 const currentIndex = ref(0)
@@ -93,6 +95,8 @@ const login = async () => {
   ElMessage.success('登录成功！')
   router.push('/')
 }
+
+onMounted(chech_health)
 </script>
 
 <template>

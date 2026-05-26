@@ -170,11 +170,14 @@
 </template>
 
 <script setup>
+import { chech_health } from '@/utils/check_health'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+
+onMounted(chech_health)
 
 const router = useRouter()
 
-// 轮播图：三张，均已去除报告/实验相关表述
 const carouselList = [
   {
     tag: 'Anime Image Processing',
