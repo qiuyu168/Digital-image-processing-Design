@@ -67,7 +67,7 @@
                 <p>
                   {{
                     selectedAlgorithm?.description ||
-                    '请从左侧选择一个具体算法，系统会根据后端返回的参数元数据动态生成表单。'
+                    '请从左侧选择一个具体算法。'
                   }}
                 </p>
               </div>
@@ -80,7 +80,8 @@
         </section>
 
         <div class="right-grid">
-          <section class="panel-card upload-card">
+          <div class="left-workflow">
+            <section class="panel-card upload-card">
             <div class="panel-title">
               <div class="title-left">
                 <span class="title-icon">📤</span>
@@ -107,6 +108,9 @@
                       :src="previewDisplayUrl"
                       fit="contain"
                       :preview-src-list="[previewDisplayUrl]"
+                      :preview-teleported="true"
+                      :z-index="3000"
+                      hide-on-click-modal
                       @error="handleImagePreviewError"
                     >
                       <template #error>
@@ -151,7 +155,7 @@
                 <strong>{{ formatFileSize(uploadedImage.size) }}</strong>
               </div>
               <div>
-                <span>图片 ID</span>
+                <span>图片路径</span>
                 <strong>{{ uploadedImage.id }}</strong>
               </div>
             </div>
@@ -272,6 +276,7 @@
               </el-button>
             </div>
           </section>
+          </div>
 
           <section class="panel-card result-card">
             <div class="panel-title">
@@ -285,9 +290,9 @@
               <el-tag
                 v-if="resultInfo.status !== 'idle'"
                 class="soft-tag"
-                :type="resultInfo.status === 'done' ? 'success' : 'warning'"
+                :type="getResultTagType(resultInfo.status)"
               >
-                {{ resultInfo.status === 'done' ? '已生成预览' : '处理中' }}
+                {{ getResultStatusText(resultInfo.status) }}
               </el-tag>
             </div>
 
@@ -306,6 +311,9 @@
                       :src="previewDisplayUrl"
                       fit="contain"
                       :preview-src-list="[previewDisplayUrl]"
+                      :preview-teleported="true"
+                      :z-index="3000"
+                      hide-on-click-modal
                       @error="handleImagePreviewError"
                     >
                       <template #error>
@@ -321,13 +329,16 @@
                 <div class="compare-item result-preview">
                   <div class="compare-title">处理结果</div>
 
-                  <template v-if="resultInfo.status === 'done'">
+                  <template v-if="resultInfo.status === 'done' && resultInfo.imageUrl">
                     <div class="image-frame result-image-frame">
                       <el-image
                         class="compare-image"
                         :src="resultInfo.imageUrl"
                         fit="contain"
                         :preview-src-list="[resultInfo.imageUrl]"
+                        :preview-teleported="true"
+                        :z-index="3000"
+                        hide-on-click-modal
                       >
                         <template #error>
                           <div class="image-error">
@@ -342,7 +353,7 @@
                   <template v-else>
                     <div class="waiting-result">
                       <el-icon><View /></el-icon>
-                      <p>点击“开始处理”后显示任务预览</p>
+                      <p>点击“开始处理”后调用后端运行接口</p>
                     </div>
                   </template>
                 </div>
@@ -353,7 +364,7 @@
                 <span>
                   {{
                     resultInfo.message ||
-                    '当前阶段只完成算法选择、图片上传和动态参数解析，暂不调用处理接口。'
+                    '选择算法并上传图片后，点击“开始处理”即可调用后端算法运行接口。'
                   }}
                 </span>
               </div>
@@ -367,6 +378,14 @@
                   <span>选择算法</span>
                   <strong>{{ selectedAlgorithm.displayName }}</strong>
                 </div>
+                <div>
+                  <span>运行接口</span>
+                  <strong>{{ selectedRunEndpoint }}</strong>
+                </div>
+                <div>
+                  <span>图像来源</span>
+                  <strong>upload</strong>
+                </div>
               </div>
 
               <div v-if="parameterSummary.length > 0" class="params-summary">
@@ -377,6 +396,54 @@
                 >
                   <span>{{ item.label }}</span>
                   <strong>{{ item.value }}</strong>
+                </div>
+              </div>
+
+              <div v-if="resultInfo.analysis" class="analysis-box">
+                <div class="section-title">处理分析</div>
+                <p>{{ resultInfo.analysis }}</p>
+              </div>
+
+              <div v-if="metricSummary.length > 0" class="metrics-summary">
+                <div
+                  v-for="metric in metricSummary"
+                  :key="metric.key"
+                  class="summary-item"
+                >
+                  <span>{{ metric.key }}</span>
+                  <strong>{{ metric.value }}</strong>
+                </div>
+              </div>
+
+              <div v-if="resultInfo.steps.length > 0" class="steps-block">
+                <div class="section-title">处理步骤</div>
+                <div class="steps-list">
+                  <div
+                    v-for="(step, index) in resultInfo.steps"
+                    :key="`${step.name}_${index}`"
+                    class="step-item"
+                  >
+                    <div class="compare-title">{{ index + 1 }}. {{ step.name }}</div>
+                    <div v-if="step.image" class="image-frame step-image-frame">
+                      <el-image
+                        class="compare-image"
+                        :src="step.image"
+                        fit="contain"
+                        :preview-src-list="[step.image]"
+                        :preview-teleported="true"
+                        :z-index="3000"
+                        hide-on-click-modal
+                      >
+                        <template #error>
+                          <div class="image-error">
+                            <el-icon><Picture /></el-icon>
+                            <span>步骤图片预览失败</span>
+                          </div>
+                        </template>
+                      </el-image>
+                    </div>
+                    <div v-else-if="step.error" class="step-error">{{ step.error }}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -410,6 +477,15 @@ const maxWidth = 4096
 const maxHeight = 4096
 const moduleIconList = ['🌗', '🎨', '📐', '🫧', '🌌', '⚡', '🌸', '✨']
 
+const moduleRunEndpointMap = {
+  grayscale_image: '/api/algorithms/grayscale-image/run',
+  color_image: '/api/algorithms/color-image/run',
+  geometric_transform: '/api/algorithms/geometric-transform/run',
+  spatial_filter: '/api/algorithms/spatial-filter/run',
+  frequency_analysis: '/api/algorithms/frequency-analysis/run',
+  frequency_filter: '/api/algorithms/frequency-filter/run'
+}
+
 const algorithmLoading = ref(false)
 const uploadLoading = ref(false)
 const processing = ref(false)
@@ -434,7 +510,11 @@ const uploadedImage = reactive({
 const resultInfo = reactive({
   status: 'idle',
   imageUrl: '',
-  message: ''
+  message: '',
+  endpoint: '',
+  steps: [],
+  metrics: {},
+  analysis: ''
 })
 
 const selectedModule = computed(() => {
@@ -454,6 +534,11 @@ const activeMenuKey = computed(() => {
 })
 
 const openModuleKeys = computed(() => modules.value.map((item) => item.key))
+
+const selectedRunEndpoint = computed(() => {
+  if (!selectedAlgorithm.value) return ''
+  return getRunEndpoint(selectedAlgorithm.value.module)
+})
 
 const canProcess = computed(() => {
   return Boolean(
@@ -475,6 +560,15 @@ const parameterSummary = computed(() => {
     key: param.key,
     label: param.label,
     value: formatParamValue(param, paramForm[param.key])
+  }))
+})
+
+const metricSummary = computed(() => {
+  if (!isPlainObject(resultInfo.metrics)) return []
+
+  return Object.entries(resultInfo.metrics).map(([key, value]) => ({
+    key,
+    value: formatMetricValue(value)
   }))
 })
 
@@ -714,20 +808,27 @@ async function handleFileChange(uploadFile) {
 
     const data = await http.post('/api/upload/image', formData)
 
+
     if (!data?.success) {
       ElMessage.error(data?.message || '图片上传失败')
       return
     }
 
+    const imagePath = data.image_path || data.image_id || data.filename
+    if (!imagePath) {
+      ElMessage.error('图片上传成功，但后端未返回 image_path')
+      return
+    }
+
     revokeLocalPreviewUrl()
 
-    uploadedImage.id = data.image_id
+    uploadedImage.id = imagePath
     uploadedImage.localUrl = URL.createObjectURL(file)
     uploadedImage.serverPreviewUrl = normalizePreviewUrl(data.preview_url)
-    uploadedImage.name = file.name
+    uploadedImage.name = data.original_filename || file.name
     uploadedImage.size = file.size
-    uploadedImage.width = checkResult.width
-    uploadedImage.height = checkResult.height
+    uploadedImage.width = Number(data.width) || checkResult.width
+    uploadedImage.height = Number(data.height) || checkResult.height
 
     previewDisplayUrl.value = uploadedImage.serverPreviewUrl || uploadedImage.localUrl
 
@@ -816,7 +917,7 @@ function clearUploadedImage() {
   ElMessage.info('已移除当前图片')
 }
 
-function handleProcess() {
+async function handleProcess() {
   if (!selectedAlgorithm.value) {
     ElMessage.warning('请先选择算法')
     return
@@ -827,24 +928,159 @@ function handleProcess() {
     return
   }
 
+  const endpoint = getRunEndpoint(selectedAlgorithm.value.module)
+  const payload = {
+    source_type: 'upload',
+    image_path: uploadedImage.id,
+    algorithm: selectedAlgorithm.value.name,
+    algorithm_display_name: selectedAlgorithm.value.displayName,
+    params: buildProcessParams(),
+    return_steps: true
+  }
+
   processing.value = true
   resultInfo.status = 'processing'
   resultInfo.imageUrl = ''
-  resultInfo.message = '已读取当前算法、图片 ID 与参数配置。当前版本暂不调用处理接口。'
+  resultInfo.endpoint = endpoint
+  resultInfo.steps = []
+  resultInfo.metrics = {}
+  resultInfo.analysis = ''
+  resultInfo.message = `正在调用 ${endpoint} 运行算法...`
 
-  setTimeout(() => {
+  try {
+    const data = await http.post(endpoint, payload)
+
+    if (!data?.success) {
+      resultInfo.status = 'error'
+      resultInfo.message = data?.message || '算法运行失败'
+      ElMessage.error(resultInfo.message)
+      return
+    }
+
     resultInfo.status = 'done'
-    resultInfo.imageUrl = previewDisplayUrl.value
-    resultInfo.message = '当前暂未接入图像处理 API，因此结果区先展示原图预览和任务参数摘要。'
+    resultInfo.imageUrl = normalizeResultImageUrl(data.result_image)
+    resultInfo.steps = normalizeResultSteps(data.steps)
+    resultInfo.metrics = isPlainObject(data.metrics) ? data.metrics : {}
+    resultInfo.analysis = toText(data.analysis, '')
+    resultInfo.message = `${toText(data.algorithm_display_name, selectedAlgorithm.value.displayName)} 运行完成，已返回处理结果。`
+
+    ElMessage.success('算法运行成功')
+  } catch (error) {
+    resultInfo.status = 'error'
+    resultInfo.imageUrl = ''
+    resultInfo.message = extractErrorMessage(error) || '算法运行失败，请查看浏览器控制台和后端日志。'
+  } finally {
     processing.value = false
-    ElMessage.success('任务预览已生成')
-  }, 400)
+  }
+}
+
+function buildProcessParams() {
+  const params = {}
+
+  paramList.value.forEach((param) => {
+    params[param.key] = castParamValue(param, paramForm[param.key])
+  })
+
+  return params
+}
+
+function castParamValue(param, value) {
+  if (param.type === 'bool') return Boolean(value)
+
+  if (param.type === 'int' || param.type === 'odd_int') {
+    const numberValue = Number.parseInt(value, 10)
+    const safeValue = Number.isNaN(numberValue) ? getInitialParamValue(param) : numberValue
+    return normalizeOddIntIfNeeded(param, safeValue)
+  }
+
+  if (param.type === 'float') {
+    const numberValue = Number.parseFloat(value)
+    return Number.isNaN(numberValue) ? getInitialParamValue(param) : numberValue
+  }
+
+  return value
+}
+
+function getRunEndpoint(moduleName) {
+  const normalizedModuleName = String(moduleName || '')
+
+  if (moduleRunEndpointMap[normalizedModuleName]) {
+    return moduleRunEndpointMap[normalizedModuleName]
+  }
+
+  return `/api/algorithms/${normalizedModuleName.replaceAll('_', '-')}/run`
+}
+
+function normalizeResultImageUrl(image) {
+  if (!image) return ''
+
+  const imageText = String(image).trim()
+
+  if (
+    imageText.startsWith('data:image/') ||
+    imageText.startsWith('http://') ||
+    imageText.startsWith('https://') ||
+    imageText.startsWith('blob:')
+  ) {
+    return imageText
+  }
+
+  return `data:image/png;base64,${imageText}`
+}
+
+function normalizeResultSteps(steps) {
+  if (!Array.isArray(steps)) return []
+
+  return steps.map((step, index) => {
+    const safeStep = isPlainObject(step) ? step : {}
+    return {
+      name: toText(safeStep.name, `步骤 ${index + 1}`),
+      image: safeStep.image ? normalizeResultImageUrl(safeStep.image) : '',
+      error: toText(safeStep.error, '')
+    }
+  })
+}
+
+function extractErrorMessage(error) {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.detail ||
+    error?.message ||
+    ''
+  )
+}
+
+function getResultStatusText(status) {
+  const statusMap = {
+    processing: '处理中',
+    done: '运行完成',
+    error: '运行失败'
+  }
+
+  return statusMap[status] || '未开始'
+}
+
+function getResultTagType(status) {
+  if (status === 'done') return 'success'
+  if (status === 'error') return 'danger'
+  return 'warning'
+}
+
+function formatMetricValue(value) {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'number') return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(6)))
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
 }
 
 function resetResult() {
   resultInfo.status = 'idle'
   resultInfo.imageUrl = ''
   resultInfo.message = ''
+  resultInfo.endpoint = ''
+  resultInfo.steps = []
+  resultInfo.metrics = {}
+  resultInfo.analysis = ''
   processing.value = false
 }
 
@@ -1150,16 +1386,33 @@ function isPlainObject(value) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 0.95fr);
   gap: 22px;
+  align-items: start;
+}
+
+.left-workflow {
+  min-width: 0;
+  display: grid;
+  gap: 22px;
+  align-content: start;
 }
 
 .upload-card,
-.params-card {
-  grid-column: 1 / 2;
+.params-card,
+.result-card {
+  min-width: 0;
 }
 
 .result-card {
-  grid-column: 2 / 3;
-  grid-row: 1 / 3;
+  position: sticky;
+  top: 96px;
+  max-height: calc(100vh - 118px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.result-card > .panel-title {
+  flex-shrink: 0;
 }
 
 .image-uploader {
@@ -1442,8 +1695,25 @@ function isPlainObject(value) {
 }
 
 .result-content {
+  min-height: 0;
+  overflow-y: auto;
   display: grid;
   gap: 16px;
+  padding-right: 6px;
+}
+
+.result-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.result-content::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 107, 139, 0.35);
+}
+
+.result-content::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .compare-box {
@@ -1503,9 +1773,55 @@ function isPlainObject(value) {
   color: #ff5277;
 }
 
-.params-summary {
+.params-summary,
+.metrics-summary {
   display: grid;
   gap: 10px;
+}
+
+.analysis-box,
+.steps-block {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  margin-bottom: 10px;
+  color: #ff5277;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.analysis-box p {
+  margin: 0;
+  color: #444;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.steps-list {
+  display: grid;
+  gap: 14px;
+}
+
+.step-item {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.step-image-frame {
+  min-height: 160px;
+  height: clamp(160px, 24vw, 260px);
+  max-height: 260px;
+}
+
+.step-error {
+  color: #d84b65;
+  font-size: 13px;
 }
 
 .summary-item {
@@ -1587,11 +1903,27 @@ function isPlainObject(value) {
     grid-template-columns: 1fr;
   }
 
+  .left-workflow {
+    gap: 22px;
+  }
+
   .upload-card,
   .params-card,
   .result-card {
     grid-column: auto;
     grid-row: auto;
+  }
+
+  .result-card {
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .result-content {
+    overflow: visible;
+    padding-right: 0;
   }
 }
 
