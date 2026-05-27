@@ -12,7 +12,9 @@ class ProcessRequest(BaseModel):
     source_type: str
     image_path: str
     module: str
+    module_display_name: str | None = None
     algorithm: str
+    algorithm_display_name: str | None = None
     params: dict[str, Any] = Field(default_factory=dict)
     return_steps: bool = True
 
@@ -23,6 +25,7 @@ class CategoryProcessRequest(BaseModel):
     source_type: str
     image_path: str
     algorithm: str
+    algorithm_display_name: str | None = None
     params: dict[str, Any] = Field(default_factory=dict)
     return_steps: bool = True
 

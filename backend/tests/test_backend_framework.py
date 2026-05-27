@@ -7,6 +7,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
+from pydantic import ValidationError
 from fastapi.testclient import TestClient
 
 
@@ -297,3 +298,93 @@ def test_analysis_metrics_can_include_channel_histogram() -> None:
 
     if uploaded_path and uploaded_path.exists():
         uploaded_path.unlink()
+
+
+def test_bilateral_filter_handles_bgra_float_non_contiguous_image() -> None:
+    from app.algorithms.spatial_filter.bilateral_filter import run
+
+    image = np.zeros((160, 180, 4), dtype=np.float32)
+    image[:, :, 0] = np.linspace(0.0, 1.0, 180, dtype=np.float32)[None, :]
+    image[:, :, 1] = np.linspace(1.0, 0.0, 160, dtype=np.float32)[:, None]
+    image[:, :, 2] = 0.5
+    image[:, :, 3] = 1.0
+
+    response = run(image[:, ::-1, :], {"diameter": 7, "sigma_color": 50, "sigma_space": 50})
+
+    assert response["result"].dtype == np.uint8
+    assert response["result"].shape == (160, 180, 3)
+    assert response["steps"][0]["image"].shape == (160, 180, 3)
+
+
+def test_process_schemas_accept_frontend_display_names_and_reject_image_id() -> None:
+    from app.schemas.process_schema import CategoryProcessRequest, ProcessRequest
+
+    request = ProcessRequest(
+        source_type="upload",
+        image_path="upload_xxx.png",
+        module="color_image",
+        module_display_name="彩色图像类",
+        algorithm="saturation_adjust",
+        algorithm_display_name="饱和度调整",
+        params={"saturation_factor": 1.2},
+    )
+    assert request.module == "color_image"
+    assert request.module_display_name == "彩色图像类"
+    assert request.algorithm_display_name == "饱和度调整"
+
+    category_request = CategoryProcessRequest(
+        source_type="upload",
+        image_path="upload_xxx.png",
+        algorithm="saturation_adjust",
+        algorithm_display_name="饱和度调整",
+    )
+    assert category_request.algorithm_display_name == "饱和度调整"
+
+    with pytest.raises(ValidationError):
+        ProcessRequest(
+            source_type="upload",
+            image_id="upload_legacy.png",
+            module="color_image",
+            algorithm="saturation_adjust",
+        )
+
+
+def test_manual_test_script_is_beginner_three_path_version() -> None:
+    script = BACKEND_ROOT / "tests" / "manual_test_algorithm.py"
+    content = script.read_text(encoding="utf-8")
+
+    assert 'INPUT_IMAGE_PATH = "data/test_images/anime_test.png"' in content
+    assert 'OUTPUT_IMAGE_PATH = "data/test_outputs/result.png"' in content
+    assert 'ALGORITHM_IMPORT_PATH = "app.algorithms.color_image.saturation_adjust"' in content
+    assert "PARAMS =" not in content
+    assert "argparse" not in content
+    assert "--input" not in content
+    assert "--output" not in content
+    assert "--params" not in content
+    assert "--config" not in content
+
+
+def test_p0_p1_repository_hygiene_files_are_in_place() -> None:
+    project_root = BACKEND_ROOT.parent
+    gitignore = (project_root / ".gitignore").read_text(encoding="utf-8")
+
+    assert not (BACKEND_ROOT / "app" / "core" / "algorithm_framework.py").exists()
+    assert not (
+        BACKEND_ROOT / "app" / "algorithms" / "algorithm_improvement_prompts_7_models"
+    ).exists()
+    assert (project_root / "docs" / "prompts" / "algorithm_improvement_prompts_7_models").is_dir()
+    assert (BACKEND_ROOT / "data" / "uploads" / ".gitkeep").exists()
+    assert not list((BACKEND_ROOT / "data" / "uploads").glob("upload_*.png"))
+
+    for required_rule in [
+        "__pycache__/",
+        "*.py[cod]",
+        ".pytest_cache/",
+        "backend/data/uploads/*",
+        "!backend/data/uploads/.gitkeep",
+        "backend/data/outputs/*",
+        "!backend/data/outputs/.gitkeep",
+        "backend/data/test_outputs/*",
+        "!backend/data/test_outputs/.gitkeep",
+    ]:
+        assert required_rule in gitignore

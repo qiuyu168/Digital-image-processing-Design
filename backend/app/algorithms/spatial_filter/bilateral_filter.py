@@ -46,7 +46,32 @@ def _ensure_uint8(image: np.ndarray) -> np.ndarray:
     array = np.ascontiguousarray(image)
     if array.dtype == np.uint8:
         return array.copy()
-    return cv2.normalize(array, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+    array = np.nan_to_num(array.astype(np.float32), nan=0.0, posinf=255.0, neginf=0.0)
+    min_value = float(np.min(array)) if array.size else 0.0
+    max_value = float(np.max(array)) if array.size else 0.0
+    if 0.0 <= min_value and max_value <= 1.0:
+        array = array * 255.0
+    return np.clip(array, 0, 255).astype(np.uint8)
+
+
+def _prepare_bgr_or_gray(image: np.ndarray) -> np.ndarray:
+    source = _ensure_uint8(image)
+
+    if source.ndim == 2:
+        return source
+
+    if source.ndim != 3:
+        raise ValueError("输入图像必须是二维灰度图或三维彩色图")
+
+    if source.shape[2] == 1:
+        return np.ascontiguousarray(source[:, :, 0])
+    if source.shape[2] == 4:
+        return cv2.cvtColor(source, cv2.COLOR_BGRA2BGR)
+    if source.shape[2] >= 3:
+        return np.ascontiguousarray(source[:, :, :3])
+
+    raise ValueError("输入图像通道数无效")
 
 
 def _int_param(params: dict, name: str, default: int, minimum: int, maximum: int) -> int:
@@ -72,7 +97,7 @@ def run(image: np.ndarray, params: dict | None = None) -> dict:
         raise ValueError("输入图像不能为空")
     params = params or {}
 
-    source = _ensure_uint8(image)
+    source = _prepare_bgr_or_gray(image)
     diameter = _int_param(params, "diameter", 9, 1, 31)
     sigma_color = _float_param(params, "sigma_color", 75.0, 1.0, 200.0)
     sigma_space = _float_param(params, "sigma_space", 75.0, 1.0, 200.0)

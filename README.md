@@ -37,32 +37,23 @@
 
 ## 3. 总体系统架构
 
-```text
-用户
- │
- │  上传图片 / 选择图库图片 / 选择算法 / 调整参数
- ▼
-Vue 前端页面
- │
- │  Axios 请求
- ▼
-FastAPI 后端接口层
- │
- │  参数校验、图片读取、算法路由
- ▼
-后端算法模块层
- │
- │  基础运算 / 灰度变换 / 滤波 / 频域 / 彩色处理 / 复原 / 形态学 / 边缘检测 / 动漫识别
- ▼
-结果分析层
- │
- │  指标统计、直方图、分步结果、文字分析
- ▼
-FastAPI 返回 JSON
- │
- │  Base64 结果图 / 分步图 / 指标 / 分析文本
- ▼
-Vue 前端即时展示处理结果
+```mermaid
+flowchart TD
+    A["👤 用户"] -->|"上传图片 / 选择图库图片<br/>选择算法 / 调整参数"| B["Vue 3 前端页面<br/>Element Plus + ECharts + Pinia"]
+    B -->|"Axios HTTP 请求"| C["FastAPI 后端接口层<br/>参数校验 / 图片读取 / 算法路由"]
+    C -->|"模块路由 → 算法注册表 → 动态导入"| D["后端算法模块层<br/>灰度图像 | 彩色图像 | 几何变换<br/>空域滤波 | 频域分析 | 频域滤波"]
+    D -->|"统一接口: run(image, params)"| E["结果分析层<br/>指标统计 / 直方图 / 分步结果 / 文字分析"]
+    E -->|"图像编码 → Base64 / JSON 序列化"| F["JSON 响应<br/>Base64 结果图 / 分步图 / 指标 / 分析文本"]
+    F -->|"响应返回"| B
+    B -->|"即时展示处理结果"| G["✅ 用户查看结果"]
+
+    style A fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+    style B fill:#e3f2fd,stroke:#1565c0,color:#1565c0
+    style C fill:#fff3e0,stroke:#e65100,color:#e65100
+    style D fill:#fce4ec,stroke:#c62828,color:#c62828
+    style E fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
+    style F fill:#e8eaf6,stroke:#283593,color:#283593
+    style G fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
 ```
 
 ---
@@ -77,9 +68,20 @@ Digital-image-processing-Design/
 ├─ .gitignore
 │
 ├─ docs/
-│  ├─ CHANGELOG01.md
-│  ├─ CHANGELOG02.md
-│  ├─ CHANGELOG03.md
+│  ├─ backend-update-doc/
+│  │  ├─ CHANGELOG01.md
+│  │  ├─ CHANGELOG02.md
+│  │  ├─ CHANGELOG03.md
+│  │  └─ CHANGELOG04.md
+│  ├─ prompts/
+│  │  └─ algorithm_improvement_prompts_7_models/
+│  │     ├─ chatgpt_algorithm_improvement_slider_prompt.md
+│  │     ├─ claude_algorithm_improvement_slider_prompt.md
+│  │     ├─ deepseek_algorithm_improvement_slider_prompt.md
+│  │     ├─ doubao_algorithm_improvement_slider_prompt.md
+│  │     ├─ gemini_algorithm_improvement_slider_prompt.md
+│  │     ├─ glm_algorithm_improvement_slider_prompt.md
+│  │     └─ kimi_algorithm_improvement_slider_prompt.md
 │  └─ 算法书写规范说明文档.docx
 │
 ├─ backend/
@@ -90,8 +92,8 @@ Digital-image-processing-Design/
 │  │  ├─ __init__.py
 │  │  │
 │  │  ├─ core/                               # 核心配置与工具模块
+│  │  │  ├─ .gitkeep
 │  │  │  ├─ __init__.py
-│  │  │  ├─ algorithm_framework.py           # 算法手动测试脚本（旧版，基于 argparse）
 │  │  │  ├─ config.py                        # 应用全局配置
 │  │  │  ├─ cors.py                          # CORS 跨域配置
 │  │  │  ├─ image_codec.py                   # 图像编解码工具
@@ -100,6 +102,7 @@ Digital-image-processing-Design/
 │  │  │  └─ upload_validator.py              # 上传文件校验
 │  │  │
 │  │  ├─ api/                                # API 路由层（均委托 services 层处理业务逻辑）
+│  │  │  ├─ .gitkeep
 │  │  │  ├─ __init__.py
 │  │  │  ├─ algorithms.py                    # GET /api/algorithms 算法元数据查询
 │  │  │  ├─ analysis.py                      # POST /api/analysis/metrics 图片指标计算
@@ -118,6 +121,7 @@ Digital-image-processing-Design/
 │  │  │     └─ spatial_filter.py
 │  │  │
 │  │  ├─ schemas/                            # Pydantic 数据校验模型
+│  │  │  ├─ .gitkeep
 │  │  │  ├─ __init__.py
 │  │  │  ├─ algorithm_schema.py
 │  │  │  ├─ image_schema.py
@@ -125,6 +129,7 @@ Digital-image-processing-Design/
 │  │  │  └─ response_schema.py
 │  │  │
 │  │  ├─ services/                           # 业务逻辑服务层
+│  │  │  ├─ .gitkeep
 │  │  │  ├─ __init__.py
 │  │  │  ├─ algorithm_registry.py            # 算法注册与发现
 │  │  │  ├─ analysis_service.py              # 图像分析服务
@@ -139,15 +144,6 @@ Digital-image-processing-Design/
 │  │     ├─ __init__.py
 │  │     ├─ 算法框架填写说明.md
 │  │     ├─ 分工文档.md
-│  │     ├─ algorithm_improvement_prompts_7_models/  # 7 种大模型算法改进提示词
-│  │     │  ├─ chatgpt_algorithm_improvement_slider_prompt.md
-│  │     │  ├─ claude_algorithm_improvement_slider_prompt.md
-│  │     │  ├─ deepseek_algorithm_improvement_slider_prompt.md
-│  │     │  ├─ doubao_algorithm_improvement_slider_prompt.md
-│  │     │  ├─ gemini_algorithm_improvement_slider_prompt.md
-│  │     │  ├─ glm_algorithm_improvement_slider_prompt.md
-│  │     │  └─ kimi_algorithm_improvement_slider_prompt.md
-│  │     │
 │  │     ├─ grayscale_image/                 # 8.1 灰度图像类
 │  │     │  ├─ __init__.py
 │  │     │  ├─ grayscale.py                  # 灰度化
@@ -173,6 +169,7 @@ Digital-image-processing-Design/
 │  │     │  └─ flip.py                       # 图像翻转
 │  │     │
 │  │     ├─ spatial_filter/                  # 8.4 空域滤波类
+│  │     │  ├─ .gitkeep
 │  │     │  ├─ __init__.py
 │  │     │  ├─ mean_filter.py                # 均值滤波
 │  │     │  ├─ gaussian_filter.py            # 高斯滤波
@@ -187,6 +184,7 @@ Digital-image-processing-Design/
 │  │     │  └─ magnitude_spectrum.py         # 幅度谱显示
 │  │     │
 │  │     └─ frequency_filter/                # 8.6 频域滤波类
+│  │        ├─ .gitkeep
 │  │        ├─ __init__.py
 │  │        ├─ low_pass_filter.py            # 低通滤波
 │  │        ├─ high_pass_filter.py           # 高通滤波
@@ -197,7 +195,7 @@ Digital-image-processing-Design/
 │  │
 │  ├─ data/
 │  │  ├─ image_limit.md                      # 图片限制说明文档
-│  │  ├─ uploads/                            # 用户上传图片
+│  │  ├─ uploads/                            # 用户上传图片运行目录，仅提交 .gitkeep
 │  │  ├─ library/                            # 内置图片库
 │  │  │  ├─ anime_character/                 #   动漫人物图像
 │  │  │  ├─ anime_scene/                     #   动漫场景图像
@@ -205,12 +203,14 @@ Digital-image-processing-Design/
 │  │  │  ├─ course_samples/                  #   课程实验素材
 │  │  │  └─ other/                           #   其他测试图像
 │  │  ├─ test_images/                        # 测试输入图片
-│  │  ├─ test_outputs/                       # 测试输出图片
-│  │  └─ outputs/                            # 算法处理输出
+│  │  ├─ test_outputs/                       # 测试输出图片运行目录，仅提交 .gitkeep
+│  │  └─ outputs/                            # 算法处理输出运行目录，仅提交 .gitkeep
 │  │
 │  └─ tests/
 │     ├─ README.md
-│     ├─ manual_test_algorithm.py             # 算法手动测试脚本
+│     ├─ manual_test_algorithm.py             # 初学者三路径手动测试脚本
+│     ├─ manual_test_algorithm_advanced.py    # 高级参数化手动测试脚本
+│     ├─ test_algorithm_completeness.py       # 算法完整性测试
 │     ├─ test_backend_framework.py            # 后端框架自动化测试
 │     ├─ 算法测试脚本使用说明文档.md
 │     └─ sample_test_configs/
@@ -496,6 +496,8 @@ POST /api/process/run
 backend/data/uploads/
 ```
 
+该目录是运行时目录，仓库中只保留 `.gitkeep`。实际上传图片、算法输出图、测试输出图均由 `.gitignore` 忽略，不作为源码提交内容。
+
 推荐接口：
 
 ```text
@@ -522,6 +524,8 @@ jpg、jpeg、png、bmp、tif、tiff、webp
 }
 ```
 
+前后端传递图片时统一使用 `image_path` 作为图片定位字段。上传接口返回的 `image_path` 可继续用于 `/api/upload/preview/{image_path}`、`/api/process/run` 和 `/api/analysis/metrics`，不再保留重复图片编号字段。
+
 ### 7.2 项目内置图片库
 
 项目内置图片库保存到：
@@ -545,7 +549,7 @@ other/               其他测试图像
 ```text
 GET /api/library/categories
 GET /api/library/images?category=anime_character
-GET /api/library/image/{image_id}
+GET /api/library/image/{image_path}
 ```
 
 图片库的作用：
@@ -669,6 +673,14 @@ GET /api/library/image/{image_id}
 
 所有 POST 请求体格式与 `/api/process/run` 一致，其中 `module` 字段由路由自动注入，无需前端传递。
 
+### 9.3 后端请求字段约定
+
+1. 图片定位字段统一使用 `image_path`，上传图片对应 `source_type: "upload"`，内置图库图片对应 `source_type: "library"`。
+2. `/api/process/run` 和各分类算法执行接口的核心字段为 `source_type`、`image_path`、`module`、`algorithm`、`params`、`return_steps`。
+3. `module_display_name`、`algorithm_display_name` 可作为前端展示辅助字段传入，后端不会依赖它们进行算法定位。
+4. 算法结果图和步骤图统一以 PNG Base64 Data URL 返回，前端可直接绑定到图片组件。
+5. `/api/analysis/metrics` 支持基础统计指标，开启直方图参数后会返回直方图数据。
+
 ---
 
 ## 10. 前端页面清单
@@ -784,6 +796,16 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8050
 http://127.0.0.1:8050/docs
 ```
 
+后端自动化测试：
+
+```powershell
+cd backend
+$env:PYTHONDONTWRITEBYTECODE='1'
+python -m pytest -q
+```
+
+当前后端测试集覆盖算法注册、图片上传与预览、处理请求字段、分析指标、运行目录卫生、手动测试脚本约定等核心路径。
+
 ### 12.2 前端启动
 
 进入前端目录：
@@ -856,8 +878,8 @@ http://127.0.0.1:5173
 4. 返回结果必须包含 `result`、`steps`、`metrics`、`analysis`。
 5. 不在算法文件中使用 `cv2.imshow()`。
 6. 不使用本机绝对路径。
-7. 使用 `backend/tests/manual_test_algorithm.py` 完成本地测试。
-8. 测试通过后，确认 `backend/data/test_outputs/` 中能够生成结果图片。
+7. 使用 `backend/tests/manual_test_algorithm.py` 完成初学者三路径本地测试；需要批量参数或复杂配置时再使用 `backend/tests/manual_test_algorithm_advanced.py`。
+8. 测试通过后，确认 `backend/data/test_outputs/` 中能够生成结果图片，运行产物不要提交到仓库。
 
 ## 14. 关键实现注意事项
 
@@ -929,6 +951,13 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 6. 动漫图库相似度匹配。
 7. 动漫主色调提取。
 
+### 14.6 后端文档与运行产物
+
+1. 本次后端更新记录见 `docs/backend-update-doc/CHANGELOG04.md`。
+2. 算法完善提示词已归档到 `docs/prompts/algorithm_improvement_prompts_7_models/`，不再放在后端算法源码目录中。
+3. `backend/data/uploads/`、`backend/data/outputs/`、`backend/data/test_outputs/` 是运行时目录，只保留 `.gitkeep` 占位文件。
+4. 后端测试建议使用 `PYTHONDONTWRITEBYTECODE=1`，避免重新生成 `__pycache__` 和 `.pyc` 文件。
+
 ---
 
 ## 15. 课程报告对应关系
@@ -942,37 +971,37 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 
 ---
 
-## 16. 开发优先级
+## 16. 开发优先级与实现状态
 
 ### P0：必须完成
 
-1. Vue + FastAPI 前后端连通。
-2. 图片上传。
-3. 图片库选择。
-4. 算法列表由后端动态返回。
-5. 用户选择算法后立即处理并显示结果图。
-6. 灰度化、二值化、直方图均衡化。
-7. 均值滤波、高斯滤波、中值滤波。
-8. Sobel、Canny 边缘检测。
-9. 腐蚀、膨胀、开运算、闭运算。
-10. DFT 频谱图与简单低通/高通滤波。
+- [x] 1. Vue + FastAPI 前后端连通（框架搭建完成，API 已全部实现，前端页面待开发）
+- [x] 2. 图片上传（`POST /api/upload/image`）
+- [x] 3. 图片库选择（`GET /api/library/categories` 等）
+- [x] 4. 算法列表由后端动态返回（`GET /api/algorithms`）
+- [-] 5. 用户选择算法后立即处理并显示结果图（后端已实现，前端页面待开发）
+- [x] 6. 灰度化、二值化、直方图均衡化
+- [x] 7. 均值滤波、高斯滤波、中值滤波
+- [-] 8. Canny 边缘检测（已实现），Sobel 边缘检测（未实现）
+- [x] 9. 腐蚀、膨胀、开运算、闭运算
+- [x] 10. DFT 频谱图与简单低通/高通滤波
 
 ### P1：建议完成
 
-1. 动漫主色调提取。
-2. 动漫线条风格分析。
-3. 动漫图库相似度匹配。
-4. CLAHE。
-5. 双边滤波。
-6. Laplacian 锐化。
-7. Hough 直线检测。
-8. 结果指标统计。
+- [x] 1. 动漫主色调提取
+- [ ] 2. 动漫线条风格分析
+- [ ] 3. 动漫图库相似度匹配
+- [ ] 4. CLAHE
+- [x] 5. 双边滤波
+- [x] 6. Laplacian 锐化
+- [ ] 7. Hough 直线检测
+- [x] 8. 结果指标统计（`POST /api/analysis/metrics`）
 
 ### P2：有时间再做
 
-1. 维纳滤波。
-2. 图像修复。
-3. 同态滤波。
-4. 动漫人脸检测。
-5. 批量处理。
-6. 报告一键导出。
+- [ ] 1. 维纳滤波
+- [ ] 2. 图像修复
+- [ ] 3. 同态滤波
+- [ ] 4. 动漫人脸检测
+- [ ] 5. 批量处理
+- [ ] 6. 报告一键导出

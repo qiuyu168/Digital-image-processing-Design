@@ -60,6 +60,18 @@ htmlcov/
 *.cover
 
 # =========================
+# Backend runtime upload/output data
+# =========================
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+
+backend/data/outputs/*
+!backend/data/outputs/.gitkeep
+
+backend/data/test_outputs/*
+!backend/data/test_outputs/.gitkeep
+
+# =========================
 # 临时与日志文件
 # =========================
 *.log
