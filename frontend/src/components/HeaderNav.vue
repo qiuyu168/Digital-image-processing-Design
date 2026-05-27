@@ -67,6 +67,7 @@ import {
   CloseBold,
   House,
   MagicStick,
+  Picture,
   UserFilled
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/authStore'
@@ -85,6 +86,11 @@ const navItems = [
     label: '图像处理',
     path: '/workspace',
     icon: MagicStick
+  },
+  {
+    label: '图像库',
+    path: '/library',
+    icon: Picture
   },
   {
     label: '用户个人信息',
