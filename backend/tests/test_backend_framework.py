@@ -114,6 +114,16 @@ def test_algorithm_registry_returns_six_modules_and_preserves_slider_metadata() 
     assert param["max"] == 3.0
     assert param["step"] == 0.1
 
+    grayscale_module = next(module for module in modules if module["module"] == "grayscale_image")
+    sobel = next(
+        algorithm
+        for algorithm in grayscale_module["algorithms"]
+        if algorithm["name"] == "sobel_edge_detection"
+    )
+    assert sobel["display_name"] == "Sobel边缘检测"
+    assert sobel["params"]["kernel_size"]["component"] == "slider"
+    assert sobel["params"]["direction"]["component"] == "select"
+
 
 def test_fastapi_framework_endpoints_upload_and_run_saturation_adjust() -> None:
     from app.core.config import UPLOAD_DIR
@@ -235,6 +245,49 @@ def test_category_api_can_run_grayscale_algorithm_after_upload() -> None:
     assert payload["module"] == "grayscale_image"
     assert payload["result_image"].startswith("data:image/png;base64,")
     assert payload["steps"] == []
+
+    if uploaded_path and uploaded_path.exists():
+        uploaded_path.unlink()
+
+
+def test_category_api_can_run_sobel_edge_detection_after_upload() -> None:
+    from app.core.config import UPLOAD_DIR
+    from main import app
+
+    uploaded_path: Path | None = None
+    with TestClient(app) as client:
+        upload = client.post(
+            "/api/upload/image",
+            files={"file": ("anime.png", make_png_bytes(), "image/png")},
+        )
+        assert upload.status_code == 200
+        image_path = upload.json()["image_path"]
+        uploaded_path = UPLOAD_DIR / image_path
+
+        response = client.post(
+            "/api/algorithms/grayscale-image/run",
+            json={
+                "source_type": "upload",
+                "image_path": image_path,
+                "algorithm": "sobel_edge_detection",
+                "params": {
+                    "kernel_size": 3,
+                    "scale": 1.0,
+                    "delta": 0,
+                    "direction": "both",
+                },
+                "return_steps": True,
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert payload["algorithm"] == "sobel_edge_detection"
+    assert payload["algorithm_display_name"] == "Sobel边缘检测"
+    assert payload["result_image"].startswith("data:image/png;base64,")
+    assert payload["steps"]
+    assert "edge_ratio" in payload["metrics"]
 
     if uploaded_path and uploaded_path.exists():
         uploaded_path.unlink()

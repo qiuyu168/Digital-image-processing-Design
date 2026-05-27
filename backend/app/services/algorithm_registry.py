@@ -33,6 +33,7 @@ ALGORITHM_MODULES = {
         "binary_threshold",
         "histogram_equalization",
         "edge_detection_basic",
+        "sobel_edge_detection",
         "erode",
         "dilate",
         "open_operation",

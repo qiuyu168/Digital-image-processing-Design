@@ -38,22 +38,80 @@
 ## 3. 总体系统架构
 
 ```mermaid
-flowchart TD
-    A["👤 用户"] -->|"上传图片 / 选择图库图片<br/>选择算法 / 调整参数"| B["Vue 3 前端页面<br/>Element Plus + ECharts + Pinia"]
-    B -->|"Axios HTTP 请求"| C["FastAPI 后端接口层<br/>参数校验 / 图片读取 / 算法路由"]
-    C -->|"模块路由 → 算法注册表 → 动态导入"| D["后端算法模块层<br/>灰度图像 | 彩色图像 | 几何变换<br/>空域滤波 | 频域分析 | 频域滤波"]
-    D -->|"统一接口: run(image, params)"| E["结果分析层<br/>指标统计 / 直方图 / 分步结果 / 文字分析"]
-    E -->|"图像编码 → Base64 / JSON 序列化"| F["JSON 响应<br/>Base64 结果图 / 分步图 / 指标 / 分析文本"]
-    F -->|"响应返回"| B
-    B -->|"即时展示处理结果"| G["✅ 用户查看结果"]
+flowchart TB
+    subgraph FRONTEND["<b>Vue 3 前端</b>"]
+        direction TB
+        A["👤 用户"] --> A1["上传图片 / 选择图库 / 选择算法 / 调整参数"]
+        A1 --> A2["Views: HomeView · LoginView · UserProfileView · WorkspaceView"]
+        A2 --> A3["Components: HeaderNav · MainLayout · AppFooter"]
+        A3 --> A4["Axios (http.js)<br/>baseURL + Token 拦截器<br/>Element Plus + ECharts + Pinia"]
+    end
 
-    style A fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
-    style B fill:#e3f2fd,stroke:#1565c0,color:#1565c0
-    style C fill:#fff3e0,stroke:#e65100,color:#e65100
-    style D fill:#fce4ec,stroke:#c62828,color:#c62828
-    style E fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
-    style F fill:#e8eaf6,stroke:#283593,color:#283593
-    style G fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+    subgraph BACKEND["<b>FastAPI 后端</b>"]
+        direction TB
+
+        subgraph API["API 路由层 (12 条路由)"]
+            direction LR
+            B1["健康检查<br/>GET /api/health"]
+            B2["图片上传<br/>POST /api/upload/image<br/>GET /api/upload/preview/{path}"]
+            B3["图库<br/>GET /api/library/*"]
+            B4["算法元数据<br/>GET /api/algorithms"]
+            B5["算法执行<br/>POST /api/process/run<br/>POST /api/algorithms/{cat}/run"]
+            B6["指标分析<br/>POST /api/analysis/metrics"]
+        end
+
+        subgraph SERVICES["Services 业务层"]
+            direction LR
+            C1["algorithm_registry<br/>算法注册与动态导入"]
+            C2["process_service<br/>load → run → encode"]
+            C3["step_service<br/>步骤图编码"]
+            C4["analysis_service<br/>像素统计与直方图"]
+            C5["image_store<br/>上传/图库/路径安全"]
+        end
+
+        subgraph ALGOS["Algorithms 算法模块层 (30 个算法)"]
+            direction LR
+            D1["灰度图像类<br/>9 个<br/>灰度化/二值化<br/>直方图均衡化<br/>Canny/Sobel<br/>腐蚀/膨胀/开闭运算"]
+            D2["彩色图像类<br/>4 个<br/>颜色空间转换<br/>饱和度调整<br/>动漫色彩增强<br/>主色调提取"]
+            D3["几何变换类<br/>3 个<br/>缩放/旋转/翻转"]
+            D4["空域滤波类<br/>5 个<br/>均值/高斯/中值<br/>双边/拉普拉斯"]
+            D5["频域分析类<br/>3 个<br/>DFT/中心化/幅度谱"]
+            D6["频域滤波类<br/>6 个<br/>低通/高通<br/>理想/高斯 变种"]
+        end
+
+        subgraph CORE["Core 核心工具层"]
+            direction LR
+            E1["image_codec<br/>numpy ↔ Base64"]
+            E2["image_io<br/>中文路径兼容"]
+            E3["upload_validator<br/>格式/大小/分辨率"]
+            E4["cors · config"]
+        end
+    end
+
+    subgraph STORAGE["<b>数据存储</b>"]
+        direction LR
+        F1[("data/uploads/<br/>用户上传")]
+        F2[("data/library/<br/>内置图库<br/>5 个分类")]
+        F3[("data/outputs/<br/>算法输出")]
+    end
+
+    A4 -->|"HTTP 请求"| API
+    API --> SERVICES
+    SERVICES --> ALGOS
+    SERVICES --> CORE
+    CORE --> STORAGE
+    STORAGE -->|"读取图片"| SERVICES
+    ALGOS -->|"run(image, params)"| SERVICES
+    SERVICES -->|"JSON + Base64"| A4
+    A4 -->|"渲染结果图/分步图/指标/分析"| A2
+
+    style FRONTEND fill:#e3f2fd,stroke:#1565c0,color:#1a237e
+    style BACKEND fill:#fff8e1,stroke:#f57f17,color:#3e2723
+    style STORAGE fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    style API fill:#fff3e0,stroke:#e65100,color:#bf360c
+    style SERVICES fill:#fce4ec,stroke:#c62828,color:#880e4f
+    style ALGOS fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
+    style CORE fill:#e0f2f1,stroke:#00695c,color:#004d40
 ```
 
 ---
@@ -72,7 +130,8 @@ Digital-image-processing-Design/
 │  │  ├─ CHANGELOG01.md
 │  │  ├─ CHANGELOG02.md
 │  │  ├─ CHANGELOG03.md
-│  │  └─ CHANGELOG04.md
+│  │  ├─ CHANGELOG04.md
+│  │  └─ CHANGELOG05.md
 │  ├─ prompts/
 │  │  └─ algorithm_improvement_prompts_7_models/
 │  │     ├─ chatgpt_algorithm_improvement_slider_prompt.md
@@ -86,7 +145,7 @@ Digital-image-processing-Design/
 │
 ├─ backend/
 │  ├─ main.py                                # FastAPI 应用入口
-│  ├─ 后端运行环境配置说明.md
+│  ├─ README.md                              # 后端文件说明、前端联调和环境配置
 │  │
 │  ├─ app/
 │  │  ├─ __init__.py
@@ -150,6 +209,7 @@ Digital-image-processing-Design/
 │  │     │  ├─ binary_threshold.py           # 二值化
 │  │     │  ├─ histogram_equalization.py     # 直方图均衡化
 │  │     │  ├─ edge_detection_basic.py       # 边缘检测（Canny）
+│  │     │  ├─ sobel_edge_detection.py       # 边缘检测（Sobel）
 │  │     │  ├─ erode.py                      # 腐蚀
 │  │     │  ├─ dilate.py                     # 膨胀
 │  │     │  ├─ open_operation.py             # 开运算
@@ -218,46 +278,62 @@ Digital-image-processing-Design/
 │        ├─ grayscale_example.json
 │        ├─ binary_threshold_example.json
 │        ├─ canny_example.json
+│        ├─ sobel_edge_detection_example.json
 │        ├─ gaussian_filter_example.json
 │        ├─ dft_spectrum_example.json
 │        ├─ ideal_low_pass_example.json
 │        └─ ideal_high_pass_example.json
 │
 └─ frontend/
+   ├─ .env.development                     # 开发环境变量（后端 API 地址）
+   ├─ .gitignore
+   ├─ .vscode/
+   │  └─ extensions.json
+   ├─ README.md
    ├─ package.json
+   ├─ pnpm-lock.yaml
+   ├─ pnpm-workspace.yaml
+   ├─ jsconfig.json
    ├─ vite.config.js
    ├─ index.html
-   ├─ src/
-   │  ├─ main.js
-   │  ├─ App.vue
-   │  ├─ api/
-   │  │  ├─ http.js
-   │  │  ├─ uploadApi.js
-   │  │  ├─ libraryApi.js
-   │  │  ├─ algorithmApi.js
-   │  │  └─ processApi.js
-   │  ├─ router/
-   │  │  └─ index.js
-   │  ├─ stores/
-   │  │  ├─ imageStore.js
-   │  │  └─ algorithmStore.js
-   │  ├─ views/
-   │  │  ├─ HomeView.vue
-   │  │  ├─ UploadView.vue
-   │  │  ├─ LibraryView.vue
-   │  │  ├─ ProcessView.vue
-   │  │  ├─ AnimeRecognitionView.vue
-   │  │  └─ ReportView.vue
-   │  └─ components/
-   │     ├─ ImageUploader.vue
-   │     ├─ ImageLibrary.vue
-   │     ├─ AlgorithmSelector.vue
-   │     ├─ ParameterPanel.vue
-   │     ├─ ImageCompare.vue
-   │     ├─ StepViewer.vue
-   │     └─ MetricPanel.vue
-   └─ public/
-      └─ favicon.ico
+   ├─ public/
+   │  └─ favicon.ico
+   └─ src/
+      ├─ main.js
+      ├─ App.vue
+      ├─ api/
+      │  ├─ .gitkeep
+      │  └─ http.js                        # Axios 实例封装（baseURL / 拦截器 / Token）
+      ├─ assets/
+      │  ├─ .gitkeep
+      │  ├─ background/                    # 页面背景图片
+      │  │  ├─ bg1.jpg
+      │  │  ├─ bg2.jpg
+      │  │  ├─ bg3.jpg
+      │  │  └─ bg4.jpg
+      │  └─ home_bg.jpg                    # 首页背景
+      ├─ components/
+      │  ├─ .gitkeep
+      │  ├─ AppFooter.vue                  # 页脚组件
+      │  ├─ HeaderNav.vue                  # 顶部导航组件
+      │  └─ MainLayout.vue                 # 主布局组件（Header + RouterView + Footer）
+      ├─ router/
+      │  └─ index.js                       # 路由配置（首页/登录/个人中心/工作区）
+      ├─ stores/
+      │  ├─ authStore.js                   # 用户认证状态（Pinia）
+      │  └─ counter.js                     # 示例 store
+      ├─ styles/
+      │  └─ index.scss                      # 全局样式
+      ├─ utils/
+      │  ├─ .gitkeep
+      │  ├─ check_health.js                # 后端健康检查工具
+      │  └─ token.js                       # Token 存取工具
+      └─ views/
+         ├─ .gitkeep
+         ├─ HomeView.vue                   # 首页
+         ├─ LoginView.vue                  # 登录页
+         ├─ UserProfileView.vue             # 个人中心
+         └─ WorkspaceView.vue              # 工作区（图像处理主页面）
 ```
 
 ---
@@ -326,8 +402,8 @@ import numpy as np
 
 ALGORITHM_META = {
     "module": "grayscale_image",
-    "name": "edge_detection",
-    "display_name": "边缘检测",
+    "name": "edge_detection_basic",
+    "display_name": "基础边缘检测",
     "description": "用于提取动漫人物轮廓、发丝边缘、场景建筑线条等边缘信息。",
     "params": {
         "threshold1": {
@@ -411,8 +487,8 @@ GET /api/algorithms
       "display_name": "灰度图像类",
       "algorithms": [
         {
-          "name": "edge_detection",
-          "display_name": "边缘检测",
+          "name": "edge_detection_basic",
+          "display_name": "基础边缘检测",
           "params": {
             "threshold1": {
               "type": "int", "default": 80, "min": 0, "max": 255,
@@ -443,7 +519,7 @@ POST /api/process/run
   "source_type": "upload",
   "image_path": "upload_20260525_001.png",
   "module": "grayscale_image",
-  "algorithm": "edge_detection",
+  "algorithm": "edge_detection_basic",
   "params": {
     "threshold1": 80,
     "threshold2": 160,
@@ -460,8 +536,8 @@ POST /api/process/run
   "success": true,
   "module": "grayscale_image",
   "module_display_name": "灰度图像类",
-  "algorithm": "edge_detection",
-  "algorithm_display_name": "边缘检测",
+  "algorithm": "edge_detection_basic",
+  "algorithm_display_name": "基础边缘检测",
   "result_image": "data:image/png;base64,...",
   "steps": [
     {
@@ -563,7 +639,7 @@ GET /api/library/image/{image_path}
 
 ## 8. 功能模块清单
 
-当前后端算法主目录按 6 类组织，29 个算法已全部实现。
+当前后端算法主目录按 6 类组织，30 个算法已全部实现。
 
 ### 8.1 `grayscale_image/` 灰度图像类
 
@@ -572,7 +648,8 @@ GET /api/library/image/{image_path}
 | 灰度化       | `grayscale.py`              | 将彩色图像转换为灰度图像，作为二值化、边缘检测、频域分析等算法的基础输入 | 已实现 |
 | 二值化       | `binary_threshold.py`       | 将灰度图转换为黑白二值图，可支持固定阈值和自适应阈值         | 已实现 |
 | 直方图均衡化 | `histogram_equalization.py` | 增强灰度图像整体对比度，使灰度分布更加均衡                   | 已实现 |
-| 边缘检测     | `edge_detection_basic.py`   | 使用 Canny 算子提取图像中的主要轮廓和边界                    | 已实现 |
+| Canny边缘检测 | `edge_detection_basic.py`   | 使用 Canny 算子提取图像中的主要轮廓和边界                    | 已实现 |
+| Sobel边缘检测 | `sobel_edge_detection.py` | 使用 Sobel 一阶梯度算子提取 X/Y/综合方向的边缘强度           | 已实现 |
 | 腐蚀         | `erode.py`                  | 缩小前景区域，去除小白点或细小噪声                           | 已实现 |
 | 膨胀         | `dilate.py`                 | 扩大前景区域，连接断裂区域或增强目标区域                     | 已实现 |
 | 开运算       | `open_operation.py`         | 先腐蚀后膨胀，适合去除小噪声                                 | 已实现 |
@@ -685,15 +762,23 @@ GET /api/library/image/{image_path}
 
 ## 10. 前端页面清单
 
+### 已实现
+
+| 页面 | 文件 | 功能 |
+|---|---|---|
+| 首页 | `HomeView.vue` | 项目介绍、主题说明、快速导航 |
+| 登录页 | `LoginView.vue` | 用户登录认证 |
+| 个人中心 | `UserProfileView.vue` | 用户信息与设置 |
+| 工作区 | `WorkspaceView.vue` | 图像处理主页面（算法选择/处理/结果展示） |
+
+### 待实现
+
 | 页面 | 功能 |
 |---|---|
-| 首页 | 项目介绍、主题说明、快速开始 |
 | 图片上传页 | 用户上传图片并预览 |
 | 图片库页 | 用户从项目内置图库中选择图片 |
-| 图像处理页 | 选择算法分类、算法名称、参数并即时处理 |
 | 动漫识别页 | 主色调提取、线条风格分析、图库相似度匹配 |
 | 分步执行页 | 展示算法中间过程，例如傅里叶变换频谱分解 |
-| 结果分析页 | 展示直方图、指标、文字分析 |
 | 报告辅助页 | 汇总原图、结果图、参数、分析文字，便于写课程报告 |
 
 ---
@@ -804,7 +889,7 @@ $env:PYTHONDONTWRITEBYTECODE='1'
 python -m pytest -q
 ```
 
-当前后端测试集覆盖算法注册、图片上传与预览、处理请求字段、分析指标、运行目录卫生、手动测试脚本约定等核心路径。
+当前后端测试集覆盖算法注册、图片上传与预览、处理请求字段、分析指标、运行目录卫生、手动测试脚本约定和 Sobel 边缘检测接口执行等核心路径。
 
 ### 12.2 前端启动
 
@@ -844,6 +929,7 @@ http://127.0.0.1:5173
 | 任可   | `grayscale_image/` 灰度图像类     | `binary_threshold.py`       | 二值化             |
 | 任可   | `grayscale_image/` 灰度图像类     | `histogram_equalization.py` | 直方图均衡化       |
 | 雍晨   | `grayscale_image/` 灰度图像类     | `edge_detection_basic.py`   | 边缘检测           |
+| 雍晨   | `grayscale_image/` 灰度图像类     | `sobel_edge_detection.py`   | Sobel边缘检测      |
 | 雍晨   | `grayscale_image/` 灰度图像类     | `erode.py`                  | 腐蚀               |
 | 雍晨   | `grayscale_image/` 灰度图像类     | `dilate.py`                 | 膨胀               |
 | 雍晨   | `grayscale_image/` 灰度图像类     | `open_operation.py`         | 开运算             |
@@ -953,7 +1039,7 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 
 ### 14.6 后端文档与运行产物
 
-1. 本次后端更新记录见 `docs/backend-update-doc/CHANGELOG04.md`。
+1. 本次后端更新记录见 `docs/backend-update-doc/CHANGELOG05.md`。
 2. 算法完善提示词已归档到 `docs/prompts/algorithm_improvement_prompts_7_models/`，不再放在后端算法源码目录中。
 3. `backend/data/uploads/`、`backend/data/outputs/`、`backend/data/test_outputs/` 是运行时目录，只保留 `.gitkeep` 占位文件。
 4. 后端测试建议使用 `PYTHONDONTWRITEBYTECODE=1`，避免重新生成 `__pycache__` 和 `.pyc` 文件。
@@ -975,14 +1061,14 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 
 ### P0：必须完成
 
-- [x] 1. Vue + FastAPI 前后端连通（框架搭建完成，API 已全部实现，前端页面待开发）
+- [x] 1. Vue + FastAPI 前后端连通（Axios 已封装，页面框架与路由已搭建）
 - [x] 2. 图片上传（`POST /api/upload/image`）
 - [x] 3. 图片库选择（`GET /api/library/categories` 等）
 - [x] 4. 算法列表由后端动态返回（`GET /api/algorithms`）
-- [-] 5. 用户选择算法后立即处理并显示结果图（后端已实现，前端页面待开发）
+- [-] 5. 用户选择算法后立即处理并显示结果图（后端已实现，WorkspaceView 待对接算法 API）
 - [x] 6. 灰度化、二值化、直方图均衡化
 - [x] 7. 均值滤波、高斯滤波、中值滤波
-- [-] 8. Canny 边缘检测（已实现），Sobel 边缘检测（未实现）
+- [x] 8. Canny 边缘检测、Sobel 边缘检测
 - [x] 9. 腐蚀、膨胀、开运算、闭运算
 - [x] 10. DFT 频谱图与简单低通/高通滤波
 

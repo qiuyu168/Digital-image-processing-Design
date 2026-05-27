@@ -31,9 +31,10 @@ backend\data\test_images\anime_test.png
 算法文件必须放在规范目录下，例如：
 
 ```text
-backend/app/algorithms/gray_transform/grayscale.py
-backend/app/algorithms/color_processing/hsv_adjust.py
-backend/app/algorithms/edge_detection/canny.py
+backend/app/algorithms/grayscale_image/grayscale.py
+backend/app/algorithms/color_image/saturation_adjust.py
+backend/app/algorithms/grayscale_image/edge_detection_basic.py
+backend/app/algorithms/grayscale_image/sobel_edge_detection.py
 ```
 
 不要使用旧版灰度、彩色或频域分析目录，统一使用当前规范分类目录。
@@ -49,19 +50,19 @@ backend\tests\manual_test_algorithm.py
 修改：
 
 ```python
-ALGORITHM_IMPORT_PATH = "app.algorithms.color_processing.hsv_adjust"
+ALGORITHM_IMPORT_PATH = "app.algorithms.color_image.saturation_adjust"
 ```
 
 导入路径是 Python 模块路径，不是文件路径。比如文件在：
 
 ```text
-backend/app/algorithms/gray_transform/grayscale.py
+backend/app/algorithms/grayscale_image/grayscale.py
 ```
 
 导入路径应写成：
 
 ```python
-ALGORITHM_IMPORT_PATH = "app.algorithms.gray_transform.grayscale"
+ALGORITHM_IMPORT_PATH = "app.algorithms.grayscale_image.grayscale"
 ```
 
 ## 6. 修改输入和输出路径
@@ -80,13 +81,18 @@ OUTPUT_IMAGE_PATH = "data/test_outputs/result.png"
 
 路径建议写相对于 `backend/` 的相对路径，不要写个人电脑绝对路径。
 
-## 7. 修改参数
+## 7. 参数来源
 
-根据算法文件中的 `ALGORITHM_META["params"]` 修改：
+简化版 `manual_test_algorithm.py` 会根据算法文件中的 `ALGORITHM_META["params"]` 自动读取默认参数，不需要手动修改 `PARAMS`。
+
+需要自定义参数时，使用高级脚本 `manual_test_algorithm_advanced.py`。例如 Sobel：
 
 ```python
 PARAMS = {
-    "saturation_factor": 1.5
+    "direction": "both",
+    "kernel_size": 3,
+    "scale": 1.0,
+    "delta": 0
 }
 ```
 
@@ -112,13 +118,13 @@ python tests/manual_test_algorithm.py
 也可以使用示例配置：
 
 ```bat
-python tests/manual_test_algorithm.py --config tests/sample_test_configs/canny_example.json
+python tests/manual_test_algorithm_advanced.py --config tests/sample_test_configs/canny_example.json
 ```
 
 也可以临时传入参数：
 
 ```bat
-python tests/manual_test_algorithm.py --algorithm app.algorithms.edge_detection.canny --input data/test_images/anime_test.png --output data/test_outputs/canny_result.png --params "{\"threshold1\":80,\"threshold2\":160,\"blur_size\":3}"
+python tests/manual_test_algorithm_advanced.py --algorithm app.algorithms.grayscale_image.sobel_edge_detection --input data/test_images/anime_test.png --output data/test_outputs/sobel_result.png --params "{\"direction\":\"both\",\"kernel_size\":3,\"scale\":1.0,\"delta\":0}"
 ```
 
 ## 9. 查看结果

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,7 @@ ALGORITHM_MODULES = {
         "binary_threshold",
         "histogram_equalization",
         "edge_detection_basic",
+        "sobel_edge_detection",
         "erode",
         "dilate",
         "open_operation",
@@ -142,5 +144,26 @@ def test_all_algorithm_files_are_complete_and_runnable() -> None:
                 failures.append(f"{import_path}: analysis is empty")
             elif any(word in analysis for word in ["占位", "框架", "替换", "未实现"]):
                 failures.append(f"{import_path}: analysis still looks like placeholder")
+
+    assert not failures, "\n".join(failures)
+
+
+def test_sample_test_configs_reference_existing_algorithm_modules() -> None:
+    config_dir = BACKEND_ROOT / "tests" / "sample_test_configs"
+    failures: list[str] = []
+
+    for config_path in sorted(config_dir.glob("*.json")):
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        import_path = config.get("algorithm_import_path")
+        if not isinstance(import_path, str) or not import_path:
+            failures.append(f"{config_path.name}: missing algorithm_import_path")
+            continue
+        try:
+            module = importlib.import_module(import_path)
+        except Exception as exc:
+            failures.append(f"{config_path.name}: invalid import path {import_path}: {exc}")
+            continue
+        if not callable(getattr(module, "run", None)):
+            failures.append(f"{config_path.name}: imported module has no callable run")
 
     assert not failures, "\n".join(failures)

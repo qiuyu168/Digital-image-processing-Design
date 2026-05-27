@@ -1,0 +1,1 @@
+{"说明":"本文件用于配置 Sobel 边缘检测算法的本地测试示例。","algorithm_import_path":"app.algorithms.grayscale_image.sobel_edge_detection","input_image_path":"data/test_images/anime_test.png","output_image_path":"data/test_outputs/sobel_edge_detection_result.png","params":{"direction":"both","kernel_size":3,"scale":1.0,"delta":0}}
