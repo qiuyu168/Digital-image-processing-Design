@@ -399,6 +399,7 @@ import {
   View
 } from '@element-plus/icons-vue'
 import http from '@/api/http'
+import { getAlgorithmService } from '@/api/algorithms'
 
 const allowedExtensions = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'tif', 'tiff']
 const minFileSize = 10 * 1024
@@ -494,7 +495,7 @@ async function loadAlgorithms() {
   algorithmLoading.value = true
 
   try {
-    const data = await http.get('/api/algorithms')
+    const data = await getAlgorithmService()
     const parsedModules = normalizeModules(data)
 
     modules.value = parsedModules

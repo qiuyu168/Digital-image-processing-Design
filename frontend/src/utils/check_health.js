@@ -1,8 +1,8 @@
-import http from "@/api/http"
+import { checkHealthService } from "@/api/health"
 
 export const chech_health = async () => {
     try {
-        const data = await http.get('/api/health')
+        const data = await checkHealthService()
         if (data.success)
             ElMessage.success(data.message)
         else
