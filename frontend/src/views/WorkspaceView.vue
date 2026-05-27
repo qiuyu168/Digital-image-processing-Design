@@ -467,6 +467,7 @@ import {
 } from '@element-plus/icons-vue'
 import http from '@/api/http'
 import { getAlgorithmService } from '@/api/algorithms'
+import { uploadImageService } from '@/api/upload'
 
 const allowedExtensions = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'tif', 'tiff']
 const minFileSize = 10 * 1024
@@ -791,7 +792,7 @@ function normalizeOddIntIfNeeded(param, value) {
 }
 
 async function handleFileChange(uploadFile) {
-  const file = uploadFile.raw
+  const file = uploadFile.raw 
   if (!file) return
 
   const checkResult = await validateImageFile(file)
@@ -806,7 +807,7 @@ async function handleFileChange(uploadFile) {
     const formData = new FormData()
     formData.append('file', file, file.name)
 
-    const data = await http.post('/api/upload/image', formData)
+    const data = await uploadImageService(formData)
 
 
     if (!data?.success) {
