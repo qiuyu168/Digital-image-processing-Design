@@ -16,25 +16,25 @@
       <!-- 参与人员 -->
       <div class="footer-team">
         <div class="team-group">
-          <h4 class="team-category">总架构设计</h4>
+          <h4 class="team-category">总架构设计/前后端对接</h4>
           <div class="team-members">
-            <span class="member-tag">name01</span>
+            <span class="member-tag">王韬涵</span>
           </div>
         </div>
         <div class="team-group">
-          <h4 class="team-category">前端设计</h4>
+          <h4 class="team-category">前端设计/前后端对接</h4>
           <div class="team-members">
-            <span class="member-tag">name02</span>
+            <span class="member-tag">聂纪坤</span>
           </div>
         </div>
         <div class="team-group">
-          <h4 class="team-category">后端设计</h4>
+          <h4 class="team-category">后端设计(不分先后)</h4>
           <div class="team-members">
-            <span class="member-tag">name03</span>
-            <span class="member-tag">name04</span>
-            <span class="member-tag">name05</span>
-            <span class="member-tag">name06</span>
-            <span class="member-tag">name07</span>
+            <span class="member-tag">毛思涵</span>
+            <span class="member-tag">周恩承</span>
+            <span class="member-tag">任可</span>
+            <span class="member-tag">高艳阳</span>
+            <span class="member-tag">雍晨</span>
           </div>
         </div>
       </div>
