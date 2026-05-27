@@ -1,0 +1,88 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* =========================================
+   Claude + Apple Tokens
+   Claude 暖色主调 + Apple 结构骨架
+   ========================================= */
+:root {
+  --c-cream:    #faf7f2;
+  --c-cream-2:  #f4eee5;
+  --c-peach:    #f0d9c2;
+  --c-amber:    #d97706;
+  --c-amber-2:  #b45309;
+  --c-ink:      #2b2419;
+  --c-ink-2:    #5a4f43;
+  --c-line:     rgba(43, 36, 25, 0.08);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-1: 0 1px 2px rgba(43, 36, 25, 0.04), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  --shadow-2: 0 4px 16px rgba(43, 36, 25, 0.06);
+  --shadow-3: 0 12px 36px rgba(43, 36, 25, 0.10);
+
+  --font-stack: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue',
+                'PingFang SC', 'Hiragino Sans GB', system-ui, sans-serif;
+
+  /* Apple HIG 缓动 + 时长 */
+  --ease-standard:   cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-decel:      cubic-bezier(0, 0, 0.2, 1);
+  --ease-accel:      cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 180ms;
+  --dur-base: 240ms;
+  --dur-slow: 340ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 路由切换：Apple fade-up */
+.route-fade-enter-active,
+.route-fade-leave-active {
+  transition: opacity var(--dur-base) var(--ease-standard),
+              transform var(--dur-base) var(--ease-standard);
+}
+.route-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.route-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+body {
+  font-family: var(--font-stack);
+  color: var(--c-ink);
+  background: var(--c-cream);
+}
+
+/* 暖色尘埃漂浮 */
+@keyframes warmDustDrift {
+  0%, 100% { transform: translate(0, 0); opacity: 0.10; }
+  50%      { transform: translate(20px, -16px); opacity: 0.16; }
+}
+
+@keyframes warmDustDriftAlt {
+  0%, 100% { transform: translate(0, 0); opacity: 0.08; }
+  50%      { transform: translate(-18px, 20px); opacity: 0.14; }
+}
+
+/* Element Plus 弹层与 Image Viewer 防遮挡 */
+.el-image-viewer__wrapper {
+  z-index: 4000 !important;
+}

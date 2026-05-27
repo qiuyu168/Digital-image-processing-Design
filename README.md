@@ -21,9 +21,12 @@
 |---|---|---|
 | 项目主题 | 动漫相关图像识别 | 以动漫人物、头像、插画、场景截图为主要处理对象 |
 | 前端框架 | Vue 3 + Vite | 用于实现交互式 Web 页面 |
-| 前端请求 | Axios | 用于请求 FastAPI 后端接口 |
-| 前端 UI | Element Plus / Naive UI 二选一 | 推荐 Element Plus，组件成熟，适合课程展示 |
-| 前端图表 | ECharts | 用于展示直方图、指标曲线、对比图 |
+| 前端请求 | Axios | 封装 baseURL、Token 拦截器、响应拦截 |
+| 前端 UI | Element Plus | 组件成熟，适合课程展示，已全局注册 |
+| 前端状态管理 | Pinia + pinia-plugin-persistedstate | 用户认证状态持久化 |
+| 前端图表 | ECharts + vue-echarts | 用于展示直方图、指标曲线、对比图 |
+| 前端样式 | SCSS + Element Plus 主题 | 全局样式 + 组件级 scoped 样式 |
+| 包管理器 | pnpm | 前端依赖安装与项目管理 |
 | 后端框架 | FastAPI | 提供图片上传、图库读取、算法处理、结果返回接口 |
 | 后端语言 | Python | 所有图像处理与识别功能均使用 Python 实现 |
 | 图像处理库 | OpenCV、Pillow、scikit-image、SciPy | 覆盖主要数字图像处理算法 |
@@ -42,9 +45,9 @@ flowchart TB
     subgraph FRONTEND["<b>Vue 3 前端</b>"]
         direction TB
         A["👤 用户"] --> A1["上传图片 / 选择图库 / 选择算法 / 调整参数"]
-        A1 --> A2["Views: HomeView · LoginView · UserProfileView · WorkspaceView"]
-        A2 --> A3["Components: HeaderNav · MainLayout · AppFooter"]
-        A3 --> A4["Axios (http.js)<br/>baseURL + Token 拦截器<br/>Element Plus + ECharts + Pinia"]
+        A1 --> A2["Views: HomeView · LoginView · UserProfileView · WorkspaceView · LibraryView · NotFoundView"]
+        A2 --> A3["Components: layout + workspace/ · home/ · library/ · login/ · profile/<br/>22 个子组件按功能区拆分"]
+        A3 --> A4["Axios (http.js)<br/>baseURL + Token 拦截器<br/>Element Plus + ECharts + Pinia<br/>Claude 暖色 + Apple HIG 动效"]
     end
 
     subgraph BACKEND["<b>FastAPI 后端</b>"]
@@ -126,12 +129,12 @@ Digital-image-processing-Design/
 ├─ .gitignore
 │
 ├─ docs/
-│  ├─ backend-update-doc/
-│  │  ├─ CHANGELOG01.md
-│  │  ├─ CHANGELOG02.md
-│  │  ├─ CHANGELOG03.md
-│  │  ├─ CHANGELOG04.md
-│  │  └─ CHANGELOG05.md
+│  ├─ CHANGELOG01.md
+│  ├─ CHANGELOG02.md
+│  ├─ CHANGELOG03.md
+│  ├─ CHANGELOG04.md
+│  ├─ CHANGELOG05.md
+│  ├─ CHANGELOG06.md
 │  ├─ prompts/
 │  │  └─ algorithm_improvement_prompts_7_models/
 │  │     ├─ chatgpt_algorithm_improvement_slider_prompt.md
@@ -285,55 +288,84 @@ Digital-image-processing-Design/
 │        └─ ideal_high_pass_example.json
 │
 └─ frontend/
-   ├─ .env.development                     # 开发环境变量（后端 API 地址）
+   ├─ .env.development                     # 开发环境变量（VITE_API_BASE_URL）
    ├─ .gitignore
    ├─ .vscode/
    │  └─ extensions.json
-   ├─ README.md
+   ├─ README.md                            # 前端环境搭建与运行说明
    ├─ package.json
    ├─ pnpm-lock.yaml
    ├─ pnpm-workspace.yaml
    ├─ jsconfig.json
-   ├─ vite.config.js
+   ├─ vite.config.js                       # Vite + Element Plus 自动导入 + @ 别名
    ├─ index.html
    ├─ public/
    │  └─ favicon.ico
    └─ src/
-      ├─ main.js
+      ├─ main.js                           # 入口：Pinia + Router + Element Plus + 图标全局注册
       ├─ App.vue
-      ├─ api/
+      ├─ api/                               # 后端 API 请求模块
       │  ├─ .gitkeep
-      │  └─ http.js                        # Axios 实例封装（baseURL / 拦截器 / Token）
+      │  ├─ http.js                        # Axios 实例（baseURL / Token 拦截器 / 错误提示）
+      │  ├─ health.js                      # GET /api/health 健康检查
+      │  ├─ upload.js                      # POST /api/upload/image 图片上传
+      │  ├─ algorithms.js                  # GET /api/algorithms 算法列表
+      │  ├─ library.js                     # GET /api/library/* 图像库接口
+      │  └─ run.js                         # POST /api/process/run 算法执行
       ├─ assets/
       │  ├─ .gitkeep
-      │  ├─ background/                    # 页面背景图片
+      │  ├─ background/                    # 登录页轮播背景图片（4 张）
       │  │  ├─ bg1.jpg
       │  │  ├─ bg2.jpg
       │  │  ├─ bg3.jpg
       │  │  └─ bg4.jpg
       │  └─ home_bg.jpg                    # 首页背景
-      ├─ components/
-      │  ├─ .gitkeep
-      │  ├─ AppFooter.vue                  # 页脚组件
-      │  ├─ HeaderNav.vue                  # 顶部导航组件
-      │  └─ MainLayout.vue                 # 主布局组件（Header + RouterView + Footer）
+      ├─ components/                        # 公共组件（3 布局 + 22 功能区子组件）
+      │  ├─ HeaderNav.vue                  # 顶部导航栏（underline 滑动 + 用户头像折叠）
+      │  ├─ MainLayout.vue                 # 主布局（WarmDust + Header + route-fade + Footer）
+      │  ├─ AppFooter.vue                  # 页脚组件（水平两行排布）
+      │  ├─ workspace/                     # 工作区子组件（6 个）
+      │  │  ├─ AlgorithmSidebar.vue
+      │  │  ├─ AlgorithmInfoCard.vue
+      │  │  ├─ UploadPanel.vue
+      │  │  ├─ ParamsPanel.vue
+      │  │  ├─ NoParamCard.vue
+      │  │  └─ ResultPanel.vue
+      │  ├─ home/                          # 首页子组件（4 个）
+      │  │  ├─ HeroSection.vue
+      │  │  ├─ FlowSection.vue
+      │  │  ├─ AlgorithmModuleGrid.vue
+      │  │  └─ FeatureSection.vue
+      │  ├─ library/                       # 图像库子组件（4 个）
+      │  │  ├─ CategorySidebar.vue
+      │  │  ├─ LibraryHero.vue
+      │  │  ├─ ImageGrid.vue
+      │  │  └─ MetricsPanel.vue
+      │  ├─ login/                         # 登录页子组件（2 个）
+      │  │  ├─ LoginHero.vue
+      │  │  └─ LoginCard.vue
+      │  └─ profile/                       # 个人信息子组件（4 个）
+      │     ├─ ProfileTabSidebar.vue
+      │     ├─ InfoForm.vue
+      │     ├─ AvatarForm.vue
+      │     └─ PasswordForm.vue
       ├─ router/
-      │  └─ index.js                       # 路由配置（首页/登录/个人中心/工作区）
+      │  └─ index.js                       # 路由：/home /workspace /library /profile /login（懒加载）
       ├─ stores/
-      │  ├─ authStore.js                   # 用户认证状态（Pinia）
-      │  └─ counter.js                     # 示例 store
+      │  └─ authStore.js                   # 用户认证状态（Pinia + 持久化插件）
       ├─ styles/
-      │  └─ index.scss                      # 全局样式
+      │  └─ index.scss                     # Claude 暖色 Token + Apple HIG 动效 + WarmDust 动画
       ├─ utils/
       │  ├─ .gitkeep
-      │  ├─ check_health.js                # 后端健康检查工具
-      │  └─ token.js                       # Token 存取工具
-      └─ views/
-         ├─ .gitkeep
-         ├─ HomeView.vue                   # 首页
-         ├─ LoginView.vue                  # 登录页
-         ├─ UserProfileView.vue             # 个人中心
-         └─ WorkspaceView.vue              # 工作区（图像处理主页面）
+      │  ├─ check_health.js                # 后端健康检查（页面加载时调用）
+      │  └─ token.js                       # JWT Token 生成工具（本地测试用）
+      └─ views/                             # 页面视图（装配层）
+         ├─ HomeView.vue                   # 首页（4 子组件装配 + TOC 侧栏 + scrollSpy）
+         ├─ LoginView.vue                  # 登录/注册页（hero + card 装配 + tab 切）
+         ├─ UserProfileView.vue             # 个人中心（sidebar + 3 form 装配）
+         ├─ WorkspaceView.vue              # 工作区（三栏装配：算法树 / 工作区 / 参数）
+         ├─ LibraryView.vue                # 图像库（侧栏 + hero + 网格 + 底部抽屉装配）
+         └─ NotFoundView.vue               # 404 页面（Apple HIG stagger 入场动画）
 ```
 
 ---
@@ -762,24 +794,32 @@ GET /api/library/image/{image_path}
 
 ## 10. 前端页面清单
 
-### 已实现
+### 已实现（6 页 + 22 功能区子组件）
 
-| 页面 | 文件 | 功能 |
+| 页面 | 文件 | 功能描述 |
 |---|---|---|
-| 首页 | `HomeView.vue` | 项目介绍、主题说明、快速导航 |
-| 登录页 | `LoginView.vue` | 用户登录认证 |
-| 个人中心 | `UserProfileView.vue` | 用户信息与设置 |
-| 工作区 | `WorkspaceView.vue` | 图像处理主页面（算法选择/处理/结果展示） |
+| 首页 | `HomeView.vue` | Hero 层叠步骤卡 + Flow 横向步骤指示器 + 主推大卡联动紧凑卡网格 + 项目特色展示，加载时调用健康检查 |
+| 登录页 | `LoginView.vue` | 左右分栏（LoginHero 品牌展示 + LoginCard 表单），顶 tab 登录/注册切换（fade-up），amber focus ring，生成测试 Token |
+| 个人中心 | `UserProfileView.vue` | 左 tab 侧栏 + 右内容面板，基本资料/头像/密码三表单，含三段密码强度指示条 |
+| 工作区 | `WorkspaceView.vue` | **三栏布局**：算法树侧栏（6 模块 30 算法 + 计数徽章 + 刷新）+ 中栏（信息卡/上传/原图结果对比）+ 右栏参数面板（动态控件 + 执行按钮固定底部），含无可变参数 SVG 占位卡 |
+| 图像库 | `LibraryView.vue` | 左分类侧栏 + 中图片网格（hover Finder 风格操作图标）+ **底部内联指标抽屉**（折叠 64px / 展开 320px 横滚），选图后查看指标 |
+| 404 页面 | `NotFoundView.vue` | Apple HIG stagger 入场动画（404 数字 fade-up + accent line scaleX 延迟入场） |
 
-### 待实现
+### 布局与导航
 
-| 页面 | 功能 |
-|---|---|
-| 图片上传页 | 用户上传图片并预览 |
-| 图片库页 | 用户从项目内置图库中选择图片 |
-| 动漫识别页 | 主色调提取、线条风格分析、图库相似度匹配 |
-| 分步执行页 | 展示算法中间过程，例如傅里叶变换频谱分解 |
-| 报告辅助页 | 汇总原图、结果图、参数、分析文字，便于写课程报告 |
+| 组件 | 文件 | 功能 |
+|---|---|---|
+| 主布局 | `MainLayout.vue` | WarmDust 粒子 + HeaderNav + `<Transition name="route-fade">` + AppFooter |
+| 顶部导航 | `HeaderNav.vue` | Logo、4 导航项（active underline left-origin 滑动）、用户头像 hover 折叠展开 |
+| 页脚 | `AppFooter.vue` | 水平两行：品牌信息 + 三组团队 member-tag（hover 微高亮） |
+
+### 设计系统
+
+基于 **Claude 暖色 + Apple HIG 结构骨架** 设计语言，定义于 `src/styles/index.scss`：
+
+- **颜色**：`--c-cream/cream-2/peach/amber/amber-2/ink/ink-2/line` 八色暖色调
+- **动效**：`--ease-standard/emphasized/decel/accel` 缓动 + `--dur-fast/base/slow` 时长，全局 `prefers-reduced-motion` 尊重
+- **装饰**：WarmDust 极淡尘埃粒子（30–50s 周期）+ 全局径向渐变背景
 
 ---
 
@@ -812,76 +852,69 @@ GET /api/library/image/{image_path}
 
 ### 11.2 前端依赖建议
 
-前端不写入 `requirements.txt`，需要单独写入 `frontend/package.json`。
+前端依赖在 `frontend/package.json` 中管理，使用 pnpm 安装。
 
-推荐前端依赖：
+`dependencies`（运行时依赖）：
 
-```json
-{
-  "dependencies": {
-    "@vitejs/plugin-vue": "latest",
-    "vite": "latest",
-    "vue": "latest",
-    "vue-router": "latest",
-    "pinia": "latest",
-    "axios": "latest",
-    "element-plus": "latest",
-    "echarts": "latest"
-  },
-  "devDependencies": {}
-}
-```
+| 依赖 | 用途 |
+|---|---|
+| `vue` ^3.5 | 前端核心框架 |
+| `vue-router` ^5.0 | SPA 路由（懒加载） |
+| `pinia` ^3.0 + `pinia-plugin-persistedstate` ^4.7 | 状态管理 + 持久化 |
+| `axios` ^1.16 | HTTP 请求客户端 |
+| `element-plus` ^2.14 + `@element-plus/icons-vue` ^2.3 | UI 组件库 + 图标 |
+| `echarts` ^6.1 + `vue-echarts` ^8.0 | 图表展示 |
+
+`devDependencies`（开发依赖）：
+
+| 依赖 | 用途 |
+|---|---|
+| `vite` ^8.0 + `@vitejs/plugin-vue` ^6.0 | 构建工具 |
+| `sass` ^1.100 | SCSS 预处理器 |
+| `unplugin-auto-import` ^21.0 | 自动导入 Vue/Element Plus API |
+| `unplugin-vue-components` ^32.1 | 按需导入 Element Plus 组件 |
+| `vite-plugin-vue-devtools` ^8.1 | Vue DevTools 集成 |
 
 ---
 
 ## 12. Windows 11 开发与启动流程
 
+### 12.0 启动顺序
+
+**必须先启动后端，再启动前端。** 前端启动时会调用 `/api/health` 检查后端连通性。
+
+---
+
 ### 12.1 后端启动
 
-进入项目根目录：
+在项目根目录执行：
 
-```bat
-cd Digital-image-processing-Design
-```
+**首次安装：**
 
-创建虚拟环境：
-
-```bat
+```powershell
 python -m venv .venv
-```
-
-激活虚拟环境：
-
-```bat
 .venv\Scripts\activate
-```
-
-升级 pip：
-
-```bat
 python -m pip install --upgrade pip
-```
-
-安装依赖：
-
-```bat
 pip install -r requirements.txt
 ```
 
-启动 FastAPI：
+**启动后端（端口 8050）：**
 
-```bat
+```powershell
 cd backend
-uvicorn main:app --reload --host 127.0.0.1 --port 8050
+..\.venv\Scripts\python.exe -m uvicorn main:app --reload --host 127.0.0.1 --port 8050
 ```
 
-浏览器打开：
+验证后端是否启动成功：
 
-```text
-http://127.0.0.1:8050/docs
+```powershell
+curl http://127.0.0.1:8050/
+# 返回: {"success":true,"message":"Interactive Digital Image Processing Backend"}
 ```
 
-后端自动化测试：
+接口文档：`http://127.0.0.1:8050/docs`
+
+**运行测试：**
 
 ```powershell
 cd backend
@@ -889,33 +922,37 @@ $env:PYTHONDONTWRITEBYTECODE='1'
 python -m pytest -q
 ```
 
-当前后端测试集覆盖算法注册、图片上传与预览、处理请求字段、分析指标、运行目录卫生、手动测试脚本约定和 Sobel 边缘检测接口执行等核心路径。
+---
 
 ### 12.2 前端启动
 
-进入前端目录：
+前端使用 pnpm 作为包管理器。
 
-```bat
+**首次安装：**
+
+```powershell
+npm install -g pnpm
 cd frontend
+pnpm install
 ```
 
-安装依赖：
+**启动开发服务器：**
 
-```bat
-npm install
+```powershell
+cd frontend
+pnpm dev
 ```
 
-启动开发服务器：
+访问：`http://127.0.0.1:5173`（若端口被占用，Vite 会自动递增至 5174 / 5175 / 5176）
 
-```bat
-npm run dev
+**环境变量配置**（`frontend/.env.development`）：
+
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8050
+VITE_APP_TITLE=动漫图像处理系统
 ```
 
-默认访问：
-
-```text
-http://127.0.0.1:5173
-```
+**CORS 说明：** 后端已允许 `127.0.0.1` 和 `localhost` 的 5173–5176 端口跨域访问。若前端运行在其他端口，需在 `backend/app/core/cors.py` 中添加对应来源。
 
 ---
 
@@ -1039,7 +1076,7 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 
 ### 14.6 后端文档与运行产物
 
-1. 本次后端更新记录见 `docs/backend-update-doc/CHANGELOG05.md`。
+1. 本次前端重写更新记录见 `docs/CHANGELOG06.md`，历史后端更新记录见 `docs/CHANGELOG01.md` ~ `docs/CHANGELOG05.md`。
 2. 算法完善提示词已归档到 `docs/prompts/algorithm_improvement_prompts_7_models/`，不再放在后端算法源码目录中。
 3. `backend/data/uploads/`、`backend/data/outputs/`、`backend/data/test_outputs/` 是运行时目录，只保留 `.gitkeep` 占位文件。
 4. 后端测试建议使用 `PYTHONDONTWRITEBYTECODE=1`，避免重新生成 `__pycache__` 和 `.pyc` 文件。
@@ -1061,11 +1098,11 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 
 ### P0：必须完成
 
-- [x] 1. Vue + FastAPI 前后端连通（Axios 已封装，页面框架与路由已搭建）
-- [x] 2. 图片上传（`POST /api/upload/image`）
+- [x] 1. Vue + FastAPI 前后端连通（Axios 已封装 5 个 API 模块，4 页 + 3 组件已实现）
+- [x] 2. 图片上传（`POST /api/upload/image`，前端 `upload.js` 已封装）
 - [x] 3. 图片库选择（`GET /api/library/categories` 等）
-- [x] 4. 算法列表由后端动态返回（`GET /api/algorithms`）
-- [-] 5. 用户选择算法后立即处理并显示结果图（后端已实现，WorkspaceView 待对接算法 API）
+- [x] 4. 算法列表由后端动态返回（`GET /api/algorithms`，WorkspaceView 侧栏已动态渲染）
+- [x] 5. 用户选择算法后立即处理并显示结果图（WorkspaceView 三栏布局，完整 run 调用链已联调）
 - [x] 6. 灰度化、二值化、直方图均衡化
 - [x] 7. 均值滤波、高斯滤波、中值滤波
 - [x] 8. Canny 边缘检测、Sobel 边缘检测
