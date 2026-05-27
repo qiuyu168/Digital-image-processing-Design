@@ -37,6 +37,14 @@ const router = createRouter({
                     }
                 },
                 {
+                    path: 'library',
+                    name: 'Library',
+                    component: () => import('@/views/LibraryView.vue'),
+                    meta: {
+                      title: '图像库'
+                    }
+                },
+                {
                     path: 'profile',
                     name: 'UserProfile',
                     component: () => import('@/views/UserProfileView.vue'),
@@ -45,18 +53,24 @@ const router = createRouter({
                     }
                 }
             ]
+        },
+        {
+            path: '/:pathMatch(.*)*',
+            name: 'NotFound',
+            component: () => import('@/views/NotFoundView.vue'),
+            meta: {
+                title: '页面不存在'
+            }
         }
     ]
 })
 
-// router.beforeEach((to) => {
-//     const authStore = useAuthStore()
+const appTitle = import.meta.env.VITE_APP_TITLE || '数字图像处理系统'
 
-//     document.title = to.meta.title ? `${to.meta.title} - 数字图像处理系统` : '数字图像处理系统'
+router.afterEach((to) => {
+  const pageTitle = to.meta?.title
 
-//     if (!authStore.isLogin)
-//         return '/login'
-//     return '/home'
-// })
+  document.title = pageTitle ? `${pageTitle} - ${appTitle}` : appTitle
+})
 
 export default router
