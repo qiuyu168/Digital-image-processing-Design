@@ -1,75 +1,75 @@
 <template>
-  <div class=”workspace-page page-enter”>
+  <div class="workspace-page page-enter">
     <!-- 左栏：算法树 -->
-    <aside class=”workspace-sidebar glass-card”>
-      <div class=”sidebar-header”>
-        <span class=”sidebar-title”>✦ 算法分类</span>
-        <el-icon class=”sidebar-refresh” @click=”loadAlgorithms”><Refresh /></el-icon>
+    <aside class="workspace-sidebar glass-card">
+      <div class="sidebar-header">
+        <span class="sidebar-title">✦ 算法分类</span>
+        <el-icon class="sidebar-refresh" @click="loadAlgorithms"><Refresh /></el-icon>
       </div>
-      <div class=”algo-tree”>
-        <div v-for=”mod in algorithmModules” :key=”mod.module”
-          class=”tree-module”
-          :class=”{ 'tree-module--active': activeModule === mod.module }”
-          @click=”activeModule = mod.module”>
-          <span class=”tree-module-name”>{{ mod.display_name }}</span>
-          <span class=”tree-badge”>{{ mod.algorithms?.length || 0 }}</span>
+      <div class="algo-tree">
+        <div v-for="mod in algorithmModules" :key="mod.module"
+          class="tree-module"
+          :class="{ 'tree-module--active': activeModule === mod.module }"
+          @click="activeModule = mod.module">
+          <span class="tree-module-name">{{ mod.display_name }}</span>
+          <span class="tree-badge">{{ mod.algorithms?.length || 0 }}</span>
         </div>
       </div>
     </aside>
 
     <!-- 中栏：主工作区 -->
-    <main class=”workspace-main”>
+    <main class="workspace-main">
       <!-- 上传区 -->
-      <div class=”glass-card upload-section”>
-        <input ref=”fileInput” type=”file” accept=”image/*” hidden @change=”onFileChange”>
-        <div v-if=”!uploadedImage” class=”upload-placeholder” @click=”triggerUpload”>
-          <span class=”upload-icon”>✦</span>
-          <span class=”upload-text”>拖拽或点击上传图片</span>
-          <span class=”upload-hint”>支持 jpg / png / bmp / webp / tiff</span>
+      <div class="glass-card upload-section">
+        <input ref="fileInput" type="file" accept="image/*" hidden @change="onFileChange">
+        <div v-if="!uploadedImage" class="upload-placeholder" @click="triggerUpload">
+          <span class="upload-icon">✦</span>
+          <span class="upload-text">拖拽或点击上传图片</span>
+          <span class="upload-hint">支持 jpg / png / bmp / webp / tiff</span>
         </div>
-        <div v-else class=”image-compare”>
-          <div class=”compare-pane”>
-            <span class=”compare-label”>原图</span>
-            <img :src=”uploadedImage” alt=”原图” class=”compare-image”>
+        <div v-else class="image-compare">
+          <div class="compare-pane">
+            <span class="compare-label">原图</span>
+            <img :src="uploadedImage" alt="原图" class="compare-image">
           </div>
-          <div class=”compare-pane”>
-            <span class=”compare-label”>结果</span>
-            <img v-if=”resultInfo.imageUrl” :src=”resultInfo.imageUrl” alt=”结果” class=”compare-image result-image”>
-            <div v-else class=”compare-empty”>等待处理...</div>
+          <div class="compare-pane">
+            <span class="compare-label">结果</span>
+            <img v-if="resultInfo.imageUrl" :src="resultInfo.imageUrl" alt="结果" class="compare-image result-image">
+            <div v-else class="compare-empty">等待处理...</div>
           </div>
         </div>
       </div>
 
       <!-- 分析文本 -->
-      <div v-if=”resultInfo.analysis” class=”glass-card analysis-section”>
+      <div v-if="resultInfo.analysis" class="glass-card analysis-section">
         <p>{{ resultInfo.analysis }}</p>
       </div>
     </main>
 
     <!-- 右栏：参数面板 -->
-    <aside class=”workspace-params glass-card”>
-      <div class=”params-header”>
-        <span class=”params-title”>{{ selectedAlgorithm?.display_name || '选择算法' }}</span>
+    <aside class="workspace-params glass-card">
+      <div class="params-header">
+        <span class="params-title">{{ selectedAlgorithm?.display_name || '选择算法' }}</span>
       </div>
-      <div v-if=”selectedAlgorithm?.params && Object.keys(selectedAlgorithm.params).length > 0” class=”params-list”>
-        <div v-for=”(param, key) in selectedAlgorithm.params” :key=”key” class=”param-item”>
-          <label class=”param-label”>{{ param.label }}</label>
-          <el-slider v-if=”param.component === 'slider'” v-model=”params[key]”
-            :min=”param.min” :max=”param.max” :step=”param.step”
-            :show-tooltip=”false” />
-          <el-select v-else-if=”param.component === 'select'” v-model=”params[key]” style=”width:100%”>
-            <el-option v-for=”opt in param.options” :key=”opt” :label=”opt” :value=”opt” />
+      <div v-if="selectedAlgorithm?.params && Object.keys(selectedAlgorithm.params).length > 0" class="params-list">
+        <div v-for="(param, key) in selectedAlgorithm.params" :key="key" class="param-item">
+          <label class="param-label">{{ param.label }}</label>
+          <el-slider v-if="param.component === 'slider'" v-model="params[key]"
+            :min="param.min" :max="param.max" :step="param.step"
+            :show-tooltip="false" />
+          <el-select v-else-if="param.component === 'select'" v-model="params[key]" style="width:100%">
+            <el-option v-for="opt in param.options" :key="opt" :label="opt" :value="opt" />
           </el-select>
-          <el-switch v-else-if=”param.component === 'switch'” v-model=”params[key]” />
+          <el-switch v-else-if="param.component === 'switch'" v-model="params[key]" />
         </div>
       </div>
-      <div v-else class=”params-empty”>
+      <div v-else class="params-empty">
         <span>此算法无可调节参数</span>
       </div>
-      <button class=”btn-gradient run-btn”
-        :disabled=”running”
-        @click=”runAlgorithm”>
-        <span v-if=”running”>✦ 处理中...</span>
+      <button class="btn-gradient run-btn"
+        :disabled="running"
+        @click="runAlgorithm">
+        <span v-if="running">✦ 处理中...</span>
         <span v-else>▶ 执行算法</span>
       </button>
     </aside>
@@ -228,10 +228,10 @@ const secondUploadedImageSizeText = computed(() => {
 
 const processHintText = computed(() => {
   if (requiresSecondImage.value) {
-    return '选择算法并上传主图与参考图后，点击“开始处理”即可调用后端算法运行接口。'
+    return '选择算法并上传主图与参考图后，点击"开始处理"即可调用后端算法运行接口。'
   }
 
-  return '选择算法并上传图片后，点击“开始处理”即可调用后端算法运行接口。'
+  return '选择算法并上传图片后，点击"开始处理"即可调用后端算法运行接口。'
 })
 
 const parameterSummary = computed(() => {
