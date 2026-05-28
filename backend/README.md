@@ -45,6 +45,7 @@ http://127.0.0.1:5173
 | 文件 | 功能 |
 |---|---|
 | `app/__init__.py` | 标记 `app` 为 Python 包。 |
+| `app/analysis/__init__.py` | 标记 `analysis` 为 Python 包（扩展预留）。 |
 
 ### 2.3 `app/core/` 核心工具
 
@@ -73,7 +74,7 @@ http://127.0.0.1:5173
 | 文件 | 功能 |
 |---|---|
 | `app/services/__init__.py` | 标记 `services` 为 Python 包。 |
-| `app/services/algorithm_registry.py` | 维护八大算法分类、算法顺序和中文名称，动态导入算法文件并生成前端可用的算法元数据。 |
+| `app/services/algorithm_registry.py` | 维护九大算法分类、算法顺序和中文名称，动态导入算法文件并生成前端可用的算法元数据。 |
 | `app/services/analysis_service.py` | 计算图像宽高、通道数、数据类型、均值、标准差、最大最小值和可选直方图。 |
 | `app/services/image_store.py` | 管理上传图片保存、上传图片预览路径、图库分类列表、图库图片列表、图片来源读取和路径安全校验。 |
 | `app/services/process_service.py` | 加载图片、调度算法 `run(image, params)`、校验算法返回结构，并组装前端处理响应。 |
@@ -96,7 +97,7 @@ http://127.0.0.1:5173
 | 文件 | 功能 |
 |---|---|
 | `app/api/algorithm_modules/__init__.py` | 标记分类算法路由目录为 Python 包。 |
-| `app/api/algorithm_modules/common.py` | 定义八类算法名称、分类中文名、分类算法查询、分类算法运行和算法归属校验逻辑。 |
+| `app/api/algorithm_modules/common.py` | 定义九类算法名称、分类中文名、分类算法查询、分类算法运行和算法归属校验逻辑。 |
 | `app/api/algorithm_modules/basic_operation.py` | 提供图像基本运算类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/grayscale_image.py` | 提供灰度图像类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/color_image.py` | 提供彩色图像类算法列表和分类运行接口。 |
@@ -105,6 +106,7 @@ http://127.0.0.1:5173
 | `app/api/algorithm_modules/frequency_analysis.py` | 提供频域分析类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/frequency_filter.py` | 提供频域滤波类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/image_restoration.py` | 提供图像复原类算法列表和分类运行接口。 |
+| `app/api/algorithm_modules/edge_shape_detection.py` | 提供边缘与形状检测类算法列表和分类运行接口。 |
 
 分类路由统一格式：
 
@@ -118,6 +120,7 @@ http://127.0.0.1:5173
 | 频域分析类 | `GET /api/algorithms/frequency-analysis` | `POST /api/algorithms/frequency-analysis/run` |
 | 频域滤波类 | `GET /api/algorithms/frequency-filter` | `POST /api/algorithms/frequency-filter/run` |
 | 图像复原类 | `GET /api/algorithms/image-restoration` | `POST /api/algorithms/image-restoration/run` |
+| 边缘与形状检测类 | `GET /api/algorithms/edge-shape-detection` | `POST /api/algorithms/edge-shape-detection/run` |
 
 ### 2.8 `app/algorithms/` 算法文件
 
@@ -155,8 +158,8 @@ http://127.0.0.1:5173
 | `grayscale.py` | 灰度化，将 BGR 彩色图像转换为单通道灰度图。 | 无 |
 | `binary_threshold.py` | 二值化，按固定阈值转换黑白图。 | `threshold` |
 | `histogram_equalization.py` | 直方图均衡化，提升低对比图像明暗层次。 | 无 |
-| `edge_detection_basic.py` | Canny 基础边缘检测。 | `threshold1`、`threshold2`、`blur_size` |
-| `sobel_edge_detection.py` | Sobel 边缘检测，按 X/Y/综合梯度提取边缘强度。 | `direction`、`kernel_size`、`scale`、`delta` |
+| `clahe_equalization.py` | 对比度受限自适应直方图均衡化，增强局部细节。 | `clip_limit`、`tile_grid_size` |
+| `histogram_matching.py` | 直方图匹配，根据 `second_image_path` 参考图规定化灰度分布。 | `strength`、`color_mode` |
 | `erode.py` | 腐蚀，缩小前景区域并去除细小白色噪声。 | `kernel_size`、`threshold` |
 | `dilate.py` | 膨胀，扩大白色前景并连接断裂结构。 | `kernel_size`、`threshold` |
 | `open_operation.py` | 开运算，先腐蚀后膨胀以去除小白点噪声。 | `kernel_size`、`threshold` |
@@ -171,6 +174,8 @@ http://127.0.0.1:5173
 | `saturation_adjust.py` | 饱和度调整，基于 HSV 调整色相、饱和度和明度。 | `hue_shift`、`saturation_factor`、`value_factor` |
 | `anime_color_enhance.py` | 动漫色彩增强，调整饱和度、对比度、亮度和锐化。 | `saturation_factor`、`contrast`、`brightness`、`sharpen_strength` |
 | `dominant_color_extract.py` | 主色调提取，使用 K-Means 提取主要颜色。 | `color_count` |
+| `region_mosaic.py` | 对指定比例区域进行马赛克处理。 | `x_ratio`、`y_ratio`、`width_ratio`、`height_ratio`、`block_size` |
+| `color_comprehensive_processing.py` | 彩色图像综合增强入口。 | `brightness`、`contrast`、`saturation`、`hue_shift`、`sharpen_strength` |
 
 #### 几何变换类 `app/algorithms/geometric_transform/`
 
@@ -178,8 +183,11 @@ http://127.0.0.1:5173
 |---|---|---|
 | `__init__.py` | 标记几何变换类目录为 Python 包。 | - |
 | `resize.py` | 图像缩放。 | `scale` |
-| `rotate.py` | 图像旋转。 | `angle`、`scale` |
+| `rotate.py` | 图像旋转，支持任意比例旋转中心。 | `angle`、`scale`、`center_x_ratio`、`center_y_ratio` |
 | `flip.py` | 图像翻转。 | `flip_code` |
+| `translate.py` | 图像平移。 | `tx`、`ty`、`border_mode` |
+| `affine_transform.py` | 仿射变换。 | `dx1`、`dy1`、`dx2`、`dy2`、`dx3`、`dy3` |
+| `perspective_transform.py` | 投影变换。 | `top_left_x`、`top_left_y`、`top_right_x`、`top_right_y`、`bottom_right_x`、`bottom_right_y`、`bottom_left_x`、`bottom_left_y` |
 
 #### 空域滤波类 `app/algorithms/spatial_filter/`
 
@@ -191,6 +199,12 @@ http://127.0.0.1:5173
 | `median_filter.py` | 中值滤波，抑制椒盐噪声。 | `kernel_size` |
 | `bilateral_filter.py` | 双边滤波，在平滑同时尽量保留边缘。 | `diameter`、`sigma_color`、`sigma_space` |
 | `laplacian_sharpen.py` | 拉普拉斯锐化，增强边缘和细节。 | `amount` |
+| `statistical_order_filter.py` | 统计排序滤波统一入口。 | `kernel_size`、`mode`、`percentile` |
+| `max_filter.py` | 最大值滤波。 | `kernel_size` |
+| `min_filter.py` | 最小值滤波。 | `kernel_size` |
+| `adaptive_median_filter.py` | 自适应中值滤波。 | `initial_kernel_size`、`max_kernel_size` |
+| `unsharp_masking.py` | USM 锐化。 | `amount`、`radius`、`threshold` |
+| `add_noise.py` | 添加噪声，用于退化模拟和滤波测试。 | `noise_type`、`amount`、`mean`、`sigma` |
 
 #### 频域分析类 `app/algorithms/frequency_analysis/`
 
@@ -212,6 +226,10 @@ http://127.0.0.1:5173
 | `ideal_high_pass.py` | 理想高通滤波。 | `radius` |
 | `gaussian_low_pass.py` | 高斯低通滤波。 | `radius` |
 | `gaussian_high_pass.py` | 高斯高通滤波。 | `radius` |
+| `butterworth_low_pass.py` | 巴特沃斯低通滤波。 | `cutoff`、`order` |
+| `butterworth_high_pass.py` | 巴特沃斯高通滤波。 | `cutoff`、`order` |
+| `frequency_laplacian_sharpen.py` | 频域拉普拉斯锐化。 | `amount` |
+| `homomorphic_filter.py` | 同态滤波。 | `gamma_low`、`gamma_high`、`cutoff`、`order` |
 
 #### 图像复原类 `app/algorithms/image_restoration/`
 
@@ -223,8 +241,24 @@ http://127.0.0.1:5173
 | `motion_blur_simulation.py` | 运动模糊模拟，线性 PSF 匀速直线运动。 | `length`、`angle` |
 | `atmospheric_turbulence_blur_simulation.py` | 大气湍流模糊模拟，频域湍流传递函数。 | `k` |
 | `inverse_filter_restoration.py` | 逆滤波复原，频域直接反卷积。 | `k`、`epsilon` |
+| `windowed_inverse_filter_restoration.py` | 加窗逆滤波复原，限制高频噪声放大。 | `k`、`epsilon`、`window_radius` |
 | `wiener_filter_restoration.py` | 维纳滤波复原，信噪比自适应最优滤波。 | `k`、`noise_power` |
 | `constrained_least_squares_restoration.py` | 约束最小二乘复原，拉普拉斯正则化。 | `k`、`gamma` |
+
+#### 边缘与形状检测类 `app/algorithms/edge_shape_detection/`
+
+| 文件 | 算法 | 参数 |
+|---|---|---|
+| `__init__.py` | 标记边缘与形状检测类目录为 Python 包。 | - |
+| `basic_edge_detection.py` | 基础边缘检测统一入口。 | `method`、`threshold1`、`threshold2`、`kernel_size` |
+| `canny_edge_detection.py` | Canny 边缘检测。 | `threshold1`、`threshold2`、`blur_size` |
+| `sobel_edge_detection.py` | Sobel 边缘检测。 | `direction`、`kernel_size`、`scale`、`delta` |
+| `roberts_cross.py` | Roberts 交叉算子边缘检测。 | `scale` |
+| `prewitt_edge_detection.py` | Prewitt 边缘检测。 | `direction`、`kernel_size` |
+| `scharr_edge_detection.py` | Scharr 边缘检测。 | `direction`、`scale` |
+| `log_edge_detection.py` | LoG 边缘检测。 | `blur_size`、`sigma`、`threshold` |
+| `hough_shape_detection.py` | Hough 直线/圆形检测。 | `shape_type`、`threshold`、`min_line_length`、`max_line_gap` |
+| `corner_detection.py` | Harris / Shi-Tomasi 角点检测。 | `method`、`max_corners`、`quality_level`、`min_distance` |
 
 ### 2.9 `data/` 数据目录
 
@@ -248,6 +282,7 @@ http://127.0.0.1:5173
 | `tests/README.md` | 后端本地算法测试工具说明。 |
 | `tests/算法测试脚本使用说明文档.md` | 简化版手动测试脚本的路径配置示例。 |
 | `tests/manual_test_algorithm.py` | 初学者三路径手动测试脚本，只需配置输入图、输出图、算法导入路径。 |
+| `tests/manual_test_algorithm_advanced.py` | 高级手动测试脚本，支持 `--config` 配置文件、`--input` 输入图、`--params` 临时参数和 `--second-input` 第二张图。 |
 | `tests/test_algorithm_completeness.py` | 自动检查所有算法文件是否可导入、元数据是否完整、`run` 是否可执行。 |
 | `tests/test_backend_framework.py` | 后端框架测试，覆盖上传校验、接口联调、算法注册、分析指标、schema 和目录卫生。 |
 | `tests/sample_test_configs/add_operation_example.json` | 图像加法测试配置示例。 |
@@ -467,8 +502,8 @@ POST /api/process/run
 {
   "source_type": "upload",
   "image_path": "upload_6f4f0b8d2a0c4f31a79d5d9a9a4b8e11.png",
-  "module": "grayscale_image",
-  "algorithm": "edge_detection_basic",
+  "module": "edge_shape_detection",
+  "algorithm": "canny_edge_detection",
   "params": {
     "threshold1": 80,
     "threshold2": 160,
@@ -483,10 +518,10 @@ POST /api/process/run
 ```json
 {
   "success": true,
-  "module": "grayscale_image",
-  "module_display_name": "灰度图像类",
-  "algorithm": "edge_detection_basic",
-  "algorithm_display_name": "基础边缘检测",
+  "module": "edge_shape_detection",
+  "module_display_name": "边缘与形状检测类",
+  "algorithm": "canny_edge_detection",
+  "algorithm_display_name": "Canny边缘检测",
   "result_image": "data:image/png;base64,...",
   "steps": [
     { "name": "灰度化", "image": "data:image/png;base64,..." }
@@ -506,7 +541,7 @@ POST /api/process/run
 分类执行接口也可以使用，例如：
 
 ```http
-POST /api/algorithms/grayscale-image/run
+POST /api/algorithms/edge-shape-detection/run
 ```
 
 分类执行接口请求体不需要传 `module`，后端会根据路由自动注入分类。
@@ -633,6 +668,12 @@ ALGORITHM_IMPORT_PATH = "app.algorithms.color_image.saturation_adjust"
 ```powershell
 cd backend
 python tests/manual_test_algorithm.py
+```
+
+高级配置测试使用：
+
+```powershell
+python tests/manual_test_algorithm_advanced.py --config tests/sample_test_configs/canny_example.json
 ```
 
 ### 4.6 运行目录和提交规则

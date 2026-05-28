@@ -53,7 +53,7 @@ flowchart TB
     subgraph BACKEND["<b>FastAPI 后端</b>"]
         direction TB
 
-        subgraph API["API 路由层 (25 条路由)"]
+        subgraph API["API 路由层 (28 条路由)"]
             direction LR
             B1["健康检查<br/>GET /api/health"]
             B2["图片上传<br/>POST /api/upload/image<br/>GET /api/upload/preview/{path}"]
@@ -72,16 +72,17 @@ flowchart TB
             C5["image_store<br/>上传/图库/路径安全"]
         end
 
-        subgraph ALGOS["Algorithms 算法模块层 (50 个算法)"]
+        subgraph ALGOS["Algorithms 算法模块层 (75 个算法)"]
             direction LR
             D0["图像基本运算类<br/>8 个<br/>加减乘除<br/>AND/OR/NOT/XOR"]
-            D1["灰度图像类<br/>14 个<br/>灰度化/二值化<br/>线性/伽马/对数/指数<br/>直方图均衡化<br/>Canny/Sobel<br/>腐蚀/膨胀/开闭运算"]
-            D2["彩色图像类<br/>4 个<br/>颜色空间转换<br/>饱和度调整<br/>动漫色彩增强<br/>主色调提取"]
-            D3["几何变换类<br/>3 个<br/>缩放/旋转/翻转"]
-            D4["空域滤波类<br/>5 个<br/>均值/高斯/中值<br/>双边/拉普拉斯"]
+            D1["灰度图像类<br/>14 个<br/>灰度化/二值化<br/>灰度变换/直方图增强<br/>形态学处理"]
+            D2["彩色图像类<br/>6 个<br/>颜色空间转换<br/>饱和度/综合增强<br/>主色调/区域马赛克"]
+            D3["几何变换类<br/>6 个<br/>缩放/旋转/翻转<br/>平移/仿射/投影"]
+            D4["空域滤波类<br/>11 个<br/>平滑/排序滤波<br/>锐化/噪声添加"]
             D5["频域分析类<br/>3 个<br/>DFT/中心化/幅度谱"]
-            D6["频域滤波类<br/>6 个<br/>低通/高通<br/>理想/高斯 变种"]
-            D7["图像复原类<br/>7 个<br/>散焦/镜头畸变/运动<br/>大气湍流模糊<br/>逆滤波/维纳/约束最小二乘"]
+            D6["频域滤波类<br/>10 个<br/>低通/高通<br/>理想/高斯/巴特沃斯<br/>拉普拉斯/同态"]
+            D7["图像复原类<br/>8 个<br/>退化模拟<br/>逆滤波/加窗逆滤波<br/>维纳/约束最小二乘"]
+            D8["边缘与形状检测类<br/>9 个<br/>Canny/Sobel/Roberts<br/>Prewitt/Scharr/LoG<br/>Hough/角点"]
         end
 
         subgraph CORE["Core 核心工具层"]
@@ -172,11 +173,12 @@ Digital-image-processing-Design/
 │  │  │  ├─ library.py                       # 内置图片库分类/列表/文件接口
 │  │  │  ├─ process.py                       # POST /api/process/run 算法处理主入口
 │  │  │  ├─ upload.py                        # 图片上传与预览接口
-│  │  │  └─ algorithm_modules/               # 八大分类独立子路由（GET 列表 + POST 执行）
+│  │  │  └─ algorithm_modules/               # 九大分类独立子路由（GET 列表 + POST 执行）
 │  │  │     ├─ __init__.py
 │  │  │     ├─ basic_operation.py
 │  │  │     ├─ color_image.py
 │  │  │     ├─ common.py                     # 共享常量和通用处理逻辑
+│  │  │     ├─ edge_shape_detection.py
 │  │  │     ├─ frequency_analysis.py
 │  │  │     ├─ frequency_filter.py
 │  │  │     ├─ geometric_transform.py
@@ -226,8 +228,8 @@ Digital-image-processing-Design/
 │  │     │  ├─ grayscale.py                  # 灰度化
 │  │     │  ├─ binary_threshold.py           # 二值化
 │  │     │  ├─ histogram_equalization.py     # 直方图均衡化
-│  │     │  ├─ edge_detection_basic.py       # 边缘检测（Canny）
-│  │     │  ├─ sobel_edge_detection.py       # 边缘检测（Sobel）
+│  │     │  ├─ clahe_equalization.py         # CLAHE
+│  │     │  ├─ histogram_matching.py         # 直方图匹配
 │  │     │  ├─ erode.py                      # 腐蚀
 │  │     │  ├─ dilate.py                     # 膨胀
 │  │     │  ├─ open_operation.py             # 开运算
@@ -238,13 +240,18 @@ Digital-image-processing-Design/
 │  │     │  ├─ color_space_convert.py        # 颜色空间转换
 │  │     │  ├─ saturation_adjust.py          # 饱和度调整
 │  │     │  ├─ anime_color_enhance.py        # 动漫色彩增强
-│  │     │  └─ dominant_color_extract.py     # 主色调提取
+│  │     │  ├─ dominant_color_extract.py     # 主色调提取
+│  │     │  ├─ region_mosaic.py              # 指定区域马赛克
+│  │     │  └─ color_comprehensive_processing.py  # 彩色图像综合处理
 │  │     │
 │  │     ├─ geometric_transform/             # 8.3 几何变换类
 │  │     │  ├─ __init__.py
 │  │     │  ├─ resize.py                     # 图像缩放
 │  │     │  ├─ rotate.py                     # 图像旋转
-│  │     │  └─ flip.py                       # 图像翻转
+│  │     │  ├─ flip.py                       # 图像翻转
+│  │     │  ├─ translate.py                  # 图像平移
+│  │     │  ├─ affine_transform.py           # 仿射变换
+│  │     │  └─ perspective_transform.py      # 投影变换
 │  │     │
 │  │     ├─ spatial_filter/                  # 8.4 空域滤波类
 │  │     │  ├─ __init__.py
@@ -252,7 +259,13 @@ Digital-image-processing-Design/
 │  │     │  ├─ gaussian_filter.py            # 高斯滤波
 │  │     │  ├─ median_filter.py              # 中值滤波
 │  │     │  ├─ bilateral_filter.py           # 双边滤波
-│  │     │  └─ laplacian_sharpen.py          # 拉普拉斯锐化
+│  │     │  ├─ laplacian_sharpen.py          # 拉普拉斯锐化
+│  │     │  ├─ statistical_order_filter.py   # 统计排序滤波
+│  │     │  ├─ max_filter.py                 # 最大值滤波
+│  │     │  ├─ min_filter.py                 # 最小值滤波
+│  │     │  ├─ adaptive_median_filter.py     # 自适应中值滤波
+│  │     │  ├─ unsharp_masking.py            # USM 锐化
+│  │     │  └─ add_noise.py                  # 噪声添加
 │  │     │
 │  │     ├─ frequency_analysis/              # 8.5 频域分析类
 │  │     │  ├─ __init__.py
@@ -267,17 +280,34 @@ Digital-image-processing-Design/
 │  │     │  ├─ ideal_low_pass.py             # 理想低通滤波
 │  │     │  ├─ ideal_high_pass.py            # 理想高通滤波
 │  │     │  ├─ gaussian_low_pass.py          # 高斯低通滤波
-│  │     │  └─ gaussian_high_pass.py         # 高斯高通滤波
+│  │     │  ├─ gaussian_high_pass.py         # 高斯高通滤波
+│  │     │  ├─ butterworth_low_pass.py       # 巴特沃斯低通滤波
+│  │     │  ├─ butterworth_high_pass.py      # 巴特沃斯高通滤波
+│  │     │  ├─ frequency_laplacian_sharpen.py  # 频域拉普拉斯锐化
+│  │     │  └─ homomorphic_filter.py         # 同态滤波
 │  │     │
-│  │     └─ image_restoration/               # 8.7 图像复原类
+│  │     ├─ image_restoration/               # 8.7 图像复原与图像修复类
 │  │        ├─ __init__.py
 │  │        ├─ defocus_blur_simulation.py          # 散焦模糊模拟
 │  │        ├─ lens_distortion_blur_simulation.py  # 镜头畸变模糊模拟
 │  │        ├─ motion_blur_simulation.py           # 运动模糊模拟
 │  │        ├─ atmospheric_turbulence_blur_simulation.py  # 大气湍流模糊模拟
 │  │        ├─ inverse_filter_restoration.py       # 逆滤波复原
+│  │        ├─ windowed_inverse_filter_restoration.py  # 加窗逆滤波复原
 │  │        ├─ wiener_filter_restoration.py        # 维纳滤波复原
 │  │        └─ constrained_least_squares_restoration.py  # 约束最小二乘复原
+│  │     │
+│  │     └─ edge_shape_detection/             # 8.8 边缘与形状检测类
+│  │        ├─ __init__.py
+│  │        ├─ basic_edge_detection.py        # 基础边缘检测入口
+│  │        ├─ canny_edge_detection.py        # Canny 边缘检测
+│  │        ├─ sobel_edge_detection.py        # Sobel 边缘检测
+│  │        ├─ roberts_cross.py               # Roberts 交叉算子
+│  │        ├─ prewitt_edge_detection.py      # Prewitt 边缘检测
+│  │        ├─ scharr_edge_detection.py       # Scharr 边缘检测
+│  │        ├─ log_edge_detection.py          # LoG 边缘检测
+│  │        ├─ hough_shape_detection.py       # Hough 形状检测
+│  │        └─ corner_detection.py            # 角点检测
 │  │
 │  ├─ data/
 │  │  ├─ image_limit.md                      # 图片限制说明文档
@@ -405,7 +435,7 @@ Digital-image-processing-Design/
 正确示例：
 
 ```text
-algorithms/grayscale_image/edge_detection_basic.py
+algorithms/edge_shape_detection/canny_edge_detection.py
 algorithms/grayscale_image/binary_threshold.py
 algorithms/spatial_filter/median_filter.py
 algorithms/frequency_analysis/dft_spectrum.py
@@ -459,9 +489,9 @@ import numpy as np
 
 
 ALGORITHM_META = {
-    "module": "grayscale_image",
-    "name": "edge_detection_basic",
-    "display_name": "基础边缘检测",
+    "module": "edge_shape_detection",
+    "name": "canny_edge_detection",
+    "display_name": "Canny边缘检测",
     "description": "用于提取动漫人物轮廓、发丝边缘、场景建筑线条等边缘信息。",
     "params": {
         "threshold1": {
@@ -541,12 +571,12 @@ GET /api/algorithms
 {
   "modules": [
     {
-      "module": "grayscale_image",
-      "display_name": "灰度图像类",
+      "module": "edge_shape_detection",
+      "display_name": "边缘与形状检测类",
       "algorithms": [
         {
-          "name": "edge_detection_basic",
-          "display_name": "基础边缘检测",
+          "name": "canny_edge_detection",
+          "display_name": "Canny边缘检测",
           "params": {
             "threshold1": {
               "type": "int", "default": 80, "min": 0, "max": 255,
@@ -576,8 +606,8 @@ POST /api/process/run
 {
   "source_type": "upload",
   "image_path": "upload_20260525_001.png",
-  "module": "grayscale_image",
-  "algorithm": "edge_detection_basic",
+  "module": "edge_shape_detection",
+  "algorithm": "canny_edge_detection",
   "params": {
     "threshold1": 80,
     "threshold2": 160,
@@ -592,10 +622,10 @@ POST /api/process/run
 ```json
 {
   "success": true,
-  "module": "grayscale_image",
-  "module_display_name": "灰度图像类",
-  "algorithm": "edge_detection_basic",
-  "algorithm_display_name": "基础边缘检测",
+  "module": "edge_shape_detection",
+  "module_display_name": "边缘与形状检测类",
+  "algorithm": "canny_edge_detection",
+  "algorithm_display_name": "Canny边缘检测",
   "result_image": "data:image/png;base64,...",
   "steps": [
     {
@@ -697,7 +727,7 @@ GET /api/library/image/{image_path}
 
 ## 8. 功能模块清单
 
-当前后端算法主目录按 8 类组织，50 个算法已全部实现。
+当前后端算法主目录按 9 类组织，75 个算法已全部实现。
 
 ### 8.0 `basic_operation/` 图像基本运算类
 
@@ -726,8 +756,8 @@ GET /api/library/image/{image_path}
 | 灰度化       | `grayscale.py`              | 将彩色图像转换为灰度图像，作为二值化、边缘检测、频域分析等算法的基础输入 | 已实现 |
 | 二值化       | `binary_threshold.py`       | 将灰度图转换为黑白二值图，支持固定阈值                       | 已实现 |
 | 直方图均衡化 | `histogram_equalization.py` | 增强灰度图像整体对比度，使灰度分布更加均衡                   | 已实现 |
-| Canny边缘检测 | `edge_detection_basic.py`   | 使用 Canny 算子提取图像中的主要轮廓和边界                    | 已实现 |
-| Sobel边缘检测 | `sobel_edge_detection.py` | 使用 Sobel 一阶梯度算子提取 X/Y/综合方向的边缘强度           | 已实现 |
+| CLAHE | `clahe_equalization.py` | 对比度受限自适应直方图均衡化，增强局部细节并限制噪声放大 | 已实现 |
+| 直方图匹配 | `histogram_matching.py` | 根据第二张图像进行灰度分布规定化，使用 `second_image_path` 输入参考图 | 已实现 |
 | 腐蚀         | `erode.py`                  | 缩小前景区域，去除小白点或细小噪声                           | 已实现 |
 | 膨胀         | `dilate.py`                 | 扩大前景区域，连接断裂区域或增强目标区域                     | 已实现 |
 | 开运算       | `open_operation.py`         | 先腐蚀后膨胀，适合去除小噪声                                 | 已实现 |
@@ -743,6 +773,8 @@ GET /api/library/image/{image_path}
 | 饱和度调整   | `saturation_adjust.py`      | 基于 HSV 色彩空间调整动漫图像的色相、饱和度和明度，使人物和场景颜色更突出 | 已实现 |
 | 动漫色彩增强 | `anime_color_enhance.py`    | 综合调整饱和度、对比度、亮度和轻微锐化，突出动漫图像的明快色彩与线条层次 | 已实现 |
 | 主色调提取   | `dominant_color_extract.py` | 使用 K-Means 聚类提取动漫图像中的主要颜色，并生成主色调量化可视化结果 | 已实现 |
+| 指定区域马赛克 | `region_mosaic.py` | 对指定比例区域进行块状像素化，适合局部隐私遮挡或风格化处理 | 已实现 |
+| 彩色图像综合处理 | `color_comprehensive_processing.py` | 组合亮度、对比度、饱和度、色相和锐化参数完成彩色增强 | 已实现 |
 
 ---
 
@@ -753,6 +785,9 @@ GET /api/library/image/{image_path}
 | 缩放     | `resize.py` | 改变图像尺寸，支持按比例缩放和指定宽高缩放 | 已实现 |
 | 旋转     | `rotate.py` | 按指定角度旋转图像，支持边界填充和中心旋转 | 已实现 |
 | 翻转     | `flip.py`   | 实现水平翻转、垂直翻转和中心翻转           | 已实现 |
+| 平移     | `translate.py` | 按 X/Y 像素偏移移动图像并支持边界填充 | 已实现 |
+| 仿射变换 | `affine_transform.py` | 通过三点映射完成缩放、错切、旋转等仿射变换 | 已实现 |
+| 投影变换 | `perspective_transform.py` | 通过四点映射完成透视校正和投影变换 | 已实现 |
 
 ---
 
@@ -765,6 +800,12 @@ GET /api/library/image/{image_path}
 | 中值滤波     | `median_filter.py`     | 使用邻域中值替代中心像素，对椒盐噪声有较好去除效果           | 已实现 |
 | 双边滤波     | `bilateral_filter.py`  | 在平滑图像的同时尽量保留边缘，适合动漫线条图像降噪           | 已实现 |
 | 拉普拉斯锐化 | `laplacian_sharpen.py` | 增强图像边缘和细节，使轮廓更清晰                             | 已实现 |
+| 统计排序滤波 | `statistical_order_filter.py` | 按邻域排序统计值进行滤波，支持中值、最大值、最小值和中点模式 | 已实现 |
+| 最大值滤波 | `max_filter.py` | 使用邻域最大值扩展亮区域并抑制暗孤立点 | 已实现 |
+| 最小值滤波 | `min_filter.py` | 使用邻域最小值扩展暗区域并抑制亮孤立点 | 已实现 |
+| 自适应中值滤波 | `adaptive_median_filter.py` | 根据局部噪声情况扩大窗口，增强椒盐噪声去除能力 | 已实现 |
+| USM锐化 | `unsharp_masking.py` | 通过模糊差分增强高频细节和轮廓 | 已实现 |
+| 噪声添加 | `add_noise.py` | 添加高斯、椒盐或泊松噪声，用于退化模拟和滤波测试 | 已实现 |
 
 ---
 
@@ -788,6 +829,10 @@ GET /api/library/image/{image_path}
 | 理想高通滤波 | `ideal_high_pass.py`    | 使用理想圆形掩膜进行高通滤波，用于突出边缘变化       | 已实现 |
 | 高斯低通滤波 | `gaussian_low_pass.py`  | 使用高斯频域掩膜进行平滑，过渡更自然                 | 已实现 |
 | 高斯高通滤波 | `gaussian_high_pass.py` | 使用高斯频域掩膜增强边缘，减少理想滤波带来的振铃问题 | 已实现 |
+| 巴特沃斯低通滤波 | `butterworth_low_pass.py` | 使用可调阶数的巴特沃斯传递函数平滑图像 | 已实现 |
+| 巴特沃斯高通滤波 | `butterworth_high_pass.py` | 使用巴特沃斯高通传递函数增强边缘和细节 | 已实现 |
+| 频域拉普拉斯锐化 | `frequency_laplacian_sharpen.py` | 在频域构造拉普拉斯增强项进行锐化 | 已实现 |
+| 同态滤波 | `homomorphic_filter.py` | 对数域分离照度和反射分量，压低低频光照并增强细节 | 已实现 |
 
 ---
 
@@ -800,8 +845,25 @@ GET /api/library/image/{image_path}
 | 运动模糊模拟         | `motion_blur_simulation.py`                 | 使用线性 PSF 模拟匀速直线运动模糊              | 已实现 |
 | 大气湍流模糊模拟     | `atmospheric_turbulence_blur_simulation.py`  | 使用频域湍流传递函数模拟大气扰动退化           | 已实现 |
 | 逆滤波复原           | `inverse_filter_restoration.py`             | 频域逆滤波直接复原，对无噪声退化图效果较好     | 已实现 |
+| 加窗逆滤波复原       | `windowed_inverse_filter_restoration.py`    | 使用低通窗限制逆滤波高频放大，改善噪声敏感性   | 已实现 |
 | 维纳滤波复原         | `wiener_filter_restoration.py`              | 带噪声抑制的反卷积复原，信噪比自适应的最优滤波 | 已实现 |
 | 约束最小二乘复原     | `constrained_least_squares_restoration.py`   | 拉普拉斯约束的正则化复原，抑制噪声放大         | 已实现 |
+
+---
+
+### 8.8 `edge_shape_detection/` 边缘与形状检测类
+
+| 功能名称 | 文件名 | 功能说明 | 状态 |
+| -------- | ------ | -------- | ---- |
+| 基础边缘检测 | `basic_edge_detection.py` | 统一边缘检测入口，可选择 Canny、Sobel、Prewitt、Roberts、Scharr 或 LoG | 已实现 |
+| Canny边缘检测 | `canny_edge_detection.py` | 使用 Canny 算子提取图像中的主要轮廓和边界 | 已实现 |
+| Sobel边缘检测 | `sobel_edge_detection.py` | 使用 Sobel 一阶梯度算子提取 X/Y/综合方向的边缘强度 | 已实现 |
+| Roberts交叉算子 | `roberts_cross.py` | 用 2x2 交叉梯度核检测细小边缘 | 已实现 |
+| Prewitt边缘检测 | `prewitt_edge_detection.py` | 使用 Prewitt 水平和垂直梯度检测边缘 | 已实现 |
+| Scharr边缘检测 | `scharr_edge_detection.py` | 使用 Scharr 算子增强细线边缘响应 | 已实现 |
+| LoG边缘检测 | `log_edge_detection.py` | 高斯平滑后使用拉普拉斯响应检测边缘 | 已实现 |
+| Hough形状检测 | `hough_shape_detection.py` | 检测直线或圆形结构并在结果图上标注 | 已实现 |
+| 角点检测 | `corner_detection.py` | 使用 Harris 或 Shi-Tomasi 方法检测角点 | 已实现 |
 
 ---
 
@@ -843,6 +905,8 @@ GET /api/library/image/{image_path}
 | `/api/algorithms/frequency-filter/run` | POST | 执行频域滤波类下的指定算法 |
 | `/api/algorithms/image-restoration` | GET | 图像复原类算法列表 |
 | `/api/algorithms/image-restoration/run` | POST | 执行图像复原类下的指定算法 |
+| `/api/algorithms/edge-shape-detection` | GET | 边缘与形状检测类算法列表 |
+| `/api/algorithms/edge-shape-detection/run` | POST | 执行边缘与形状检测类下的指定算法 |
 
 所有 POST 请求体格式与 `/api/process/run` 一致，其中 `module` 字段由路由自动注入，无需前端传递。
 
@@ -865,7 +929,7 @@ GET /api/library/image/{image_path}
 | 首页 | `HomeView.vue` | Hero 层叠步骤卡 + Flow 横向步骤指示器 + 主推大卡联动紧凑卡网格 + 项目特色展示，加载时调用健康检查 |
 | 登录页 | `LoginView.vue` | 左右分栏（LoginHero 品牌展示 + LoginCard 表单），顶 tab 登录/注册切换（fade-up），amber focus ring，生成测试 Token |
 | 个人中心 | `UserProfileView.vue` | 左 tab 侧栏 + 右内容面板，基本资料/头像/密码三表单，含三段密码强度指示条 |
-| 工作区 | `WorkspaceView.vue` | **三栏布局**：算法树侧栏（8 模块 50 算法 + 计数徽章 + 刷新）+ 中栏（信息卡/上传/原图结果对比）+ 右栏参数面板（动态控件 + 执行按钮固定底部），含无可变参数 SVG 占位卡 |
+| 工作区 | `WorkspaceView.vue` | **三栏布局**：算法树侧栏（9 模块 75 算法 + 计数徽章 + 刷新）+ 中栏（信息卡/上传/原图结果对比）+ 右栏参数面板（动态控件 + 执行按钮固定底部），含无可变参数 SVG 占位卡 |
 | 图像库 | `LibraryView.vue` | 左分类侧栏 + 中图片网格（hover Finder 风格操作图标）+ **底部内联指标抽屉**（折叠 64px / 展开 320px 横滚），选图后查看指标 |
 | 404 页面 | `NotFoundView.vue` | Apple HIG stagger 入场动画（404 数字 fade-up + accent line scaleX 延迟入场） |
 
@@ -1039,11 +1103,11 @@ VITE_APP_TITLE=动漫图像处理系统
 | 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `log_transform.py`          | 对数变换           |
 | 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `exponential_transform.py`  | 指数变换           |
 | 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `negative_transform.py`     | 负片变换           |
+| 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `clahe_equalization.py`     | CLAHE均衡化        |
+| 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `histogram_matching.py`     | 直方图匹配         |
 | 任可   | `grayscale_image/` 灰度图像类       | `grayscale.py`              | 灰度化             |
 | 任可   | `grayscale_image/` 灰度图像类       | `binary_threshold.py`       | 二值化             |
 | 任可   | `grayscale_image/` 灰度图像类       | `histogram_equalization.py` | 直方图均衡化       |
-| 雍晨   | `grayscale_image/` 灰度图像类       | `edge_detection_basic.py`   | 边缘检测           |
-| 雍晨   | `grayscale_image/` 灰度图像类       | `sobel_edge_detection.py`   | Sobel边缘检测      |
 | 雍晨   | `grayscale_image/` 灰度图像类       | `erode.py`                  | 腐蚀               |
 | 雍晨   | `grayscale_image/` 灰度图像类       | `dilate.py`                 | 膨胀               |
 | 雍晨   | `grayscale_image/` 灰度图像类       | `open_operation.py`         | 开运算             |
@@ -1052,14 +1116,25 @@ VITE_APP_TITLE=动漫图像处理系统
 | 毛思涵 | `color_image/` 彩色图像类           | `saturation_adjust.py`      | 饱和度调整         |
 | 毛思涵 | `color_image/` 彩色图像类           | `anime_color_enhance.py`    | 动漫色彩增强       |
 | 毛思涵 | `color_image/` 彩色图像类           | `dominant_color_extract.py` | 主色调提取         |
+| 王韬涵/聂纪坤 | `color_image/` 彩色图像类           | `region_mosaic.py`          | 区域马赛克         |
+| 王韬涵/聂纪坤 | `color_image/` 彩色图像类           | `color_comprehensive_processing.py` | 彩色综合处理 |
 | 任可   | `geometric_transform/` 几何变换类   | `resize.py`                 | 缩放               |
 | 任可   | `geometric_transform/` 几何变换类   | `rotate.py`                 | 旋转               |
 | 任可   | `geometric_transform/` 几何变换类   | `flip.py`                   | 翻转               |
+| 王韬涵/聂纪坤 | `geometric_transform/` 几何变换类   | `translate.py`              | 平移               |
+| 王韬涵/聂纪坤 | `geometric_transform/` 几何变换类   | `affine_transform.py`       | 仿射变换           |
+| 王韬涵/聂纪坤 | `geometric_transform/` 几何变换类   | `perspective_transform.py`  | 投影变换           |
 | 周恩丞 | `spatial_filter/` 空域滤波类        | `mean_filter.py`            | 均值滤波           |
 | 周恩丞 | `spatial_filter/` 空域滤波类        | `gaussian_filter.py`        | 高斯滤波           |
 | 周恩丞 | `spatial_filter/` 空域滤波类        | `median_filter.py`          | 中值滤波           |
 | 周恩丞 | `spatial_filter/` 空域滤波类        | `bilateral_filter.py`       | 双边滤波           |
 | 周恩丞 | `spatial_filter/` 空域滤波类        | `laplacian_sharpen.py`      | 拉普拉斯锐化       |
+| 王韬涵/聂纪坤 | `spatial_filter/` 空域滤波类        | `add_noise.py`              | 噪声添加           |
+| 王韬涵/聂纪坤 | `spatial_filter/` 空域滤波类        | `unsharp_masking.py`        | USM锐化            |
+| 王韬涵/聂纪坤 | `spatial_filter/` 空域滤波类        | `adaptive_median_filter.py` | 自适应中值滤波     |
+| 王韬涵/聂纪坤 | `spatial_filter/` 空域滤波类        | `max_filter.py`             | 最大值滤波         |
+| 王韬涵/聂纪坤 | `spatial_filter/` 空域滤波类        | `min_filter.py`             | 最小值滤波         |
+| 王韬涵/聂纪坤 | `spatial_filter/` 空域滤波类        | `statistical_order_filter.py` | 统计排序滤波     |
 | 高艳阳 | `frequency_analysis/` 频域分析类    | `dft_spectrum.py`           | 傅里叶变换显示频谱 |
 | 高艳阳 | `frequency_analysis/` 频域分析类    | `spectrum_shift.py`         | 频谱中心化         |
 | 高艳阳 | `frequency_analysis/` 频域分析类    | `magnitude_spectrum.py`     | 幅度谱显示         |
@@ -1069,13 +1144,27 @@ VITE_APP_TITLE=动漫图像处理系统
 | 高艳阳 | `frequency_filter/` 频域滤波类      | `ideal_high_pass.py`        | 理想高通滤波       |
 | 高艳阳 | `frequency_filter/` 频域滤波类      | `gaussian_low_pass.py`      | 高斯低通滤波       |
 | 高艳阳 | `frequency_filter/` 频域滤波类      | `gaussian_high_pass.py`     | 高斯高通滤波       |
+| 王韬涵/聂纪坤 | `frequency_filter/` 频域滤波类      | `butterworth_low_pass.py`   | 巴特沃斯低通滤波   |
+| 王韬涵/聂纪坤 | `frequency_filter/` 频域滤波类      | `butterworth_high_pass.py`  | 巴特沃斯高通滤波   |
+| 王韬涵/聂纪坤 | `frequency_filter/` 频域滤波类      | `frequency_laplacian_sharpen.py` | 频域拉普拉斯锐化 |
+| 王韬涵/聂纪坤 | `frequency_filter/` 频域滤波类      | `homomorphic_filter.py`     | 同态滤波           |
 | 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `defocus_blur_simulation.py`               | 散焦模糊模拟       |
 | 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `lens_distortion_blur_simulation.py`       | 镜头畸变模糊模拟   |
 | 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `motion_blur_simulation.py`                | 运动模糊模拟       |
 | 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `atmospheric_turbulence_blur_simulation.py` | 大气湍流模糊模拟  |
 | 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `inverse_filter_restoration.py`            | 逆滤波复原         |
+| 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `windowed_inverse_filter_restoration.py`   | 加窗逆滤波复原     |
 | 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `wiener_filter_restoration.py`             | 维纳滤波复原       |
 | 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `constrained_least_squares_restoration.py` | 约束最小二乘复原   |
+| 王韬涵/聂纪坤 | `edge_shape_detection/` 边缘与形状检测类 | `basic_edge_detection.py`     | 基础边缘检测       |
+| 王韬涵/聂纪坤 | `edge_shape_detection/` 边缘与形状检测类 | `canny_edge_detection.py`    | Canny边缘检测      |
+| 王韬涵/聂纪坤 | `edge_shape_detection/` 边缘与形状检测类 | `sobel_edge_detection.py`    | Sobel边缘检测      |
+| 王韬涵/聂纪坤 | `edge_shape_detection/` 边缘与形状检测类 | `roberts_cross.py`           | Roberts交叉检测    |
+| 王韬涵/聂纪坤 | `edge_shape_detection/` 边缘与形状检测类 | `prewitt_edge_detection.py`  | Prewitt边缘检测    |
+| 王韬涵/聂纪坤 | `edge_shape_detection/` 边缘与形状检测类 | `scharr_edge_detection.py`   | Scharr边缘检测     |
+| 王韬涵/聂纪坤 | `edge_shape_detection/` 边缘与形状检测类 | `log_edge_detection.py`      | LoG边缘检测        |
+| 王韬涵/聂纪坤 | `edge_shape_detection/` 边缘与形状检测类 | `hough_shape_detection.py`   | Hough形状检测      |
+| 王韬涵/聂纪坤 | `edge_shape_detection/` 边缘与形状检测类 | `corner_detection.py`        | 角点检测           |
 
 每个成员提交代码时必须保证：
 
@@ -1198,17 +1287,17 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 - [x] 1. 动漫主色调提取
 - [ ] 2. 动漫线条风格分析
 - [ ] 3. 动漫图库相似度匹配
-- [ ] 4. CLAHE
+- [x] 4. CLAHE
 - [x] 5. 双边滤波
 - [x] 6. Laplacian 锐化
-- [ ] 7. Hough 直线检测
+- [x] 7. Hough 直线检测
 - [x] 8. 结果指标统计（`POST /api/analysis/metrics`）
 
 ### P2：有时间再做
 
 - [x] 1. 维纳滤波
 - [x] 2. 图像复原（散焦/镜头畸变/运动/大气湍流模糊模拟 + 逆滤波/维纳/约束最小二乘复原）
-- [ ] 3. 同态滤波
+- [x] 3. 同态滤波
 - [ ] 4. 动漫人脸检测
 - [ ] 5. 批量处理
 - [ ] 6. 报告一键导出
