@@ -53,7 +53,7 @@ flowchart TB
     subgraph BACKEND["<b>FastAPI 后端</b>"]
         direction TB
 
-        subgraph API["API 路由层 (12 条路由)"]
+        subgraph API["API 路由层 (25 条路由)"]
             direction LR
             B1["健康检查<br/>GET /api/health"]
             B2["图片上传<br/>POST /api/upload/image<br/>GET /api/upload/preview/{path}"]
@@ -72,14 +72,16 @@ flowchart TB
             C5["image_store<br/>上传/图库/路径安全"]
         end
 
-        subgraph ALGOS["Algorithms 算法模块层 (30 个算法)"]
+        subgraph ALGOS["Algorithms 算法模块层 (50 个算法)"]
             direction LR
-            D1["灰度图像类<br/>9 个<br/>灰度化/二值化<br/>直方图均衡化<br/>Canny/Sobel<br/>腐蚀/膨胀/开闭运算"]
+            D0["图像基本运算类<br/>8 个<br/>加减乘除<br/>AND/OR/NOT/XOR"]
+            D1["灰度图像类<br/>14 个<br/>灰度化/二值化<br/>线性/伽马/对数/指数<br/>直方图均衡化<br/>Canny/Sobel<br/>腐蚀/膨胀/开闭运算"]
             D2["彩色图像类<br/>4 个<br/>颜色空间转换<br/>饱和度调整<br/>动漫色彩增强<br/>主色调提取"]
             D3["几何变换类<br/>3 个<br/>缩放/旋转/翻转"]
             D4["空域滤波类<br/>5 个<br/>均值/高斯/中值<br/>双边/拉普拉斯"]
             D5["频域分析类<br/>3 个<br/>DFT/中心化/幅度谱"]
             D6["频域滤波类<br/>6 个<br/>低通/高通<br/>理想/高斯 变种"]
+            D7["图像复原类<br/>7 个<br/>散焦/镜头畸变/运动<br/>大气湍流模糊<br/>逆滤波/维纳/约束最小二乘"]
         end
 
         subgraph CORE["Core 核心工具层"]
@@ -154,7 +156,6 @@ Digital-image-processing-Design/
 │  │  ├─ __init__.py
 │  │  │
 │  │  ├─ core/                               # 核心配置与工具模块
-│  │  │  ├─ .gitkeep
 │  │  │  ├─ __init__.py
 │  │  │  ├─ config.py                        # 应用全局配置
 │  │  │  ├─ cors.py                          # CORS 跨域配置
@@ -164,7 +165,6 @@ Digital-image-processing-Design/
 │  │  │  └─ upload_validator.py              # 上传文件校验
 │  │  │
 │  │  ├─ api/                                # API 路由层（均委托 services 层处理业务逻辑）
-│  │  │  ├─ .gitkeep
 │  │  │  ├─ __init__.py
 │  │  │  ├─ algorithms.py                    # GET /api/algorithms 算法元数据查询
 │  │  │  ├─ analysis.py                      # POST /api/analysis/metrics 图片指标计算
@@ -172,18 +172,19 @@ Digital-image-processing-Design/
 │  │  │  ├─ library.py                       # 内置图片库分类/列表/文件接口
 │  │  │  ├─ process.py                       # POST /api/process/run 算法处理主入口
 │  │  │  ├─ upload.py                        # 图片上传与预览接口
-│  │  │  └─ algorithm_modules/               # 六大分类独立子路由（GET 列表 + POST 执行）
+│  │  │  └─ algorithm_modules/               # 八大分类独立子路由（GET 列表 + POST 执行）
 │  │  │     ├─ __init__.py
+│  │  │     ├─ basic_operation.py
 │  │  │     ├─ color_image.py
 │  │  │     ├─ common.py                     # 共享常量和通用处理逻辑
 │  │  │     ├─ frequency_analysis.py
 │  │  │     ├─ frequency_filter.py
 │  │  │     ├─ geometric_transform.py
 │  │  │     ├─ grayscale_image.py
+│  │  │     ├─ image_restoration.py
 │  │  │     └─ spatial_filter.py
 │  │  │
 │  │  ├─ schemas/                            # Pydantic 数据校验模型
-│  │  │  ├─ .gitkeep
 │  │  │  ├─ __init__.py
 │  │  │  ├─ algorithm_schema.py
 │  │  │  ├─ image_schema.py
@@ -191,7 +192,6 @@ Digital-image-processing-Design/
 │  │  │  └─ response_schema.py
 │  │  │
 │  │  ├─ services/                           # 业务逻辑服务层
-│  │  │  ├─ .gitkeep
 │  │  │  ├─ __init__.py
 │  │  │  ├─ algorithm_registry.py            # 算法注册与发现
 │  │  │  ├─ analysis_service.py              # 图像分析服务
@@ -199,15 +199,30 @@ Digital-image-processing-Design/
 │  │  │  ├─ process_service.py               # 算法处理调度
 │  │  │  └─ step_service.py                  # 分步执行服务
 │  │  │
-│  │  ├─ analysis/                           # 分析模块（扩展预留）
-│  │  │  └─ .gitkeep
-│  │  │
 │  │  └─ algorithms/                         # 图像处理算法模块
 │  │     ├─ __init__.py
+│  │     ├─ common.py                         # 算法共享工具函数
 │  │     ├─ 算法框架填写说明.md
 │  │     ├─ 分工文档.md
+│  │     │
+│  │     ├─ basic_operation/                  # 8.0 图像基本运算类
+│  │     │  ├─ __init__.py
+│  │     │  ├─ add_operation.py               # 图像加法
+│  │     │  ├─ subtract_operation.py          # 图像减法
+│  │     │  ├─ multiply_operation.py          # 图像乘法
+│  │     │  ├─ divide_operation.py            # 图像除法
+│  │     │  ├─ and_operation.py               # 图像与运算
+│  │     │  ├─ or_operation.py                # 图像或运算
+│  │     │  ├─ not_operation.py               # 图像非运算
+│  │     │  └─ xor_operation.py               # 图像异或运算
+│  │     │
 │  │     ├─ grayscale_image/                 # 8.1 灰度图像类
 │  │     │  ├─ __init__.py
+│  │     │  ├─ linear_gray_transform.py      # 线性灰度变换
+│  │     │  ├─ gamma_correction.py           # 伽马校正
+│  │     │  ├─ log_transform.py              # 对数变换
+│  │     │  ├─ exponential_transform.py      # 指数变换
+│  │     │  ├─ negative_transform.py         # 负片变换
 │  │     │  ├─ grayscale.py                  # 灰度化
 │  │     │  ├─ binary_threshold.py           # 二值化
 │  │     │  ├─ histogram_equalization.py     # 直方图均衡化
@@ -232,7 +247,6 @@ Digital-image-processing-Design/
 │  │     │  └─ flip.py                       # 图像翻转
 │  │     │
 │  │     ├─ spatial_filter/                  # 8.4 空域滤波类
-│  │     │  ├─ .gitkeep
 │  │     │  ├─ __init__.py
 │  │     │  ├─ mean_filter.py                # 均值滤波
 │  │     │  ├─ gaussian_filter.py            # 高斯滤波
@@ -246,15 +260,24 @@ Digital-image-processing-Design/
 │  │     │  ├─ spectrum_shift.py             # 频谱中心化
 │  │     │  └─ magnitude_spectrum.py         # 幅度谱显示
 │  │     │
-│  │     └─ frequency_filter/                # 8.6 频域滤波类
-│  │        ├─ .gitkeep
+│  │     ├─ frequency_filter/                # 8.6 频域滤波类
+│  │     │  ├─ __init__.py
+│  │     │  ├─ low_pass_filter.py            # 低通滤波
+│  │     │  ├─ high_pass_filter.py           # 高通滤波
+│  │     │  ├─ ideal_low_pass.py             # 理想低通滤波
+│  │     │  ├─ ideal_high_pass.py            # 理想高通滤波
+│  │     │  ├─ gaussian_low_pass.py          # 高斯低通滤波
+│  │     │  └─ gaussian_high_pass.py         # 高斯高通滤波
+│  │     │
+│  │     └─ image_restoration/               # 8.7 图像复原类
 │  │        ├─ __init__.py
-│  │        ├─ low_pass_filter.py            # 低通滤波
-│  │        ├─ high_pass_filter.py           # 高通滤波
-│  │        ├─ ideal_low_pass.py             # 理想低通滤波
-│  │        ├─ ideal_high_pass.py            # 理想高通滤波
-│  │        ├─ gaussian_low_pass.py          # 高斯低通滤波
-│  │        └─ gaussian_high_pass.py         # 高斯高通滤波
+│  │        ├─ defocus_blur_simulation.py          # 散焦模糊模拟
+│  │        ├─ lens_distortion_blur_simulation.py  # 镜头畸变模糊模拟
+│  │        ├─ motion_blur_simulation.py           # 运动模糊模拟
+│  │        ├─ atmospheric_turbulence_blur_simulation.py  # 大气湍流模糊模拟
+│  │        ├─ inverse_filter_restoration.py       # 逆滤波复原
+│  │        ├─ wiener_filter_restoration.py        # 维纳滤波复原
+│  │        └─ constrained_least_squares_restoration.py  # 约束最小二乘复原
 │  │
 │  ├─ data/
 │  │  ├─ image_limit.md                      # 图片限制说明文档
@@ -272,20 +295,23 @@ Digital-image-processing-Design/
 │  └─ tests/
 │     ├─ README.md
 │     ├─ manual_test_algorithm.py             # 初学者三路径手动测试脚本
-│     ├─ manual_test_algorithm_advanced.py    # 高级参数化手动测试脚本
 │     ├─ test_algorithm_completeness.py       # 算法完整性测试
 │     ├─ test_backend_framework.py            # 后端框架自动化测试
 │     ├─ 算法测试脚本使用说明文档.md
 │     └─ sample_test_configs/
+│        ├─ add_operation_example.json
 │        ├─ saturation_adjust_example.json
 │        ├─ grayscale_example.json
 │        ├─ binary_threshold_example.json
 │        ├─ canny_example.json
 │        ├─ sobel_edge_detection_example.json
+│        ├─ gamma_correction_example.json
 │        ├─ gaussian_filter_example.json
 │        ├─ dft_spectrum_example.json
 │        ├─ ideal_low_pass_example.json
-│        └─ ideal_high_pass_example.json
+│        ├─ ideal_high_pass_example.json
+│        ├─ motion_blur_simulation_example.json
+│        └─ wiener_filter_restoration_example.json
 │
 └─ frontend/
    ├─ .env.development                     # 开发环境变量（VITE_API_BASE_URL）
@@ -671,14 +697,34 @@ GET /api/library/image/{image_path}
 
 ## 8. 功能模块清单
 
-当前后端算法主目录按 6 类组织，30 个算法已全部实现。
+当前后端算法主目录按 8 类组织，50 个算法已全部实现。
+
+### 8.0 `basic_operation/` 图像基本运算类
+
+| 功能名称 | 文件名                  | 功能说明                                           | 状态   |
+| -------- | ----------------------- | -------------------------------------------------- | ------ |
+| 图像加法 | `add_operation.py`      | 两张图像加权相加，可调节权重和亮度增益             | 已实现 |
+| 图像减法 | `subtract_operation.py` | 两张图像逐像素相减，可用于变化检测和差异比较       | 已实现 |
+| 图像乘法 | `multiply_operation.py` | 两张图像归一化相乘，可用于掩膜和增强               | 已实现 |
+| 图像除法 | `divide_operation.py`   | 第一张图像除以第二张，可用于去光照和归一化         | 已实现 |
+| 图像与   | `and_operation.py`      | 两张图像按位与，可用于掩膜提取                     | 已实现 |
+| 图像或   | `or_operation.py`       | 两张图像按位或，可用于区域合并                     | 已实现 |
+| 图像非   | `not_operation.py`      | 单张图像按位取反，产生负片/反色效果                | 已实现 |
+| 图像异或 | `xor_operation.py`      | 两张图像按位异或，可用于加密和差异高亮             | 已实现 |
+
+---
 
 ### 8.1 `grayscale_image/` 灰度图像类
 
 | 功能名称     | 文件名                      | 功能说明                                                     | 状态     |
 | ------------ | --------------------------- | ------------------------------------------------------------ | -------- |
+| 线性灰度变换 | `linear_gray_transform.py`  | 线性变换 g = alpha*f + beta，调整图像对比度与亮度            | 已实现 |
+| 伽马校正     | `gamma_correction.py`       | 幂律变换，校正显示设备的非线性响应，增强暗部或亮部细节       | 已实现 |
+| 对数变换     | `log_transform.py`          | 对数动态范围压缩，增强低灰度区域细节                         | 已实现 |
+| 指数变换     | `exponential_transform.py`  | 指数动态范围扩展，增强高灰度区域对比度                       | 已实现 |
+| 负片变换     | `negative_transform.py`     | 灰度反转 255 - pixel，可保持彩色通道仅反转亮度               | 已实现 |
 | 灰度化       | `grayscale.py`              | 将彩色图像转换为灰度图像，作为二值化、边缘检测、频域分析等算法的基础输入 | 已实现 |
-| 二值化       | `binary_threshold.py`       | 将灰度图转换为黑白二值图，可支持固定阈值和自适应阈值         | 已实现 |
+| 二值化       | `binary_threshold.py`       | 将灰度图转换为黑白二值图，支持固定阈值                       | 已实现 |
 | 直方图均衡化 | `histogram_equalization.py` | 增强灰度图像整体对比度，使灰度分布更加均衡                   | 已实现 |
 | Canny边缘检测 | `edge_detection_basic.py`   | 使用 Canny 算子提取图像中的主要轮廓和边界                    | 已实现 |
 | Sobel边缘检测 | `sobel_edge_detection.py` | 使用 Sobel 一阶梯度算子提取 X/Y/综合方向的边缘强度           | 已实现 |
@@ -745,6 +791,20 @@ GET /api/library/image/{image_path}
 
 ---
 
+### 8.7 `image_restoration/` 图像复原类
+
+| 功能名称             | 文件名                                      | 功能说明                                       | 状态   |
+| -------------------- | ------------------------------------------- | ---------------------------------------------- | ------ |
+| 散焦模糊模拟         | `defocus_blur_simulation.py`                | 使用圆盘 PSF 模拟散焦模糊退化                  | 已实现 |
+| 镜头畸变模糊模拟     | `lens_distortion_blur_simulation.py`         | 模拟径向畸变与模糊叠加的复合退化               | 已实现 |
+| 运动模糊模拟         | `motion_blur_simulation.py`                 | 使用线性 PSF 模拟匀速直线运动模糊              | 已实现 |
+| 大气湍流模糊模拟     | `atmospheric_turbulence_blur_simulation.py`  | 使用频域湍流传递函数模拟大气扰动退化           | 已实现 |
+| 逆滤波复原           | `inverse_filter_restoration.py`             | 频域逆滤波直接复原，对无噪声退化图效果较好     | 已实现 |
+| 维纳滤波复原         | `wiener_filter_restoration.py`              | 带噪声抑制的反卷积复原，信噪比自适应的最优滤波 | 已实现 |
+| 约束最小二乘复原     | `constrained_least_squares_restoration.py`   | 拉普拉斯约束的正则化复原，抑制噪声放大         | 已实现 |
+
+---
+
 ## 9. 后端 API 清单
 
 ### 9.1 核心接口
@@ -767,6 +827,8 @@ GET /api/library/image/{image_path}
 
 | 接口 | 方法 | 说明 |
 |---|---|---|
+| `/api/algorithms/basic-operation` | GET | 图像基本运算类算法列表 |
+| `/api/algorithms/basic-operation/run` | POST | 执行图像基本运算类下的指定算法 |
 | `/api/algorithms/grayscale-image` | GET | 灰度图像类算法列表 |
 | `/api/algorithms/grayscale-image/run` | POST | 执行灰度图像类下的指定算法 |
 | `/api/algorithms/color-image` | GET | 彩色图像类算法列表 |
@@ -779,6 +841,8 @@ GET /api/library/image/{image_path}
 | `/api/algorithms/frequency-analysis/run` | POST | 执行频域分析类下的指定算法 |
 | `/api/algorithms/frequency-filter` | GET | 频域滤波类算法列表 |
 | `/api/algorithms/frequency-filter/run` | POST | 执行频域滤波类下的指定算法 |
+| `/api/algorithms/image-restoration` | GET | 图像复原类算法列表 |
+| `/api/algorithms/image-restoration/run` | POST | 执行图像复原类下的指定算法 |
 
 所有 POST 请求体格式与 `/api/process/run` 一致，其中 `module` 字段由路由自动注入，无需前端传递。
 
@@ -801,7 +865,7 @@ GET /api/library/image/{image_path}
 | 首页 | `HomeView.vue` | Hero 层叠步骤卡 + Flow 横向步骤指示器 + 主推大卡联动紧凑卡网格 + 项目特色展示，加载时调用健康检查 |
 | 登录页 | `LoginView.vue` | 左右分栏（LoginHero 品牌展示 + LoginCard 表单），顶 tab 登录/注册切换（fade-up），amber focus ring，生成测试 Token |
 | 个人中心 | `UserProfileView.vue` | 左 tab 侧栏 + 右内容面板，基本资料/头像/密码三表单，含三段密码强度指示条 |
-| 工作区 | `WorkspaceView.vue` | **三栏布局**：算法树侧栏（6 模块 30 算法 + 计数徽章 + 刷新）+ 中栏（信息卡/上传/原图结果对比）+ 右栏参数面板（动态控件 + 执行按钮固定底部），含无可变参数 SVG 占位卡 |
+| 工作区 | `WorkspaceView.vue` | **三栏布局**：算法树侧栏（8 模块 50 算法 + 计数徽章 + 刷新）+ 中栏（信息卡/上传/原图结果对比）+ 右栏参数面板（动态控件 + 执行按钮固定底部），含无可变参数 SVG 占位卡 |
 | 图像库 | `LibraryView.vue` | 左分类侧栏 + 中图片网格（hover Finder 风格操作图标）+ **底部内联指标抽屉**（折叠 64px / 展开 320px 横滚），选图后查看指标 |
 | 404 页面 | `NotFoundView.vue` | Apple HIG stagger 入场动画（404 数字 fade-up + accent line scaleX 延迟入场） |
 
@@ -960,38 +1024,58 @@ VITE_APP_TITLE=动漫图像处理系统
 
 本项目多人协作主要集中在后端算法模块，因此建议直接按照 `backend/app/algorithms/` 下的算法目录进行分工。每个成员负责一个算法类别，并完成该目录下对应 `.py` 文件的算法实现、本地测试和结果检查。
 
-| 成员   | 负责算法目录                      | 需要完成的算法文件          | 对应功能           |
-| ------ | --------------------------------- | --------------------------- | ------------------ |
-| 任可   | `grayscale_image/` 灰度图像类     | `grayscale.py`              | 灰度化             |
-| 任可   | `grayscale_image/` 灰度图像类     | `binary_threshold.py`       | 二值化             |
-| 任可   | `grayscale_image/` 灰度图像类     | `histogram_equalization.py` | 直方图均衡化       |
-| 雍晨   | `grayscale_image/` 灰度图像类     | `edge_detection_basic.py`   | 边缘检测           |
-| 雍晨   | `grayscale_image/` 灰度图像类     | `sobel_edge_detection.py`   | Sobel边缘检测      |
-| 雍晨   | `grayscale_image/` 灰度图像类     | `erode.py`                  | 腐蚀               |
-| 雍晨   | `grayscale_image/` 灰度图像类     | `dilate.py`                 | 膨胀               |
-| 雍晨   | `grayscale_image/` 灰度图像类     | `open_operation.py`         | 开运算             |
-| 雍晨   | `grayscale_image/` 灰度图像类     | `close_operation.py`        | 闭运算             |
-| 毛思涵 | `color_image/` 彩色图像类         | `color_space_convert.py`    | 颜色空间转换       |
-| 毛思涵 | `color_image/` 彩色图像类         | `saturation_adjust.py`      | 饱和度调整         |
-| 毛思涵 | `color_image/` 彩色图像类         | `anime_color_enhance.py`    | 动漫色彩增强       |
-| 毛思涵 | `color_image/` 彩色图像类         | `dominant_color_extract.py` | 主色调提取         |
-| 任可   | `geometric_transform/` 几何变换类 | `resize.py`                 | 缩放               |
-| 任可   | `geometric_transform/` 几何变换类 | `rotate.py`                 | 旋转               |
-| 任可   | `geometric_transform/` 几何变换类 | `flip.py`                   | 翻转               |
-| 周恩丞 | `spatial_filter/` 空域滤波类      | `mean_filter.py`            | 均值滤波           |
-| 周恩丞 | `spatial_filter/` 空域滤波类      | `gaussian_filter.py`        | 高斯滤波           |
-| 周恩丞 | `spatial_filter/` 空域滤波类      | `median_filter.py`          | 中值滤波           |
-| 周恩丞 | `spatial_filter/` 空域滤波类      | `bilateral_filter.py`       | 双边滤波           |
-| 周恩丞 | `spatial_filter/` 空域滤波类      | `laplacian_sharpen.py`      | 拉普拉斯锐化       |
-| 高艳阳 | `frequency_analysis/` 频域分析类  | `dft_spectrum.py`           | 傅里叶变换显示频谱 |
-| 高艳阳 | `frequency_analysis/` 频域分析类  | `spectrum_shift.py`         | 频谱中心化         |
-| 高艳阳 | `frequency_analysis/` 频域分析类  | `magnitude_spectrum.py`     | 幅度谱显示         |
-| 高艳阳 | `frequency_filter/` 频域滤波类    | `low_pass_filter.py`        | 低通滤波           |
-| 高艳阳 | `frequency_filter/` 频域滤波类    | `high_pass_filter.py`       | 高通滤波           |
-| 高艳阳 | `frequency_filter/` 频域滤波类    | `ideal_low_pass.py`         | 理想低通滤波       |
-| 高艳阳 | `frequency_filter/` 频域滤波类    | `ideal_high_pass.py`        | 理想高通滤波       |
-| 高艳阳 | `frequency_filter/` 频域滤波类    | `gaussian_low_pass.py`      | 高斯低通滤波       |
-| 高艳阳 | `frequency_filter/` 频域滤波类    | `gaussian_high_pass.py`     | 高斯高通滤波       |
+| 成员   | 负责算法目录                        | 需要完成的算法文件          | 对应功能           |
+| ------ | ----------------------------------- | --------------------------- | ------------------ |
+| 王韬涵/聂纪坤 | `basic_operation/` 图像基本运算类   | `add_operation.py`          | 图像加法           |
+| 王韬涵/聂纪坤 | `basic_operation/` 图像基本运算类   | `subtract_operation.py`     | 图像减法           |
+| 王韬涵/聂纪坤 | `basic_operation/` 图像基本运算类   | `multiply_operation.py`     | 图像乘法           |
+| 王韬涵/聂纪坤 | `basic_operation/` 图像基本运算类   | `divide_operation.py`       | 图像除法           |
+| 王韬涵/聂纪坤 | `basic_operation/` 图像基本运算类   | `and_operation.py`          | 图像与             |
+| 王韬涵/聂纪坤 | `basic_operation/` 图像基本运算类   | `or_operation.py`           | 图像或             |
+| 王韬涵/聂纪坤 | `basic_operation/` 图像基本运算类   | `not_operation.py`          | 图像非             |
+| 王韬涵/聂纪坤 | `basic_operation/` 图像基本运算类   | `xor_operation.py`          | 图像异或           |
+| 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `linear_gray_transform.py`  | 线性灰度变换       |
+| 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `gamma_correction.py`       | 伽马校正           |
+| 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `log_transform.py`          | 对数变换           |
+| 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `exponential_transform.py`  | 指数变换           |
+| 王韬涵/聂纪坤 | `grayscale_image/` 灰度图像类       | `negative_transform.py`     | 负片变换           |
+| 任可   | `grayscale_image/` 灰度图像类       | `grayscale.py`              | 灰度化             |
+| 任可   | `grayscale_image/` 灰度图像类       | `binary_threshold.py`       | 二值化             |
+| 任可   | `grayscale_image/` 灰度图像类       | `histogram_equalization.py` | 直方图均衡化       |
+| 雍晨   | `grayscale_image/` 灰度图像类       | `edge_detection_basic.py`   | 边缘检测           |
+| 雍晨   | `grayscale_image/` 灰度图像类       | `sobel_edge_detection.py`   | Sobel边缘检测      |
+| 雍晨   | `grayscale_image/` 灰度图像类       | `erode.py`                  | 腐蚀               |
+| 雍晨   | `grayscale_image/` 灰度图像类       | `dilate.py`                 | 膨胀               |
+| 雍晨   | `grayscale_image/` 灰度图像类       | `open_operation.py`         | 开运算             |
+| 雍晨   | `grayscale_image/` 灰度图像类       | `close_operation.py`        | 闭运算             |
+| 毛思涵 | `color_image/` 彩色图像类           | `color_space_convert.py`    | 颜色空间转换       |
+| 毛思涵 | `color_image/` 彩色图像类           | `saturation_adjust.py`      | 饱和度调整         |
+| 毛思涵 | `color_image/` 彩色图像类           | `anime_color_enhance.py`    | 动漫色彩增强       |
+| 毛思涵 | `color_image/` 彩色图像类           | `dominant_color_extract.py` | 主色调提取         |
+| 任可   | `geometric_transform/` 几何变换类   | `resize.py`                 | 缩放               |
+| 任可   | `geometric_transform/` 几何变换类   | `rotate.py`                 | 旋转               |
+| 任可   | `geometric_transform/` 几何变换类   | `flip.py`                   | 翻转               |
+| 周恩丞 | `spatial_filter/` 空域滤波类        | `mean_filter.py`            | 均值滤波           |
+| 周恩丞 | `spatial_filter/` 空域滤波类        | `gaussian_filter.py`        | 高斯滤波           |
+| 周恩丞 | `spatial_filter/` 空域滤波类        | `median_filter.py`          | 中值滤波           |
+| 周恩丞 | `spatial_filter/` 空域滤波类        | `bilateral_filter.py`       | 双边滤波           |
+| 周恩丞 | `spatial_filter/` 空域滤波类        | `laplacian_sharpen.py`      | 拉普拉斯锐化       |
+| 高艳阳 | `frequency_analysis/` 频域分析类    | `dft_spectrum.py`           | 傅里叶变换显示频谱 |
+| 高艳阳 | `frequency_analysis/` 频域分析类    | `spectrum_shift.py`         | 频谱中心化         |
+| 高艳阳 | `frequency_analysis/` 频域分析类    | `magnitude_spectrum.py`     | 幅度谱显示         |
+| 高艳阳 | `frequency_filter/` 频域滤波类      | `low_pass_filter.py`        | 低通滤波           |
+| 高艳阳 | `frequency_filter/` 频域滤波类      | `high_pass_filter.py`       | 高通滤波           |
+| 高艳阳 | `frequency_filter/` 频域滤波类      | `ideal_low_pass.py`         | 理想低通滤波       |
+| 高艳阳 | `frequency_filter/` 频域滤波类      | `ideal_high_pass.py`        | 理想高通滤波       |
+| 高艳阳 | `frequency_filter/` 频域滤波类      | `gaussian_low_pass.py`      | 高斯低通滤波       |
+| 高艳阳 | `frequency_filter/` 频域滤波类      | `gaussian_high_pass.py`     | 高斯高通滤波       |
+| 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `defocus_blur_simulation.py`               | 散焦模糊模拟       |
+| 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `lens_distortion_blur_simulation.py`       | 镜头畸变模糊模拟   |
+| 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `motion_blur_simulation.py`                | 运动模糊模拟       |
+| 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `atmospheric_turbulence_blur_simulation.py` | 大气湍流模糊模拟  |
+| 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `inverse_filter_restoration.py`            | 逆滤波复原         |
+| 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `wiener_filter_restoration.py`             | 维纳滤波复原       |
+| 王韬涵/聂纪坤 | `image_restoration/` 图像复原类     | `constrained_least_squares_restoration.py` | 约束最小二乘复原   |
 
 每个成员提交代码时必须保证：
 
@@ -1001,7 +1085,7 @@ VITE_APP_TITLE=动漫图像处理系统
 4. 返回结果必须包含 `result`、`steps`、`metrics`、`analysis`。
 5. 不在算法文件中使用 `cv2.imshow()`。
 6. 不使用本机绝对路径。
-7. 使用 `backend/tests/manual_test_algorithm.py` 完成初学者三路径本地测试；需要批量参数或复杂配置时再使用 `backend/tests/manual_test_algorithm_advanced.py`。
+7. 使用 `backend/tests/manual_test_algorithm.py` 完成初学者三路径本地测试。
 8. 测试通过后，确认 `backend/data/test_outputs/` 中能够生成结果图片，运行产物不要提交到仓库。
 
 ## 14. 关键实现注意事项
@@ -1122,8 +1206,8 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 
 ### P2：有时间再做
 
-- [ ] 1. 维纳滤波
-- [ ] 2. 图像修复
+- [x] 1. 维纳滤波
+- [x] 2. 图像复原（散焦/镜头畸变/运动/大气湍流模糊模拟 + 逆滤波/维纳/约束最小二乘复原）
 - [ ] 3. 同态滤波
 - [ ] 4. 动漫人脸检测
 - [ ] 5. 批量处理
