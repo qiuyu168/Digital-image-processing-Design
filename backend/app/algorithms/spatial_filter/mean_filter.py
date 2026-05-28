@@ -1,4 +1,5 @@
 # 本文件用于实现均值滤波平滑图像的功能
+from __future__ import annotations
 
 import cv2
 import numpy as np
@@ -8,113 +9,67 @@ ALGORITHM_META = {
     "module": "spatial_filter",
     "name": "mean_filter",
     "display_name": "均值滤波",
-    "description": "使用邻域平均值进行平滑处理，可降低随机噪声，但会造成一定模糊。",
+    "description": "使用邻域像素平均值平滑图像，适合降低随机噪声，但会带来一定模糊。",
     "params": {
         "kernel_size": {
             "type": "odd_int",
             "default": 5,
             "min": 1,
             "max": 31,
-            "label": "滤波核大小"
+            "step": 2,
+            "label": "滤波核大小",
+            "component": "slider",
         },
     },
 }
 
 
-def run(image: np.ndarray, params: dict | None = None) -> dict:
-    """
-    均值滤波统一算法入口函数
-    """
+def _ensure_uint8(image: np.ndarray) -> np.ndarray:
+    array = np.ascontiguousarray(image)
+    if array.dtype == np.uint8:
+        return array.copy()
+    return cv2.normalize(array, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-    # =========================
-    # 输入检查
-    # =========================
+
+def _odd_param(params: dict, name: str, default: int, minimum: int, maximum: int) -> int:
+    value = int(params.get(name, default))
+    value = max(minimum, min(maximum, value))
+    if value % 2 == 0:
+        value += 1 if value < maximum else -1
+    return max(minimum, value)
+
+
+def _gray_for_metrics(image: np.ndarray) -> np.ndarray:
+    if image.ndim == 2:
+        return image
+    if image.shape[2] == 4:
+        return cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+
+def run(image: np.ndarray, params: dict | None = None) -> dict:
     if image is None:
         raise ValueError("输入图像不能为空")
+    params = params or {}
 
-    if not isinstance(image, np.ndarray):
-        raise TypeError("输入图像必须为 numpy.ndarray 类型")
+    source = _ensure_uint8(image)
+    kernel_size = _odd_param(params, "kernel_size", 5, 1, 31)
+    result = cv2.blur(source, (kernel_size, kernel_size))
+    gray_source = _gray_for_metrics(source)
+    gray_result = _gray_for_metrics(result)
 
-    if params is None:
-        params = {}
-
-    # =========================
-    # 获取参数
-    # =========================
-    kernel_size = int(params.get("kernel_size", 5))
-
-    # 防止非法参数
-    kernel_size = max(1, kernel_size)
-
-    # OpenCV 建议卷积核使用奇数
-    if kernel_size % 2 == 0:
-        kernel_size += 1
-
-    # =========================
-    # 保存原图
-    # =========================
-    original = image.copy()
-
-    # =========================
-    # 执行均值滤波
-    # =========================
-    result = cv2.blur(
-        src=image,
-        ksize=(kernel_size, kernel_size)
-    )
-
-    # =========================
-    # 构建步骤图
-    # =========================
-    steps = [
-        {
-            "name": "原始图像",
-            "image": original
-        },
-        {
-            "name": "均值滤波结果",
-            "image": result
-        }
-    ]
-
-    # =========================
-    # 计算指标
-    # =========================
-    gray_before = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
-    gray_after = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-
-    average_difference = float(
-        np.mean(
-            np.abs(
-                gray_before.astype(np.float32) -
-                gray_after.astype(np.float32)
-            )
-        )
-    )
-
-    metrics = {
-        "kernel_size": kernel_size,
-        "average_difference": round(average_difference, 2)
-    }
-
-    # =========================
-    # 中文分析
-    # =========================
-    analysis = (
-        f"均值滤波处理完成。"
-        f"当前滤波核大小为 {kernel_size}×{kernel_size}。"
-        f"该算法通过计算邻域像素平均值实现图像平滑，"
-        f"能够有效降低随机噪声，"
-        f"但会在一定程度上削弱图像边缘和细节信息。"
-        f"适用于基础降噪和预处理任务。"
-    )
-
-    # =========================
-    # 返回统一结构
-    # =========================
     return {
-        "result": result,
-        "steps": steps,
-        "metrics": metrics,
-        "analysis": analysis
+        "result": result.astype(np.uint8),
+        "steps": [
+            {"name": "原始图像", "image": source},
+            {"name": f"{kernel_size}x{kernel_size} 均值滤波", "image": result},
+        ],
+        "metrics": {
+            "kernel_size": kernel_size,
+            "mean_before": float(np.mean(gray_source)),
+            "mean_after": float(np.mean(gray_result)),
+            "std_before": float(np.std(gray_source)),
+            "std_after": float(np.std(gray_result)),
+        },
+        "analysis": "均值滤波通过邻域平均削弱局部灰度波动，随机噪声会被平滑，但边缘和细节也会随核尺寸增大而变软。",
     }

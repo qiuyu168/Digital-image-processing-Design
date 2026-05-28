@@ -1,98 +1,92 @@
-# 本文件用于实现理想高通滤波器对图像进行频域边缘提取。
+# 本文件用于实现理想高通频域滤波的功能
+from __future__ import annotations
 
-import numpy as np
 import cv2
+import numpy as np
+
 
 ALGORITHM_META = {
     "module": "frequency_filter",
     "name": "ideal_high_pass",
     "display_name": "理想高通滤波",
-    "description": "使用理想高通滤波器在频域对图像进行边缘增强，完全阻断截止频率以内的低频成分，仅保留圆形截止区域以外的高频成分（边缘、细节）。结果会出现振铃效应。",
+    "description": "使用理想圆形掩膜去除低频成分，突出图像边缘和细节。",
     "params": {
-        "cutoff_ratio": {"type": "float", "default": 0.10, "min": 0.01, "max": 0.99, "label": "截止频率比例"}
-    }
+        "radius": {
+            "type": "int",
+            "default": 30,
+            "min": 1,
+            "max": 300,
+            "step": 1,
+            "label": "频域滤波半径",
+            "component": "slider",
+        },
+    },
 }
 
 
-def _ideal_high_pass(shape: tuple, cutoff_ratio: float) -> np.ndarray:
-    """构建理想高通滤波器掩模（= 1 - 理想低通掩模）。"""
-    h, w = shape
-    cx, cy = h // 2, w // 2
-    D0 = cutoff_ratio * min(h, w) / 2.0
-    Y, X = np.ogrid[:h, :w]
-    D = np.sqrt((X - cy) ** 2 + (Y - cx) ** 2)
-    H = (D > D0).astype(np.float64)
-    return H
+def _ensure_uint8(image: np.ndarray) -> np.ndarray:
+    array = np.ascontiguousarray(image)
+    if array.dtype == np.uint8:
+        return array.copy()
+    return cv2.normalize(array, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+
+def _to_gray(image: np.ndarray) -> np.ndarray:
+    source = _ensure_uint8(image)
+    if source.ndim == 2:
+        return source
+    if source.shape[2] == 4:
+        return cv2.cvtColor(source, cv2.COLOR_BGRA2GRAY)
+    return cv2.cvtColor(source, cv2.COLOR_BGR2GRAY)
+
+
+def _normalize_uint8(values: np.ndarray) -> np.ndarray:
+    values = np.asarray(values, dtype=np.float32)
+    if float(np.max(values)) == float(np.min(values)):
+        return np.zeros(values.shape, dtype=np.uint8)
+    return cv2.normalize(values, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+
+def _radius(params: dict, image_shape: tuple[int, int]) -> int:
+    limit = max(1, min(image_shape) // 2)
+    value = int(params.get("radius", 30))
+    return max(1, min(300, limit, value))
+
+
+def _distance_grid(shape: tuple[int, int]) -> np.ndarray:
+    rows, cols = shape
+    y, x = np.ogrid[:rows, :cols]
+    return np.sqrt((y - rows // 2) ** 2 + (x - cols // 2) ** 2)
 
 
 def run(image: np.ndarray, params: dict | None = None) -> dict:
-    """统一算法入口函数。"""
-    if params is None:
-        params = {}
+    if image is None:
+        raise ValueError("输入图像不能为空")
+    params = params or {}
 
-    cutoff_ratio = float(params.get("cutoff_ratio", 0.10))
-
-    # 转为灰度图处理
-    if len(image.shape) == 3:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = image.copy()
-
-    # 构建理想高通滤波器
-    H = _ideal_high_pass(gray.shape, cutoff_ratio)
-
-    # 频域滤波
-    dft = np.fft.fft2(gray.astype(np.float64))
-    dft_shift = np.fft.fftshift(dft)
-    filtered_shift = dft_shift * H
-
-    # 逆变换
-    filtered = np.fft.ifft2(np.fft.ifftshift(filtered_shift))
-    filtered_img = np.clip(np.abs(filtered), 0, 255).astype(np.uint8)
-
-    # 彩色输出
-    result = cv2.cvtColor(filtered_img, cv2.COLOR_GRAY2BGR)
-
-    # 频谱可视化
-    spectrum_orig = np.log1p(np.abs(dft_shift))
-    spectrum_orig = cv2.normalize(spectrum_orig, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    spectrum_filtered = np.log1p(np.abs(filtered_shift))
-    spectrum_filtered = cv2.normalize(spectrum_filtered, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-
-    # 滤波器掩模可视化（中心圆孔）
-    H_vis = (H * 255).astype(np.uint8)
-
-    steps = [
-        {"name": "原始灰度图", "image": cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)},
-        {"name": "理想高通掩模（圆孔）", "image": cv2.cvtColor(H_vis, cv2.COLOR_GRAY2BGR)},
-        {"name": "滤波前频谱", "image": cv2.cvtColor(spectrum_orig, cv2.COLOR_GRAY2BGR)},
-        {"name": "滤波后频谱", "image": cv2.cvtColor(spectrum_filtered, cv2.COLOR_GRAY2BGR)},
-        {"name": "理想高通滤波结果", "image": result}
-    ]
-
-    # 计算边缘增强效果
-    pass_ratio = float(np.sum(H)) / H.size
-    edges = cv2.Canny(filtered_img, 50, 150)
-    edge_density = float(np.sum(edges > 0)) / edges.size
-    mean_intensity = float(np.mean(filtered_img))
-
-    metrics = {
-        "截止频率比例": cutoff_ratio,
-        "通过频率点占比(%)": round(pass_ratio * 100, 2),
-        "结果边缘密度(%)": round(edge_density * 100, 2),
-        "结果平均灰度": round(mean_intensity, 2)
-    }
-
-    analysis = (
-        f"理想高通滤波器（截止频率比例={cutoff_ratio}）在频域中心挖去圆形低频区域，"
-        "完全阻断截止频率内的低频成分，仅保留高频成分。"
-        "结果图像主要呈现图像边缘和细节，背景区域趋于黑色（低频被完全去除）。"
-        "由于频域的硬截断，结果同样存在振铃效应；相比巴特沃斯高通，边缘细节更锐利但伴随更多伪影。"
-    )
+    gray = _to_gray(image)
+    radius = _radius(params, gray.shape)
+    shifted = np.fft.fftshift(np.fft.fft2(gray.astype(np.float32)))
+    mask = (_distance_grid(gray.shape) > radius).astype(np.float32)
+    filtered = shifted * mask
+    result_float = np.abs(np.fft.ifft2(np.fft.ifftshift(filtered)))
+    result = _normalize_uint8(result_float)
+    spectrum = _normalize_uint8(np.log1p(np.abs(shifted)))
+    mask_display = (mask * 255).astype(np.uint8)
 
     return {
         "result": result,
-        "steps": steps,
-        "metrics": metrics,
-        "analysis": analysis
+        "steps": [
+            {"name": "灰度图像", "image": gray},
+            {"name": "中心化频谱", "image": spectrum},
+            {"name": "理想高通掩膜", "image": mask_display},
+            {"name": "滤波结果", "image": result},
+        ],
+        "metrics": {
+            "radius": radius,
+            "pass_ratio": float(np.mean(mask)),
+            "std_before": float(np.std(gray)),
+            "std_after": float(np.std(result)),
+        },
+        "analysis": "理想高通滤波直接截断中心低频区域，能够突出边缘和纹理；半径越大，被去除的平缓背景成分越多。",
     }

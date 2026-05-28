@@ -1,0 +1,13 @@
+{
+  "说明": "图像加法运算高级手动测试配置示例，second_image_path 用于两图像运算。",
+  "algorithm_import_path": "app.algorithms.basic_operation.add_operation",
+  "input_image_path": "data/test_images/anime_test.png",
+  "second_image_path": "data/test_images/anime_test_second.png",
+  "output_image_path": "data/test_outputs/add_operation_result.png",
+  "params": {
+    "alpha": 1.0,
+    "beta": 1.0,
+    "gamma": 0
+  }
+}
+

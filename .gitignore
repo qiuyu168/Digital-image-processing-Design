@@ -13,6 +13,12 @@ __pycache__/
 dist/
 build/
 *.egg
+*.sdist
+
+# =========================
+# Claude Code 本地配置
+# =========================
+.claude/
 
 # =========================
 # 前端依赖与构建产物
@@ -29,6 +35,7 @@ frontend/dist/
 *.swp
 *.swo
 *~
+*.orig
 
 # =========================
 # 操作系统生成文件
@@ -53,6 +60,20 @@ htmlcov/
 *.cover
 
 # =========================
-# 日志文件
+# Backend runtime upload/output data
+# =========================
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+
+backend/data/outputs/*
+!backend/data/outputs/.gitkeep
+
+backend/data/test_outputs/*
+!backend/data/test_outputs/.gitkeep
+
+# =========================
+# 临时与日志文件
 # =========================
 *.log
+*.tmp
+*.bak

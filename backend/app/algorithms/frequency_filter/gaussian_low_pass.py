@@ -1,101 +1,93 @@
-# 本文件用于实现高斯低通滤波器对图像进行频域平滑处理。
+# 本文件用于实现高斯低通频域滤波的功能
+from __future__ import annotations
 
-import numpy as np
 import cv2
+import numpy as np
+
 
 ALGORITHM_META = {
     "module": "frequency_filter",
     "name": "gaussian_low_pass",
     "display_name": "高斯低通滤波",
-    "description": "使用高斯低通滤波器在频域对图像进行平滑处理，频率响应呈高斯分布，过渡平滑无振铃效应。可用于图像去噪、模糊和预处理，效果优于理想低通滤波器。",
+    "description": "使用高斯频域掩膜进行平滑，过渡更自然。",
     "params": {
-        "sigma_ratio": {"type": "float", "default": 0.15, "min": 0.01, "max": 0.99, "label": "高斯标准差比例（控制截止带宽）"}
-    }
+        "radius": {
+            "type": "int",
+            "default": 30,
+            "min": 1,
+            "max": 300,
+            "step": 1,
+            "label": "频域滤波半径",
+            "component": "slider",
+        },
+    },
 }
 
 
-def _gaussian_low_pass(shape: tuple, sigma_ratio: float) -> np.ndarray:
-    """构建高斯低通滤波器掩模。"""
-    h, w = shape
-    cx, cy = h // 2, w // 2
-    sigma = sigma_ratio * min(h, w) / 2.0
-    Y, X = np.ogrid[:h, :w]
-    D2 = (X - cy) ** 2 + (Y - cx) ** 2
-    H = np.exp(-D2 / (2.0 * sigma ** 2))
-    return H
+def _ensure_uint8(image: np.ndarray) -> np.ndarray:
+    array = np.ascontiguousarray(image)
+    if array.dtype == np.uint8:
+        return array.copy()
+    return cv2.normalize(array, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+
+def _to_gray(image: np.ndarray) -> np.ndarray:
+    source = _ensure_uint8(image)
+    if source.ndim == 2:
+        return source
+    if source.shape[2] == 4:
+        return cv2.cvtColor(source, cv2.COLOR_BGRA2GRAY)
+    return cv2.cvtColor(source, cv2.COLOR_BGR2GRAY)
+
+
+def _normalize_uint8(values: np.ndarray) -> np.ndarray:
+    values = np.asarray(values, dtype=np.float32)
+    if float(np.max(values)) == float(np.min(values)):
+        return np.zeros(values.shape, dtype=np.uint8)
+    return cv2.normalize(values, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+
+def _radius(params: dict, image_shape: tuple[int, int]) -> int:
+    limit = max(1, min(image_shape) // 2)
+    value = int(params.get("radius", 30))
+    return max(1, min(300, limit, value))
+
+
+def _distance_grid(shape: tuple[int, int]) -> np.ndarray:
+    rows, cols = shape
+    y, x = np.ogrid[:rows, :cols]
+    return np.sqrt((y - rows // 2) ** 2 + (x - cols // 2) ** 2)
 
 
 def run(image: np.ndarray, params: dict | None = None) -> dict:
-    """统一算法入口函数。"""
-    if params is None:
-        params = {}
+    if image is None:
+        raise ValueError("输入图像不能为空")
+    params = params or {}
 
-    sigma_ratio = float(params.get("sigma_ratio", 0.15))
-
-    # 转为灰度图处理
-    if len(image.shape) == 3:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = image.copy()
-
-    # 构建高斯低通滤波器
-    H = _gaussian_low_pass(gray.shape, sigma_ratio)
-
-    # 频域滤波
-    dft = np.fft.fft2(gray.astype(np.float64))
-    dft_shift = np.fft.fftshift(dft)
-    filtered_shift = dft_shift * H
-
-    # 逆变换
-    filtered = np.fft.ifft2(np.fft.ifftshift(filtered_shift))
-    filtered_img = np.clip(np.abs(filtered), 0, 255).astype(np.uint8)
-
-    # 彩色输出
-    result = cv2.cvtColor(filtered_img, cv2.COLOR_GRAY2BGR)
-
-    # 频谱可视化
-    spectrum_orig = np.log1p(np.abs(dft_shift))
-    spectrum_orig = cv2.normalize(spectrum_orig, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    spectrum_filtered = np.log1p(np.abs(filtered_shift))
-    spectrum_filtered = cv2.normalize(spectrum_filtered, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-
-    # 滤波器掩模可视化（高斯形状）
-    H_vis = (H * 255).astype(np.uint8)
-
-    steps = [
-        {"name": "原始灰度图", "image": cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)},
-        {"name": "高斯低通掩模", "image": cv2.cvtColor(H_vis, cv2.COLOR_GRAY2BGR)},
-        {"name": "滤波前频谱", "image": cv2.cvtColor(spectrum_orig, cv2.COLOR_GRAY2BGR)},
-        {"name": "滤波后频谱", "image": cv2.cvtColor(spectrum_filtered, cv2.COLOR_GRAY2BGR)},
-        {"name": "高斯低通滤波结果", "image": result}
-    ]
-
-    # 指标计算
-    psnr = cv2.PSNR(gray, filtered_img)
-    edges_orig = cv2.Canny(gray, 50, 150)
-    edges_result = cv2.Canny(filtered_img, 50, 150)
-    edge_reduction = 1.0 - (np.sum(edges_result > 0) / (np.sum(edges_orig > 0) + 1e-10))
-
-    # 半功率截止频率（sigma 处响应为 e^{-0.5} ≈ 0.607）
-    D0_px = sigma_ratio * min(gray.shape) / 2.0
-
-    metrics = {
-        "高斯标准差比例": sigma_ratio,
-        "截止频率半径(px)": round(D0_px, 1),
-        "PSNR(dB)": round(float(psnr), 2),
-        "边缘密度降低比(%)": round(float(edge_reduction) * 100, 2)
-    }
-
-    analysis = (
-        f"高斯低通滤波器（sigma比例={sigma_ratio}）的频率响应呈高斯分布，从中心向外平滑衰减。"
-        "由于高斯函数的傅里叶变换仍是高斯函数，空域中等效于高斯核的卷积操作，因此不产生振铃效应。"
-        "与理想低通滤波相比，高斯低通的平滑效果更自然；sigma越大，平滑范围越广，图像越模糊。"
-        "高斯低通滤波常用于图像预处理、噪声抑制和尺度空间构建。"
-    )
+    gray = _to_gray(image)
+    radius = _radius(params, gray.shape)
+    shifted = np.fft.fftshift(np.fft.fft2(gray.astype(np.float32)))
+    distance = _distance_grid(gray.shape)
+    mask = np.exp(-(distance ** 2) / (2 * float(radius ** 2)))
+    filtered = shifted * mask
+    result_float = np.abs(np.fft.ifft2(np.fft.ifftshift(filtered)))
+    result = _normalize_uint8(result_float)
+    spectrum = _normalize_uint8(np.log1p(np.abs(shifted)))
+    mask_display = _normalize_uint8(mask)
 
     return {
         "result": result,
-        "steps": steps,
-        "metrics": metrics,
-        "analysis": analysis
+        "steps": [
+            {"name": "灰度图像", "image": gray},
+            {"name": "中心化频谱", "image": spectrum},
+            {"name": "高斯低通掩膜", "image": mask_display},
+            {"name": "滤波结果", "image": result},
+        ],
+        "metrics": {
+            "radius": radius,
+            "mask_mean": float(np.mean(mask)),
+            "std_before": float(np.std(gray)),
+            "std_after": float(np.std(result)),
+        },
+        "analysis": "高斯低通滤波以连续衰减方式保留低频并削弱高频，边界不突变，通常比理想低通更少产生振铃。",
     }

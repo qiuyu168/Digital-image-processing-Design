@@ -1,4 +1,4 @@
-# 本文件用于实现颜色空间转换功能（RGB↔HSV、RGB→CMYK）
+# 本文件用于实现图像颜色空间转换功能
 
 import cv2
 import numpy as np
@@ -8,239 +8,130 @@ ALGORITHM_META = {
     "module": "color_image",
     "name": "color_space_convert",
     "display_name": "颜色空间转换",
-    "description": "实现 RGB 与 HSV 之间的相互转换，以及 RGB 到 CMYK 的转换，并自动提取主色调及其 HSV、CMYK 数值对照表。",
+    "description": "将 BGR 图像转换为灰度、HSV 或 Lab 表示，并生成便于保存和展示的可视化结果。",
     "params": {
-        "conversion_type": {
+        "target_space": {
             "type": "select",
-            "default": "bgr_to_hsv",
+            "default": "gray",
             "options": [
-                {"value": "bgr_to_hsv", "label": "RGB → HSV"},
-                {"value": "hsv_to_bgr", "label": "HSV → RGB"},
-                {"value": "bgr_to_cmyk", "label": "RGB → CMYK"}
+                {"label": "灰度图", "value": "gray"},
+                {"label": "HSV 可视化", "value": "hsv"},
+                {"label": "Lab 可视化", "value": "lab"},
             ],
-            "label": "转换类型",
-            "component": "select"
+            "label": "目标颜色空间",
+            "component": "select",
         },
-        "n_colors": {
-            "type": "int",
-            "default": 5,
-            "min": 2,
-            "max": 10,
-            "step": 1,
-            "label": "主色调数量",
-            "component": "slider"
-        }
-    }
+    },
 }
 
 
-def _channel_to_bgr(channel: np.ndarray) -> np.ndarray:
-    """单通道灰度图转为 BGR 三通道图像，便于前端统一展示。"""
-    return cv2.cvtColor(channel, cv2.COLOR_GRAY2BGR)
-
-
-def _bgr_to_hsv_impl(image: np.ndarray):
-    """BGR → HSV 转换，返回 HSV 图像及各通道。"""
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    h, s, v = cv2.split(hsv)
-    return hsv, h, s, v
-
-
-def _hsv_to_bgr_impl(image: np.ndarray) -> np.ndarray:
-    """HSV → BGR 转换。"""
-    return cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
-
-
-def _bgr_to_cmyk_impl(image: np.ndarray):
-    """BGR → CMYK 转换，返回 CMYK 可视化预览图及各通道。"""
-    rgb = image.astype(np.float32)
-    b, g, r = cv2.split(rgb)
-    r_norm = r / 255.0
-    g_norm = g / 255.0
-    b_norm = b / 255.0
-
-    k_channel = 1.0 - np.maximum(np.maximum(r_norm, g_norm), b_norm)
-    denom = 1.0 - k_channel
-    zero_mask = denom == 0.0
-    denom_safe = np.where(zero_mask, 1.0, denom)
-
-    c_channel = np.where(zero_mask, 0.0, (1.0 - r_norm - k_channel) / denom_safe)
-    m_channel = np.where(zero_mask, 0.0, (1.0 - g_norm - k_channel) / denom_safe)
-    y_channel = np.where(zero_mask, 0.0, (1.0 - b_norm - k_channel) / denom_safe)
-
-    c_u8 = (c_channel * 255.0).astype(np.uint8)
-    m_u8 = (m_channel * 255.0).astype(np.uint8)
-    y_u8 = (y_channel * 255.0).astype(np.uint8)
-    k_u8 = (k_channel * 255.0).astype(np.uint8)
-
-    c_with_k = np.clip(c_channel * (1.0 - k_channel) + k_channel, 0.0, 1.0)
-    m_with_k = np.clip(m_channel * (1.0 - k_channel) + k_channel, 0.0, 1.0)
-    y_with_k = np.clip(y_channel * (1.0 - k_channel) + k_channel, 0.0, 1.0)
-
-    r_show = ((1.0 - c_with_k) * 255.0).astype(np.uint8)
-    g_show = ((1.0 - m_with_k) * 255.0).astype(np.uint8)
-    b_show = ((1.0 - y_with_k) * 255.0).astype(np.uint8)
-
-    cmyk_vis = cv2.merge([b_show, g_show, r_show])
-    return cmyk_vis, c_u8, m_u8, y_u8, k_u8
-
-
-def _extract_color_table(image_bgr: np.ndarray, n_colors: int = 5) -> list:
-    """基于 BGR 图像提取主色调对照表。"""
-    if len(image_bgr.shape) != 3 or image_bgr.shape[2] != 3:
-        return []
-
-    pixels = image_bgr.reshape(-1, 3).astype(np.float32)
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
-    _, labels, centers = cv2.kmeans(
-        pixels, n_colors, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
-    )
-
-    centers = centers.astype(np.uint8)
-    labels = labels.flatten()
-    total_pixels = len(labels)
-
-    color_table = []
-    for i, bgr in enumerate(centers):
-        ratio = np.sum(labels == i) / total_pixels
-        hsv = cv2.cvtColor(np.uint8([[bgr]]), cv2.COLOR_BGR2HSV)[0][0]
-        r, g, b_val = bgr[2] / 255.0, bgr[1] / 255.0, bgr[0] / 255.0
-        k = 1.0 - max(r, g, b_val)
-        if k < 1.0:
-            c = (1.0 - r - k) / (1.0 - k)
-            m = (1.0 - g - k) / (1.0 - k)
-            y = (1.0 - b_val - k) / (1.0 - k)
-        else:
-            c = m = y = 0.0
-
-        color_table.append({
-            "bgr": [int(bgr[0]), int(bgr[1]), int(bgr[2])],
-            "hsv": [int(hsv[0]), int(hsv[1]), int(hsv[2])],
-            "cmyk": [round(c * 100, 1), round(m * 100, 1), round(y * 100, 1), round(k * 100, 1)],
-            "percentage": round(ratio * 100, 1)
-        })
-
-    color_table.sort(key=lambda x: x["percentage"], reverse=True)
-    return color_table
-
-
-def run(image: np.ndarray, params: dict = None) -> dict:
-    """统一算法入口函数。"""
+def run(image: np.ndarray, params: dict | None = None) -> dict:
     if image is None:
         raise ValueError("输入图像不能为空")
-
-    if params is None:
+    if params is None or not isinstance(params, dict):
         params = {}
 
-    # 读取参数并使用默认值
-    conversion_type = params.get("conversion_type", "bgr_to_hsv")
-    n_colors = int(params.get("n_colors", 5))
-    n_colors = max(2, min(10, n_colors))
+    bgr_image = _prepare_bgr_image(image)
+    target_space = _get_select_param(params, "target_space")
 
-    valid_types = ["bgr_to_hsv", "hsv_to_bgr", "bgr_to_cmyk"]
-    if conversion_type not in valid_types:
-        conversion_type = "bgr_to_hsv"
-
-    # ---- 统一处理灰度与 Alpha ----
-    original_image = image
-    if len(image.shape) == 2:
-        # 灰度图转为 BGR 以便通用处理（除非该转换模式明确不需要）
-        bgr_image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-    elif image.shape[2] == 4:
-        # 带 Alpha 通道，分离
-        bgr_image = image[:, :, :3]
-        alpha = image[:, :, 3]
-    else:
-        bgr_image = image
-        alpha = None
-
-    steps = []
-    metrics = {}
-    analysis = ""
-    result = None
-
-    # ---- 执行具体转换 ----
-    if conversion_type == "bgr_to_hsv":
-        # 需要三通道输入，bgr_image 已是三通道
-        hsv, h, s, v = _bgr_to_hsv_impl(bgr_image)
-        result = bgr_image  # HSV 不可直接显示，保留原图
+    if target_space == "gray":
+        gray_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)
+        result = cv2.cvtColor(gray_image, cv2.COLOR_GRAY2BGR)
         steps = [
-            {"name": "原始图像", "image": original_image},
-            {"name": "HSV 色调通道（H）", "image": _channel_to_bgr(h)},
-            {"name": "HSV 饱和度通道（S）", "image": _channel_to_bgr(s)},
-            {"name": "HSV 明度通道（V）", "image": _channel_to_bgr(v)}
+            {"name": "原始图像", "image": bgr_image},
+            {"name": "灰度转换结果", "image": result},
         ]
-        metrics.update({
-            "mean_hue": round(float(np.mean(h)), 2),
-            "mean_saturation": round(float(np.mean(s)), 2),
-            "mean_value": round(float(np.mean(v)), 2)
-        })
-        analysis = (
-            "RGB → HSV 转换完成。H 通道表示色调（色相角），S 通道表示饱和度（颜色纯度），"
-            "V 通道表示明度（亮度）。HSV 空间将颜色与亮度分离，更符合人眼感知习惯，"
-            "适合进行颜色分析和饱和度、亮度调整。动漫图像在 HSV 空间中通常具有较高的饱和度值。"
-            "注意：HSV 为数据处理空间，结果图像不可直接显示，此处显示原图。"
+        metrics = {
+            "target_space": target_space,
+            "gray_mean": round(float(np.mean(gray_image)), 2),
+            "gray_std": round(float(np.std(gray_image)), 2),
+            "gray_min": int(np.min(gray_image)),
+            "gray_max": int(np.max(gray_image)),
+        }
+        analysis = "已将图像转换为灰度表示，结果使用三通道灰度图保存，便于前端和本地测试统一显示。"
+    elif target_space == "hsv":
+        hsv_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2HSV)
+        hue_visual = cv2.cvtColor(
+            cv2.merge([
+                hsv_image[:, :, 0],
+                np.full_like(hsv_image[:, :, 1], 255),
+                np.full_like(hsv_image[:, :, 2], 255),
+            ]),
+            cv2.COLOR_HSV2BGR,
         )
-        src_for_table = bgr_image
-
-    elif conversion_type == "hsv_to_bgr":
-        # 尝试将输入视为 HSV 图像进行转换
-        try:
-            result = _hsv_to_bgr_impl(bgr_image)
-            steps = [
-                {"name": "原始图像（HSV 空间）", "image": original_image},
-                {"name": "HSV → RGB 结果", "image": result}
-            ]
-            analysis = (
-                "HSV → RGB 转换完成。将 HSV 颜色空间的图像还原为 RGB（BGR 通道序）格式，"
-                "可在图像处理管线中继续后续操作或直接用于显示。"
-            )
-            src_for_table = result
-        except Exception:
-            # 如果输入不是合理的 HSV 图像，返回安全结果
-            result = bgr_image
-            steps = [
-                {"name": "原始图像", "image": original_image}
-            ]
-            analysis = "输入图像无法作为 HSV 图像进行转换，返回原图。请确认输入图像为有效的 HSV 格式。"
-            src_for_table = bgr_image
-
-    elif conversion_type == "bgr_to_cmyk":
-        cmyk_vis, c, m, y, k = _bgr_to_cmyk_impl(bgr_image)
-        result = cmyk_vis
+        hsv_visual = cv2.merge([
+            np.uint8(np.round(hsv_image[:, :, 0].astype(np.float32) * 255.0 / 179.0)),
+            hsv_image[:, :, 1],
+            hsv_image[:, :, 2],
+        ])
+        result = _ensure_uint8(hsv_visual)
         steps = [
-            {"name": "原始图像", "image": original_image},
-            {"name": "CMYK 青色通道（C）", "image": _channel_to_bgr(c)},
-            {"name": "CMYK 品红通道（M）", "image": _channel_to_bgr(m)},
-            {"name": "CMYK 黄色通道（Y）", "image": _channel_to_bgr(y)},
-            {"name": "CMYK 黑色通道（K）", "image": _channel_to_bgr(k)}
+            {"name": "原始图像", "image": bgr_image},
+            {"name": "色相预览", "image": hue_visual},
+            {"name": "HSV 通道可视化", "image": result},
         ]
-        metrics.update({
-            "mean_cyan": round(float(np.mean(c)), 2),
-            "mean_magenta": round(float(np.mean(m)), 2),
-            "mean_yellow": round(float(np.mean(y)), 2),
-            "mean_black": round(float(np.mean(k)), 2)
-        })
-        analysis = (
-            "RGB → CMYK 转换完成。CMYK 是印刷行业使用的减色模型："
-            "C（青）、M（品红）、Y（黄）为三原色，K（黑）用于加深暗部层次。"
-            "动漫图像的暗部（如阴影区域）K 值较高，鲜艳区域的 C/M/Y 组合值较高。"
-            "注意：CMYK 为设备相关颜色空间，实际印刷效果需结合 ICC 色彩配置文件。"
-        )
-        src_for_table = bgr_image
-
+        metrics = {
+            "target_space": target_space,
+            "hue_mean": round(float(np.mean(hsv_image[:, :, 0])), 2),
+            "saturation_mean": round(float(np.mean(hsv_image[:, :, 1])), 2),
+            "value_mean": round(float(np.mean(hsv_image[:, :, 2])), 2),
+        }
+        analysis = "已转换到 HSV 空间，并将 H/S/V 三个通道归一化为可保存的伪彩色可视化图。"
     else:
-        # 兜底
-        result = bgr_image
-        src_for_table = bgr_image
-
-    # ---- 生成主色调对照表（放入 metrics） ----
-    color_table = _extract_color_table(src_for_table, n_colors=n_colors)
-    metrics["color_table"] = color_table
+        lab_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2LAB)
+        result = _ensure_uint8(lab_image)
+        steps = [
+            {"name": "原始图像", "image": bgr_image},
+            {"name": "Lab 通道可视化", "image": result},
+        ]
+        metrics = {
+            "target_space": target_space,
+            "l_mean": round(float(np.mean(lab_image[:, :, 0])), 2),
+            "a_mean": round(float(np.mean(lab_image[:, :, 1])), 2),
+            "b_mean": round(float(np.mean(lab_image[:, :, 2])), 2),
+        }
+        analysis = "已转换到 Lab 空间，结果图用于观察亮度通道与颜色对立通道的分布，不代表自然 BGR 颜色。"
 
     return {
         "result": result,
         "steps": steps,
         "metrics": metrics,
-        "analysis": analysis
+        "analysis": analysis,
     }
+
+
+def _get_select_param(params: dict, name: str) -> str:
+    meta = ALGORITHM_META["params"][name]
+    allowed_values = {option["value"] for option in meta["options"]}
+    value = params.get(name, meta["default"])
+    if value not in allowed_values:
+        return str(meta["default"])
+    return str(value)
+
+
+def _prepare_bgr_image(image: np.ndarray) -> np.ndarray:
+    array = _ensure_uint8(image)
+    if array.ndim == 2:
+        return cv2.cvtColor(array, cv2.COLOR_GRAY2BGR)
+    if array.ndim != 3:
+        raise ValueError("输入图像必须是二维灰度图或三维彩色图")
+    if array.shape[2] == 1:
+        return cv2.cvtColor(array[:, :, 0], cv2.COLOR_GRAY2BGR)
+    if array.shape[2] == 4:
+        return cv2.cvtColor(array, cv2.COLOR_BGRA2BGR)
+    if array.shape[2] >= 3:
+        return np.ascontiguousarray(array[:, :, :3])
+    raise ValueError("输入图像通道数不正确")
+
+
+def _ensure_uint8(image: np.ndarray) -> np.ndarray:
+    array = np.asarray(image)
+    if array.size == 0:
+        raise ValueError("输入图像不能为空数组")
+    if array.dtype == np.uint8:
+        return np.ascontiguousarray(array)
+
+    array = np.nan_to_num(array.astype(np.float32), nan=0.0, posinf=255.0, neginf=0.0)
+    if float(np.max(array)) <= 1.0 and float(np.min(array)) >= 0.0:
+        array = array * 255.0
+    return np.ascontiguousarray(np.clip(array, 0, 255).astype(np.uint8))

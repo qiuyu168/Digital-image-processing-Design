@@ -1,4 +1,4 @@
-# 本文件用于实现动漫图像的饱和度调整功能
+# 本文件用于实现图像饱和度调整功能
 
 import cv2
 import numpy as np
@@ -8,8 +8,17 @@ ALGORITHM_META = {
     "module": "color_image",
     "name": "saturation_adjust",
     "display_name": "饱和度调整",
-    "description": "调整动漫图像色彩鲜艳程度，使人物和场景颜色更突出。通过 HSV 颜色空间的饱和度通道缩放实现。",
+    "description": "基于 HSV 色彩空间调整动漫图像的色相、饱和度和明度，使人物和场景颜色更突出。",
     "params": {
+        "hue_shift": {
+            "type": "int",
+            "default": 0,
+            "min": -180,
+            "max": 180,
+            "step": 1,
+            "label": "色相偏移",
+            "component": "slider",
+        },
         "saturation_factor": {
             "type": "float",
             "default": 1.5,
@@ -17,95 +26,120 @@ ALGORITHM_META = {
             "max": 3.0,
             "step": 0.1,
             "label": "饱和度系数",
-            "component": "slider"
-        }
-    }
+            "component": "slider",
+        },
+        "value_factor": {
+            "type": "float",
+            "default": 1.0,
+            "min": 0.0,
+            "max": 3.0,
+            "step": 0.1,
+            "label": "明度系数",
+            "component": "slider",
+        },
+    },
 }
 
 
-def run(image: np.ndarray, params: dict = None) -> dict:
-    """统一算法入口函数。"""
+def run(image: np.ndarray, params: dict | None = None) -> dict:
     if image is None:
         raise ValueError("输入图像不能为空")
-
-    # 防御：params 可能为 None
-    if params is None:
+    if params is None or not isinstance(params, dict):
         params = {}
 
-    # 1. 读取并校验参数，使用与 ALGORITHM_META 一致的默认值
-    factor = float(params.get("saturation_factor", 1.5))
-    factor = max(0.0, min(3.0, factor))
+    bgr_image = _prepare_bgr_image(image)
+    hue_shift = _get_int_param(params, "hue_shift")
+    saturation_factor = _get_float_param(params, "saturation_factor")
+    value_factor = _get_float_param(params, "value_factor")
 
-    # 2. 灰度图处理：直接返回原图，不做调整
-    if len(image.shape) == 2 or (len(image.shape) == 3 and image.shape[2] == 1):
-        return {
-            "result": image.copy(),
-            "steps": [
-                {"name": "原始图像（灰度）", "image": image}
-            ],
-            "metrics": {
-                "mean_saturation_before": 0.0,
-                "mean_saturation_after": 0.0
-            },
-            "analysis": "输入为灰度图像，无饱和度通道，不进行任何调整，直接返回原图。"
-        }
+    hsv_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2HSV).astype(np.float32)
+    original_saturation = hsv_image[:, :, 1].copy()
+    original_value = hsv_image[:, :, 2].copy()
 
-    # 3. Alpha 通道处理：分离并保留
-    has_alpha = (image.shape[2] == 4)
-    if has_alpha:
-        bgr = image[:, :, :3]
-        alpha = image[:, :, 3]
-    else:
-        bgr = image
-        alpha = None
+    hsv_image[:, :, 0] = (hsv_image[:, :, 0] + hue_shift) % 180
+    hsv_image[:, :, 1] = np.clip(hsv_image[:, :, 1] * saturation_factor, 0, 255)
+    hsv_image[:, :, 2] = np.clip(hsv_image[:, :, 2] * value_factor, 0, 255)
 
-    # 4. BGR 转 HSV，使用浮点计算避免溢出
-    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV).astype(np.float32)
+    adjusted_hsv = hsv_image.astype(np.uint8)
+    result = cv2.cvtColor(adjusted_hsv, cv2.COLOR_HSV2BGR)
+    result = _ensure_uint8(result)
 
-    # 5. 记录调整前的平均饱和度
-    mean_s_before = float(np.mean(hsv[:, :, 1]))
-
-    # 6. 缩放饱和度通道并截断到有效范围
-    hsv[:, :, 1] = np.clip(hsv[:, :, 1] * factor, 0.0, 255.0)
-
-    # 7. 记录调整后的平均饱和度
-    mean_s_after = float(np.mean(hsv[:, :, 1]))
-
-    # 8. 提取饱和度通道图像（转为 uint8 供步骤图显示）
-    s_channel_display = np.clip(hsv[:, :, 1], 0, 255).astype(np.uint8)
-
-    # 9. 转换回 BGR
-    hsv = np.clip(hsv, 0.0, 255.0).astype(np.uint8)
-    result_bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-
-    # 10. 如有 Alpha 通道，重新合并
-    if has_alpha:
-        result = np.dstack((result_bgr, alpha))
-    else:
-        result = result_bgr
-
-    # 11. 组织分步结果
-    steps = [
-        {"name": "原始图像", "image": image.copy()},
-        {"name": "饱和度通道（S 通道）", "image": s_channel_display},
-        {"name": "饱和度调整结果", "image": result}
-    ]
-
-    # 12. 生成中文分析
-    analysis = (
-        f"饱和度系数为 {factor:.1f}，"
-        f"平均饱和度从 {mean_s_before:.1f} 变化为 {mean_s_after:.1f}。"
-        f"系数大于 1 时颜色更加鲜艳，小于 1 时颜色趋于柔和。"
-        f"动漫图像中适当提高饱和度可以让角色发色、服装和场景色彩更加突出。"
+    saturation_step = cv2.cvtColor(
+        cv2.merge([
+            adjusted_hsv[:, :, 0],
+            adjusted_hsv[:, :, 1],
+            np.full_like(adjusted_hsv[:, :, 2], 255),
+        ]),
+        cv2.COLOR_HSV2BGR,
     )
 
-    # 13. 返回统一结构
+    metrics = {
+        "hue_shift": hue_shift,
+        "saturation_factor": saturation_factor,
+        "value_factor": value_factor,
+        "mean_saturation_before": round(float(np.mean(original_saturation)), 2),
+        "mean_saturation_after": round(float(np.mean(adjusted_hsv[:, :, 1])), 2),
+        "mean_value_before": round(float(np.mean(original_value)), 2),
+        "mean_value_after": round(float(np.mean(adjusted_hsv[:, :, 2])), 2),
+    }
+
     return {
         "result": result,
-        "steps": steps,
-        "metrics": {
-            "mean_saturation_before": round(mean_s_before, 2),
-            "mean_saturation_after": round(mean_s_after, 2)
-        },
-        "analysis": analysis
+        "steps": [
+            {"name": "原始图像", "image": bgr_image},
+            {"name": "饱和度色相预览", "image": saturation_step},
+            {"name": "调整结果", "image": result},
+        ],
+        "metrics": metrics,
+        "analysis": (
+            f"已在 HSV 空间将色相偏移 {hue_shift}，饱和度放大为 {saturation_factor:.2f} 倍，"
+            f"明度放大为 {value_factor:.2f} 倍。该处理适合增强动漫图像色彩表现，"
+            "输出已限制在 0 到 255 的 uint8 范围内。"
+        ),
     }
+
+
+def _get_float_param(params: dict, name: str) -> float:
+    meta = ALGORITHM_META["params"][name]
+    try:
+        value = float(params.get(name, meta["default"]))
+    except (TypeError, ValueError):
+        value = float(meta["default"])
+    return float(np.clip(value, meta["min"], meta["max"]))
+
+
+def _get_int_param(params: dict, name: str) -> int:
+    meta = ALGORITHM_META["params"][name]
+    try:
+        value = int(round(float(params.get(name, meta["default"]))))
+    except (TypeError, ValueError):
+        value = int(meta["default"])
+    return int(np.clip(value, meta["min"], meta["max"]))
+
+
+def _prepare_bgr_image(image: np.ndarray) -> np.ndarray:
+    array = _ensure_uint8(image)
+    if array.ndim == 2:
+        return cv2.cvtColor(array, cv2.COLOR_GRAY2BGR)
+    if array.ndim != 3:
+        raise ValueError("输入图像必须是二维灰度图或三维彩色图")
+    if array.shape[2] == 1:
+        return cv2.cvtColor(array[:, :, 0], cv2.COLOR_GRAY2BGR)
+    if array.shape[2] == 4:
+        return cv2.cvtColor(array, cv2.COLOR_BGRA2BGR)
+    if array.shape[2] >= 3:
+        return np.ascontiguousarray(array[:, :, :3])
+    raise ValueError("输入图像通道数不正确")
+
+
+def _ensure_uint8(image: np.ndarray) -> np.ndarray:
+    array = np.asarray(image)
+    if array.size == 0:
+        raise ValueError("输入图像不能为空数组")
+    if array.dtype == np.uint8:
+        return np.ascontiguousarray(array)
+
+    array = np.nan_to_num(array.astype(np.float32), nan=0.0, posinf=255.0, neginf=0.0)
+    if float(np.max(array)) <= 1.0 and float(np.min(array)) >= 0.0:
+        array = array * 255.0
+    return np.ascontiguousarray(np.clip(array, 0, 255).astype(np.uint8))
