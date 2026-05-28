@@ -59,7 +59,7 @@
             </div>
 
             <el-tag v-if="activeCategory" class="soft-tag">
-              {{ images.length }} 张图片
+              {{ totalImages }} 张图片
             </el-tag>
           </div>
         </section>
@@ -95,68 +95,81 @@
               :image-size="110"
             />
 
-            <el-scrollbar v-else class="image-scroll">
-              <div class="image-grid">
-                <article
-                  v-for="image in images"
-                  :key="image.imagePath"
-                  class="image-card"
-                  :class="{ active: selectedImage?.imagePath === image.imagePath }"
-                >
-                  <div class="image-frame">
-                    <el-image
-                      class="library-image"
-                      :src="image.displayUrl"
-                      fit="contain"
-                      :preview-src-list="imagePreviewUrls"
-                      :initial-index="getImagePreviewIndex(image)"
-                      preview-teleported
-                      hide-on-click-modal
-                    >
-                      <template #error>
-                        <div class="image-error">
-                          <el-icon><Picture /></el-icon>
-                          <span>图片加载失败</span>
-                        </div>
-                      </template>
-                    </el-image>
+            <template v-else>
+              <el-scrollbar class="image-scroll">
+                <div class="image-grid">
+                  <article
+                    v-for="image in images"
+                    :key="image.imagePath"
+                    class="image-card"
+                    :class="{ active: selectedImage?.imagePath === image.imagePath }"
+                  >
+                    <div class="image-frame">
+                      <el-image
+                        class="library-image"
+                        :src="image.displayUrl"
+                        fit="contain"
+                        :preview-src-list="imagePreviewUrls"
+                        :initial-index="getImagePreviewIndex(image)"
+                        preview-teleported
+                        hide-on-click-modal
+                      >
+                        <template #error>
+                          <div class="image-error">
+                            <el-icon><Picture /></el-icon>
+                            <span>图片加载失败</span>
+                          </div>
+                        </template>
+                      </el-image>
 
-                    <div class="preview-mask">
-                      <el-icon><View /></el-icon>
-                      <span>全屏预览</span>
+                      <div class="preview-mask">
+                        <el-icon><View /></el-icon>
+                        <span>全屏预览</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div class="image-info">
-                    <h4>{{ image.displayName }}</h4>
-                    <p>{{ image.filename }}</p>
-                  </div>
+                    <div class="image-info">
+                      <h4>{{ image.displayName }}</h4>
+                      <p>{{ image.filename }}</p>
+                    </div>
 
-                  <div class="image-actions">
-                    <el-button
-                      class="image-action-btn"
-                      size="small"
-                      plain
-                      :loading="metricsLoading && selectedImage?.imagePath === image.imagePath"
-                      @click.stop="handleViewMetrics(image)"
-                    >
-                      <el-icon><DataAnalysis /></el-icon>
-                      查看参数
-                    </el-button>
+                    <div class="image-actions">
+                      <el-button
+                        class="image-action-btn"
+                        size="small"
+                        plain
+                        :loading="metricsLoading && selectedImage?.imagePath === image.imagePath"
+                        @click.stop="handleViewMetrics(image)"
+                      >
+                        <el-icon><DataAnalysis /></el-icon>
+                        查看参数
+                      </el-button>
 
-                    <el-button
-                      class="image-action-btn download-btn"
-                      size="small"
-                      plain
-                      @click.stop="downloadImage(image)"
-                    >
-                      <el-icon><Download /></el-icon>
-                      获取图片
-                    </el-button>
-                  </div>
-                </article>
+                      <el-button
+                        class="image-action-btn download-btn"
+                        size="small"
+                        plain
+                        @click.stop="downloadImage(image)"
+                      >
+                        <el-icon><Download /></el-icon>
+                        获取图片
+                      </el-button>
+                    </div>
+                  </article>
+                </div>
+              </el-scrollbar>
+
+              <div v-if="totalImages > pageSize" class="pagination-wrapper">
+                <el-pagination
+                  background
+                  layout="prev, pager, next"
+                  :total="totalImages"
+                  :page-size="pageSize"
+                  :current-page="currentPage"
+                  @current-change="handlePageChange"
+                />
               </div>
-            </el-scrollbar>
+            </template>
           </section>
 
           <!-- 参数展示 -->
@@ -254,6 +267,10 @@ const activeCategoryName = ref('')
 const selectedImage = ref(null)
 const metrics = ref(null)
 
+const currentPage = ref(1)
+const totalImages = ref(0)
+const pageSize = ref(6)
+
 const activeCategory = computed(() => {
   return categories.value.find((item) => item.name === activeCategoryName.value) || null
 })
@@ -329,6 +346,7 @@ async function handleSelectCategory(categoryName) {
   activeCategoryName.value = categoryName
   selectedImage.value = null
   metrics.value = null
+  currentPage.value = 1
   await loadImages(categoryName)
 }
 
@@ -338,7 +356,13 @@ async function loadImages(categoryName) {
   imageLoading.value = true
 
   try {
-    const data = await getDetailImageService({ params: {category: categoryName} })
+    const data = await getDetailImageService({
+      params: {
+        category: categoryName,
+        page: currentPage.value,
+        page_size: pageSize.value
+      }
+    })
 
     if (!data?.success) {
       ElMessage.error('获取图像列表失败')
@@ -346,9 +370,17 @@ async function loadImages(categoryName) {
     }
 
     images.value = normalizeImages(data.images)
+    totalImages.value = data.total || 0
   } finally {
     imageLoading.value = false
   }
+}
+
+async function handlePageChange(page) {
+  currentPage.value = page
+  selectedImage.value = null
+  metrics.value = null
+  await loadImages(activeCategoryName.value)
 }
 
 async function handleViewMetrics(image) {
@@ -751,6 +783,13 @@ function getCategoryIcon(index) {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 16px;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  padding-top: 20px;
+  padding-bottom: 4px;
 }
 
 .image-card {
