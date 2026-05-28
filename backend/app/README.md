@@ -19,7 +19,7 @@ flowchart TD
 
         AlgorithmsAPI["algorithms.py<br/>GET /api/algorithms<br/>获取算法大类、小类、参数元数据"]
 
-        CategoryAPI["algorithm_modules/*.py<br/>GET /api/algorithms/{category}<br/>POST /api/algorithms/{category}/run<br/>六大类算法独立入口"]
+        CategoryAPI["algorithm_modules/*.py<br/>GET /api/algorithms/{category}<br/>POST /api/algorithms/{category}/run<br/>九大类算法独立入口"]
 
         ProcessAPI["process.py<br/>POST /api/process/run<br/>通用算法处理入口"]
 
@@ -32,7 +32,7 @@ flowchart TD
     subgraph Services["Services 业务层：backend/app/services/"]
         ImageStore["image_store.py<br/>保存上传图片<br/>读取上传图片 / 图库图片<br/>路径安全检查"]
 
-        AlgorithmRegistry["algorithm_registry.py<br/>注册 6 大类算法<br/>动态导入算法文件<br/>读取 ALGORITHM_META<br/>返回前端参数元数据"]
+        AlgorithmRegistry["algorithm_registry.py<br/>注册 9 大类算法<br/>动态导入算法文件<br/>读取 ALGORITHM_META<br/>返回前端参数元数据"]
 
         ProcessService["process_service.py<br/>读取请求参数<br/>加载图片<br/>调用算法 run(image, params)<br/>组装结果响应"]
 
@@ -62,17 +62,21 @@ flowchart TD
     %% Algorithms 层
     %% =========================
     subgraph Algorithms["Algorithms 算法层：backend/app/algorithms/"]
-        Gray["grayscale_image/<br/>灰度化 / 二值化 / 直方图均衡化<br/>Canny / Sobel / 腐蚀 / 膨胀 / 开闭运算"]
+        Gray["grayscale_image/<br/>灰度变换 / 灰度化 / 二值化<br/>直方图均衡 / CLAHE / 直方图匹配<br/>腐蚀 / 膨胀 / 开闭运算"]
 
-        Color["color_image/<br/>颜色空间转换 / 饱和度调整<br/>动漫色彩增强 / 主色调提取"]
+        Color["color_image/<br/>颜色空间转换 / 饱和度调整<br/>动漫色彩增强 / 主色调提取<br/>区域马赛克 / 彩色综合处理"]
 
-        Geometry["geometric_transform/<br/>缩放 / 旋转 / 翻转"]
+        Geometry["geometric_transform/<br/>缩放 / 旋转 / 翻转<br/>平移 / 仿射 / 投影"]
 
-        Spatial["spatial_filter/<br/>均值 / 高斯 / 中值<br/>双边 / 拉普拉斯锐化"]
+        Spatial["spatial_filter/<br/>均值 / 高斯 / 中值 / 双边<br/>拉普拉斯锐化 / 统计排序<br/>最大最小 / 自适应中值 / USM / 噪声"]
 
         FreqAnalysis["frequency_analysis/<br/>DFT 频谱 / 频谱中心化 / 幅度谱"]
 
-        FreqFilter["frequency_filter/<br/>低通 / 高通<br/>理想低通 / 理想高通<br/>高斯低通 / 高斯高通"]
+        FreqFilter["frequency_filter/<br/>低通 / 高通<br/>理想 / 高斯 / 巴特沃斯<br/>频域拉普拉斯 / 同态滤波"]
+
+        Restoration["image_restoration/<br/>退化模拟<br/>逆滤波 / 加窗逆滤波<br/>维纳 / 约束最小二乘"]
+
+        EdgeShape["edge_shape_detection/<br/>Canny / Sobel / Roberts<br/>Prewitt / Scharr / LoG<br/>Hough / 角点"]
     end
 
     %% =========================

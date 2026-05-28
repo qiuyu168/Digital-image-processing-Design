@@ -33,8 +33,8 @@ backend\data\test_images\anime_test.png
 ```text
 backend/app/algorithms/grayscale_image/grayscale.py
 backend/app/algorithms/color_image/saturation_adjust.py
-backend/app/algorithms/grayscale_image/edge_detection_basic.py
-backend/app/algorithms/grayscale_image/sobel_edge_detection.py
+backend/app/algorithms/edge_shape_detection/canny_edge_detection.py
+backend/app/algorithms/edge_shape_detection/sobel_edge_detection.py
 ```
 
 不要使用旧版灰度、彩色或频域分析目录，统一使用当前规范分类目录。
@@ -124,7 +124,7 @@ python tests/manual_test_algorithm_advanced.py --config tests/sample_test_config
 也可以临时传入参数：
 
 ```bat
-python tests/manual_test_algorithm_advanced.py --algorithm app.algorithms.grayscale_image.sobel_edge_detection --input data/test_images/anime_test.png --output data/test_outputs/sobel_result.png --params "{\"direction\":\"both\",\"kernel_size\":3,\"scale\":1.0,\"delta\":0}"
+python tests/manual_test_algorithm_advanced.py --algorithm app.algorithms.edge_shape_detection.sobel_edge_detection --input data/test_images/anime_test.png --output data/test_outputs/sobel_result.png --params "{\"direction\":\"both\",\"kernel_size\":3,\"scale\":1.0,\"delta\":0}"
 ```
 
 ## 9. 查看结果

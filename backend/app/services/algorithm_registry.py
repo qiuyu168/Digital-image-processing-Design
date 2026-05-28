@@ -18,6 +18,7 @@ MODULE_ORDER = [
     "frequency_analysis",
     "frequency_filter",
     "image_restoration",
+    "edge_shape_detection",
 ]
 
 MODULE_DISPLAY_NAMES = {
@@ -29,6 +30,7 @@ MODULE_DISPLAY_NAMES = {
     "frequency_analysis": "频域分析类",
     "frequency_filter": "频域滤波类",
     "image_restoration": "图像复原与图像修复类",
+    "edge_shape_detection": "边缘与形状检测类",
 }
 
 ALGORITHM_MODULES = {
@@ -51,8 +53,8 @@ ALGORITHM_MODULES = {
         "grayscale",
         "binary_threshold",
         "histogram_equalization",
-        "edge_detection_basic",
-        "sobel_edge_detection",
+        "clahe_equalization",
+        "histogram_matching",
         "erode",
         "dilate",
         "open_operation",
@@ -63,11 +65,16 @@ ALGORITHM_MODULES = {
         "saturation_adjust",
         "anime_color_enhance",
         "dominant_color_extract",
+        "region_mosaic",
+        "color_comprehensive_processing",
     ],
     "geometric_transform": [
         "resize",
         "rotate",
         "flip",
+        "translate",
+        "affine_transform",
+        "perspective_transform",
     ],
     "spatial_filter": [
         "mean_filter",
@@ -75,6 +82,12 @@ ALGORITHM_MODULES = {
         "median_filter",
         "bilateral_filter",
         "laplacian_sharpen",
+        "statistical_order_filter",
+        "max_filter",
+        "min_filter",
+        "adaptive_median_filter",
+        "unsharp_masking",
+        "add_noise",
     ],
     "frequency_analysis": [
         "dft_spectrum",
@@ -88,6 +101,10 @@ ALGORITHM_MODULES = {
         "ideal_high_pass",
         "gaussian_low_pass",
         "gaussian_high_pass",
+        "butterworth_low_pass",
+        "butterworth_high_pass",
+        "frequency_laplacian_sharpen",
+        "homomorphic_filter",
     ],
     "image_restoration": [
         "defocus_blur_simulation",
@@ -95,14 +112,26 @@ ALGORITHM_MODULES = {
         "motion_blur_simulation",
         "atmospheric_turbulence_blur_simulation",
         "inverse_filter_restoration",
+        "windowed_inverse_filter_restoration",
         "wiener_filter_restoration",
         "constrained_least_squares_restoration",
+    ],
+    "edge_shape_detection": [
+        "basic_edge_detection",
+        "canny_edge_detection",
+        "sobel_edge_detection",
+        "roberts_cross",
+        "prewitt_edge_detection",
+        "scharr_edge_detection",
+        "log_edge_detection",
+        "hough_shape_detection",
+        "corner_detection",
     ],
 }
 
 
 def get_all_algorithms() -> dict[str, Any]:
-    """返回八个算法模块及其所有可导入算法元数据。"""
+    """返回九个算法模块及其所有可导入算法元数据。"""
     modules: list[dict[str, Any]] = []
     flat_algorithms: list[dict[str, Any]] = []
 
@@ -183,10 +212,7 @@ def _normalize_algorithm_meta(
 ) -> dict[str, Any]:
     normalized = dict(meta)
     normalized["module"] = module_name
-    normalized["module_display_name"] = meta.get(
-        "module_display_name",
-        get_module_display_name(module_name),
-    )
+    normalized["module_display_name"] = meta.get("module_display_name", get_module_display_name(module_name))
     normalized["name"] = meta.get("name") or algorithm_name
     normalized["display_name"] = meta.get("display_name") or normalized["name"]
     normalized["description"] = meta.get("description") or ""
@@ -197,3 +223,4 @@ def _normalize_algorithm_meta(
 def _validate_module_name(module_name: str) -> None:
     if module_name not in MODULE_ORDER:
         raise ValueError(f"算法模块不存在：{module_name}")
+

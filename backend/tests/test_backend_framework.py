@@ -87,7 +87,7 @@ def test_upload_api_validates_rules_and_blocks_path_traversal() -> None:
         assert response.json()["message"]
 
 
-def test_algorithm_registry_returns_eight_modules_and_preserves_slider_metadata() -> None:
+def test_algorithm_registry_returns_nine_modules_and_preserves_slider_metadata() -> None:
     from app.services.algorithm_registry import get_all_algorithms
 
     data = get_all_algorithms()
@@ -102,6 +102,7 @@ def test_algorithm_registry_returns_eight_modules_and_preserves_slider_metadata(
         "frequency_analysis",
         "frequency_filter",
         "image_restoration",
+        "edge_shape_detection",
     ]
 
     color_module = next(module for module in modules if module["module"] == "color_image")
@@ -117,9 +118,14 @@ def test_algorithm_registry_returns_eight_modules_and_preserves_slider_metadata(
     assert param["step"] == 0.1
 
     grayscale_module = next(module for module in modules if module["module"] == "grayscale_image")
+    grayscale_names = {algorithm["name"] for algorithm in grayscale_module["algorithms"]}
+    assert "edge_detection_basic" not in grayscale_names
+    assert "sobel_edge_detection" not in grayscale_names
+
+    edge_module = next(module for module in modules if module["module"] == "edge_shape_detection")
     sobel = next(
         algorithm
-        for algorithm in grayscale_module["algorithms"]
+        for algorithm in edge_module["algorithms"]
         if algorithm["name"] == "sobel_edge_detection"
     )
     assert sobel["display_name"] == "Sobel边缘检测"
@@ -143,7 +149,7 @@ def test_fastapi_framework_endpoints_upload_and_run_saturation_adjust() -> None:
         assert algorithms.status_code == 200
         algorithm_payload = algorithms.json()
         assert algorithm_payload["success"] is True
-        assert len(algorithm_payload["modules"]) == 8
+        assert len(algorithm_payload["modules"]) == 9
 
         category = client.get("/api/algorithms/color-image")
         assert category.status_code == 200
@@ -267,7 +273,7 @@ def test_category_api_can_run_sobel_edge_detection_after_upload() -> None:
         uploaded_path = UPLOAD_DIR / image_path
 
         response = client.post(
-            "/api/algorithms/grayscale-image/run",
+            "/api/algorithms/edge-shape-detection/run",
             json={
                 "source_type": "upload",
                 "image_path": image_path,
@@ -285,6 +291,7 @@ def test_category_api_can_run_sobel_edge_detection_after_upload() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["success"] is True
+    assert payload["module"] == "edge_shape_detection"
     assert payload["algorithm"] == "sobel_edge_detection"
     assert payload["algorithm_display_name"] == "Sobel边缘检测"
     assert payload["result_image"].startswith("data:image/png;base64,")
@@ -319,6 +326,7 @@ def test_new_category_routes_and_two_image_processing_work_after_upload() -> Non
             "/api/algorithms/basic-operation",
             "/api/algorithms/grayscale-image",
             "/api/algorithms/image-restoration",
+            "/api/algorithms/edge-shape-detection",
         ]:
             response = client.get(route)
             assert response.status_code == 200
@@ -394,6 +402,33 @@ def test_new_category_routes_and_two_image_processing_work_after_upload() -> Non
         )
         assert motion_blur.status_code == 200
         assert motion_blur.json()["module"] == "image_restoration"
+
+        histogram_matching = client.post(
+            "/api/algorithms/grayscale-image/run",
+            json={
+                "source_type": "upload",
+                "image_path": first_path,
+                "second_image_path": second_path,
+                "algorithm": "histogram_matching",
+                "params": {},
+                "return_steps": False,
+            },
+        )
+        assert histogram_matching.status_code == 200
+        assert histogram_matching.json()["module"] == "grayscale_image"
+
+        canny = client.post(
+            "/api/algorithms/edge-shape-detection/run",
+            json={
+                "source_type": "upload",
+                "image_path": first_path,
+                "algorithm": "canny_edge_detection",
+                "params": {"threshold1": 80, "threshold2": 160, "blur_size": 5},
+                "return_steps": False,
+            },
+        )
+        assert canny.status_code == 200
+        assert canny.json()["module"] == "edge_shape_detection"
 
     for uploaded_path in uploaded_paths:
         if uploaded_path.exists():

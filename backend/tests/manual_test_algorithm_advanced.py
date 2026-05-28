@@ -166,7 +166,7 @@ def main() -> None:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="手动测试单个后端图像处理算法")
     parser.add_argument("--config", help="JSON 配置文件路径，例如 tests/sample_test_configs/canny_example.json")
-    parser.add_argument("--algorithm", help="算法导入路径，例如 app.algorithms.grayscale_image.edge_detection_basic")
+    parser.add_argument("--algorithm", help="算法导入路径，例如 app.algorithms.edge_shape_detection.canny_edge_detection")
     parser.add_argument("--input", help="输入图片路径，例如 data/test_images/anime_test.png")
     parser.add_argument("--output", help="输出图片路径，例如 data/test_outputs/canny_result.png")
     parser.add_argument("--params", help="JSON 字符串参数，例如 {\"threshold1\": 80, \"threshold2\": 160}")

@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.algorithm_modules.basic_operation import router as basic_operation_router
 from app.api.algorithm_modules.color_image import router as color_image_router
+from app.api.algorithm_modules.edge_shape_detection import router as edge_shape_detection_router
 from app.api.algorithm_modules.frequency_analysis import router as frequency_analysis_router
 from app.api.algorithm_modules.frequency_filter import router as frequency_filter_router
 from app.api.algorithm_modules.geometric_transform import router as geometric_transform_router
@@ -47,6 +48,7 @@ app.include_router(spatial_filter_router)
 app.include_router(frequency_analysis_router)
 app.include_router(frequency_filter_router)
 app.include_router(image_restoration_router)
+app.include_router(edge_shape_detection_router)
 
 
 @app.get("/")
