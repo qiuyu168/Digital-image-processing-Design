@@ -87,19 +87,22 @@ def test_upload_api_validates_rules_and_blocks_path_traversal() -> None:
         assert response.json()["message"]
 
 
-def test_algorithm_registry_returns_six_modules_and_preserves_slider_metadata() -> None:
+def test_algorithm_registry_returns_nine_modules_and_preserves_slider_metadata() -> None:
     from app.services.algorithm_registry import get_all_algorithms
 
     data = get_all_algorithms()
     modules = data["modules"]
 
     assert [module["module"] for module in modules] == [
+        "basic_operation",
         "grayscale_image",
         "color_image",
         "geometric_transform",
         "spatial_filter",
         "frequency_analysis",
         "frequency_filter",
+        "image_restoration",
+        "edge_shape_detection",
     ]
 
     color_module = next(module for module in modules if module["module"] == "color_image")
@@ -115,9 +118,14 @@ def test_algorithm_registry_returns_six_modules_and_preserves_slider_metadata() 
     assert param["step"] == 0.1
 
     grayscale_module = next(module for module in modules if module["module"] == "grayscale_image")
+    grayscale_names = {algorithm["name"] for algorithm in grayscale_module["algorithms"]}
+    assert "edge_detection_basic" not in grayscale_names
+    assert "sobel_edge_detection" not in grayscale_names
+
+    edge_module = next(module for module in modules if module["module"] == "edge_shape_detection")
     sobel = next(
         algorithm
-        for algorithm in grayscale_module["algorithms"]
+        for algorithm in edge_module["algorithms"]
         if algorithm["name"] == "sobel_edge_detection"
     )
     assert sobel["display_name"] == "Sobel边缘检测"
@@ -141,7 +149,7 @@ def test_fastapi_framework_endpoints_upload_and_run_saturation_adjust() -> None:
         assert algorithms.status_code == 200
         algorithm_payload = algorithms.json()
         assert algorithm_payload["success"] is True
-        assert len(algorithm_payload["modules"]) == 6
+        assert len(algorithm_payload["modules"]) == 9
 
         category = client.get("/api/algorithms/color-image")
         assert category.status_code == 200
@@ -265,7 +273,7 @@ def test_category_api_can_run_sobel_edge_detection_after_upload() -> None:
         uploaded_path = UPLOAD_DIR / image_path
 
         response = client.post(
-            "/api/algorithms/grayscale-image/run",
+            "/api/algorithms/edge-shape-detection/run",
             json={
                 "source_type": "upload",
                 "image_path": image_path,
@@ -283,6 +291,7 @@ def test_category_api_can_run_sobel_edge_detection_after_upload() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["success"] is True
+    assert payload["module"] == "edge_shape_detection"
     assert payload["algorithm"] == "sobel_edge_detection"
     assert payload["algorithm_display_name"] == "Sobel边缘检测"
     assert payload["result_image"].startswith("data:image/png;base64,")
@@ -291,6 +300,139 @@ def test_category_api_can_run_sobel_edge_detection_after_upload() -> None:
 
     if uploaded_path and uploaded_path.exists():
         uploaded_path.unlink()
+
+
+def test_new_category_routes_and_two_image_processing_work_after_upload() -> None:
+    from app.core.config import UPLOAD_DIR
+    from main import app
+
+    uploaded_paths: list[Path] = []
+    with TestClient(app) as client:
+        first_upload = client.post(
+            "/api/upload/image",
+            files={"file": ("first.png", make_png_bytes(160, 160), "image/png")},
+        )
+        second_upload = client.post(
+            "/api/upload/image",
+            files={"file": ("second.png", make_png_bytes(180, 160), "image/png")},
+        )
+        assert first_upload.status_code == 200
+        assert second_upload.status_code == 200
+        first_path = first_upload.json()["image_path"]
+        second_path = second_upload.json()["image_path"]
+        uploaded_paths.extend([UPLOAD_DIR / first_path, UPLOAD_DIR / second_path])
+
+        for route in [
+            "/api/algorithms/basic-operation",
+            "/api/algorithms/grayscale-image",
+            "/api/algorithms/image-restoration",
+            "/api/algorithms/edge-shape-detection",
+        ]:
+            response = client.get(route)
+            assert response.status_code == 200
+            assert response.json()["success"] is True
+            assert response.json()["algorithms"]
+
+        missing_second = client.post(
+            "/api/process/run",
+            json={
+                "source_type": "upload",
+                "image_path": first_path,
+                "module": "basic_operation",
+                "algorithm": "add_operation",
+                "params": {"alpha": 1.0, "beta": 1.0, "gamma": 0},
+                "return_steps": False,
+            },
+        )
+        assert missing_second.status_code == 400
+        assert "second" in missing_second.json()["message"].lower()
+
+        two_image = client.post(
+            "/api/algorithms/basic-operation/run",
+            json={
+                "source_type": "upload",
+                "image_path": first_path,
+                "second_image_path": second_path,
+                "algorithm": "add_operation",
+                "params": {"alpha": 1.0, "beta": 1.0, "gamma": 0},
+                "return_steps": False,
+            },
+        )
+        assert two_image.status_code == 200
+        assert two_image.json()["success"] is True
+        assert two_image.json()["module"] == "basic_operation"
+        assert two_image.json()["result_image"].startswith("data:image/png;base64,")
+        assert two_image.json()["steps"] == []
+
+        not_operation = client.post(
+            "/api/algorithms/basic-operation/run",
+            json={
+                "source_type": "upload",
+                "image_path": first_path,
+                "algorithm": "not_operation",
+                "params": {},
+                "return_steps": False,
+            },
+        )
+        assert not_operation.status_code == 200
+        assert not_operation.json()["algorithm"] == "not_operation"
+
+        gamma = client.post(
+            "/api/algorithms/grayscale-image/run",
+            json={
+                "source_type": "upload",
+                "image_path": first_path,
+                "algorithm": "gamma_correction",
+                "params": {"gamma": 1.2},
+                "return_steps": False,
+            },
+        )
+        assert gamma.status_code == 200
+        assert gamma.json()["module"] == "grayscale_image"
+
+        motion_blur = client.post(
+            "/api/algorithms/image-restoration/run",
+            json={
+                "source_type": "upload",
+                "image_path": first_path,
+                "algorithm": "motion_blur_simulation",
+                "params": {"length": 15, "angle": 30},
+                "return_steps": False,
+            },
+        )
+        assert motion_blur.status_code == 200
+        assert motion_blur.json()["module"] == "image_restoration"
+
+        histogram_matching = client.post(
+            "/api/algorithms/grayscale-image/run",
+            json={
+                "source_type": "upload",
+                "image_path": first_path,
+                "second_image_path": second_path,
+                "algorithm": "histogram_matching",
+                "params": {},
+                "return_steps": False,
+            },
+        )
+        assert histogram_matching.status_code == 200
+        assert histogram_matching.json()["module"] == "grayscale_image"
+
+        canny = client.post(
+            "/api/algorithms/edge-shape-detection/run",
+            json={
+                "source_type": "upload",
+                "image_path": first_path,
+                "algorithm": "canny_edge_detection",
+                "params": {"threshold1": 80, "threshold2": 160, "blur_size": 5},
+                "return_steps": False,
+            },
+        )
+        assert canny.status_code == 200
+        assert canny.json()["module"] == "edge_shape_detection"
+
+    for uploaded_path in uploaded_paths:
+        if uploaded_path.exists():
+            uploaded_path.unlink()
 
 
 def test_process_request_rejects_legacy_image_id_field() -> None:
@@ -375,6 +517,7 @@ def test_process_schemas_accept_frontend_display_names_and_reject_image_id() -> 
     request = ProcessRequest(
         source_type="upload",
         image_path="upload_xxx.png",
+        second_image_path="upload_yyy.png",
         module="color_image",
         module_display_name="彩色图像类",
         algorithm="saturation_adjust",
@@ -382,22 +525,34 @@ def test_process_schemas_accept_frontend_display_names_and_reject_image_id() -> 
         params={"saturation_factor": 1.2},
     )
     assert request.module == "color_image"
+    assert request.second_image_path == "upload_yyy.png"
     assert request.module_display_name == "彩色图像类"
     assert request.algorithm_display_name == "饱和度调整"
 
     category_request = CategoryProcessRequest(
         source_type="upload",
         image_path="upload_xxx.png",
+        second_image_path="upload_yyy.png",
         algorithm="saturation_adjust",
         algorithm_display_name="饱和度调整",
     )
     assert category_request.algorithm_display_name == "饱和度调整"
+
+    assert category_request.second_image_path == "upload_yyy.png"
 
     with pytest.raises(ValidationError):
         ProcessRequest(
             source_type="upload",
             image_id="upload_legacy.png",
             module="color_image",
+            algorithm="saturation_adjust",
+        )
+
+    with pytest.raises(ValidationError):
+        CategoryProcessRequest(
+            source_type="upload",
+            image_path="upload_xxx.png",
+            image_id="upload_legacy.png",
             algorithm="saturation_adjust",
         )
 

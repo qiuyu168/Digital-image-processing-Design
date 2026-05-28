@@ -1,4 +1,4 @@
-# 本文件用于定义六大算法分类 API 的共享常量和通用逻辑
+# 本文件用于定义算法分类 API 的共享常量和通用运行逻辑
 from __future__ import annotations
 
 from typing import Any
@@ -6,61 +6,8 @@ from typing import Any
 from fastapi import HTTPException
 
 from app.schemas.process_schema import CategoryProcessRequest
+from app.services.algorithm_registry import ALGORITHM_MODULES, MODULE_DISPLAY_NAMES
 
-
-MODULE_DISPLAY_NAMES = {
-    "grayscale_image": "灰度图像类",
-    "color_image": "彩色图像类",
-    "geometric_transform": "几何变换类",
-    "spatial_filter": "空域滤波类",
-    "frequency_analysis": "频域分析类",
-    "frequency_filter": "频域滤波类",
-}
-
-ALGORITHM_MODULES = {
-    "grayscale_image": [
-        "grayscale",
-        "binary_threshold",
-        "histogram_equalization",
-        "edge_detection_basic",
-        "sobel_edge_detection",
-        "erode",
-        "dilate",
-        "open_operation",
-        "close_operation",
-    ],
-    "color_image": [
-        "color_space_convert",
-        "saturation_adjust",
-        "anime_color_enhance",
-        "dominant_color_extract",
-    ],
-    "geometric_transform": [
-        "resize",
-        "rotate",
-        "flip",
-    ],
-    "spatial_filter": [
-        "mean_filter",
-        "gaussian_filter",
-        "median_filter",
-        "bilateral_filter",
-        "laplacian_sharpen",
-    ],
-    "frequency_analysis": [
-        "dft_spectrum",
-        "spectrum_shift",
-        "magnitude_spectrum",
-    ],
-    "frequency_filter": [
-        "low_pass_filter",
-        "high_pass_filter",
-        "ideal_low_pass",
-        "ideal_high_pass",
-        "gaussian_low_pass",
-        "gaussian_high_pass",
-    ],
-}
 
 CategoryRunRequest = CategoryProcessRequest
 
@@ -109,7 +56,7 @@ async def run_category_algorithm(
 
 
 def validate_algorithm_belongs_to_module(module_name: str, algorithm_name: str) -> None:
-    """校验算法是否属于当前分类。"""
+    """校验算法是否属于当前算法大类。"""
     if algorithm_name not in ALGORITHM_MODULES[module_name]:
         raise HTTPException(
             status_code=400,

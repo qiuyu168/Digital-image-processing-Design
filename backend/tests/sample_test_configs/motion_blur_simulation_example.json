@@ -1,0 +1,11 @@
+{
+  "说明": "运动模糊模拟高级手动测试配置示例。",
+  "algorithm_import_path": "app.algorithms.image_restoration.motion_blur_simulation",
+  "input_image_path": "data/test_images/anime_test.png",
+  "output_image_path": "data/test_outputs/motion_blur_simulation_result.png",
+  "params": {
+    "length": 15,
+    "angle": 30
+  }
+}
+

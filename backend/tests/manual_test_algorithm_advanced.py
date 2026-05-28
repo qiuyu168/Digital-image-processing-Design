@@ -22,6 +22,7 @@ if str(BACKEND_ROOT) not in sys.path:
 
 ALGORITHM_IMPORT_PATH = "app.algorithms.color_image.saturation_adjust"
 INPUT_IMAGE_PATH = "data/test_images/anime_test.png"
+SECOND_IMAGE_PATH: str | None = None
 OUTPUT_IMAGE_PATH = "data/test_outputs/result.png"
 PARAMS = {
     "saturation_factor": 1.5
@@ -121,8 +122,9 @@ def main() -> None:
 
     algorithm_import_path = config["algorithm_import_path"]
     input_image_path = config["input_image_path"]
+    second_image_path = config.get("second_image_path")
     output_image_path = config["output_image_path"]
-    params = config["params"]
+    params = dict(config["params"])
 
     print("=" * 68)
     print("开始进行图像处理算法本地测试")
@@ -134,6 +136,8 @@ def main() -> None:
 
     run_algorithm, algorithm_meta = load_algorithm(algorithm_import_path)
     image = read_image_unicode(input_image_path)
+    if second_image_path:
+        params["_second_image"] = read_image_unicode(second_image_path)
     result = run_algorithm(image, params)
     check_result_format(result)
 
@@ -162,10 +166,11 @@ def main() -> None:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="手动测试单个后端图像处理算法")
     parser.add_argument("--config", help="JSON 配置文件路径，例如 tests/sample_test_configs/canny_example.json")
-    parser.add_argument("--algorithm", help="算法导入路径，例如 app.algorithms.grayscale_image.edge_detection_basic")
+    parser.add_argument("--algorithm", help="算法导入路径，例如 app.algorithms.edge_shape_detection.canny_edge_detection")
     parser.add_argument("--input", help="输入图片路径，例如 data/test_images/anime_test.png")
     parser.add_argument("--output", help="输出图片路径，例如 data/test_outputs/canny_result.png")
     parser.add_argument("--params", help="JSON 字符串参数，例如 {\"threshold1\": 80, \"threshold2\": 160}")
+    parser.add_argument("--second-input", help="second image path for two-image algorithms")
     return parser.parse_args()
 
 
@@ -173,6 +178,7 @@ def _load_config(args: argparse.Namespace) -> dict[str, Any]:
     config = {
         "algorithm_import_path": ALGORITHM_IMPORT_PATH,
         "input_image_path": INPUT_IMAGE_PATH,
+        "second_image_path": SECOND_IMAGE_PATH,
         "output_image_path": OUTPUT_IMAGE_PATH,
         "params": PARAMS.copy(),
     }
@@ -184,6 +190,7 @@ def _load_config(args: argparse.Namespace) -> dict[str, Any]:
         config.update({
             "algorithm_import_path": loaded.get("algorithm_import_path", config["algorithm_import_path"]),
             "input_image_path": loaded.get("input_image_path", config["input_image_path"]),
+            "second_image_path": loaded.get("second_image_path", config["second_image_path"]),
             "output_image_path": loaded.get("output_image_path", config["output_image_path"]),
             "params": loaded.get("params", config["params"]),
         })
@@ -192,6 +199,8 @@ def _load_config(args: argparse.Namespace) -> dict[str, Any]:
         config["algorithm_import_path"] = args.algorithm
     if args.input:
         config["input_image_path"] = args.input
+    if hasattr(args, "second_input") and args.second_input:
+        config["second_image_path"] = args.second_input
     if args.output:
         config["output_image_path"] = args.output
     if args.params:

@@ -16,12 +16,27 @@ if str(BACKEND_ROOT) not in sys.path:
 
 
 ALGORITHM_MODULES = {
+    "basic_operation": [
+        "add_operation",
+        "subtract_operation",
+        "multiply_operation",
+        "divide_operation",
+        "and_operation",
+        "or_operation",
+        "not_operation",
+        "xor_operation",
+    ],
     "grayscale_image": [
+        "linear_gray_transform",
+        "gamma_correction",
+        "log_transform",
+        "exponential_transform",
+        "negative_transform",
         "grayscale",
         "binary_threshold",
         "histogram_equalization",
-        "edge_detection_basic",
-        "sobel_edge_detection",
+        "clahe_equalization",
+        "histogram_matching",
         "erode",
         "dilate",
         "open_operation",
@@ -32,14 +47,29 @@ ALGORITHM_MODULES = {
         "saturation_adjust",
         "anime_color_enhance",
         "dominant_color_extract",
+        "region_mosaic",
+        "color_comprehensive_processing",
     ],
-    "geometric_transform": ["resize", "rotate", "flip"],
+    "geometric_transform": [
+        "resize",
+        "rotate",
+        "flip",
+        "translate",
+        "affine_transform",
+        "perspective_transform",
+    ],
     "spatial_filter": [
         "mean_filter",
         "gaussian_filter",
         "median_filter",
         "bilateral_filter",
         "laplacian_sharpen",
+        "statistical_order_filter",
+        "max_filter",
+        "min_filter",
+        "adaptive_median_filter",
+        "unsharp_masking",
+        "add_noise",
     ],
     "frequency_analysis": ["dft_spectrum", "spectrum_shift", "magnitude_spectrum"],
     "frequency_filter": [
@@ -49,7 +79,43 @@ ALGORITHM_MODULES = {
         "ideal_high_pass",
         "gaussian_low_pass",
         "gaussian_high_pass",
+        "butterworth_low_pass",
+        "butterworth_high_pass",
+        "frequency_laplacian_sharpen",
+        "homomorphic_filter",
     ],
+    "image_restoration": [
+        "defocus_blur_simulation",
+        "lens_distortion_blur_simulation",
+        "motion_blur_simulation",
+        "atmospheric_turbulence_blur_simulation",
+        "inverse_filter_restoration",
+        "windowed_inverse_filter_restoration",
+        "wiener_filter_restoration",
+        "constrained_least_squares_restoration",
+    ],
+    "edge_shape_detection": [
+        "basic_edge_detection",
+        "canny_edge_detection",
+        "sobel_edge_detection",
+        "roberts_cross",
+        "prewitt_edge_detection",
+        "scharr_edge_detection",
+        "log_edge_detection",
+        "hough_shape_detection",
+        "corner_detection",
+    ],
+}
+
+TWO_IMAGE_ALGORITHMS = {
+    "add_operation",
+    "subtract_operation",
+    "multiply_operation",
+    "divide_operation",
+    "and_operation",
+    "or_operation",
+    "xor_operation",
+    "histogram_matching",
 }
 
 
@@ -74,6 +140,7 @@ def default_params(meta: dict[str, Any]) -> dict[str, Any]:
 def test_all_algorithm_files_are_complete_and_runnable() -> None:
     failures: list[str] = []
     image = sample_image()
+    second_image = np.rot90(image).copy()
 
     for module_name, algorithm_names in ALGORITHM_MODULES.items():
         for algorithm_name in algorithm_names:
@@ -116,7 +183,10 @@ def test_all_algorithm_files_are_complete_and_runnable() -> None:
                 continue
 
             try:
-                result = run(image[:, ::-1], default_params(meta))
+                params = default_params(meta)
+                if algorithm_name in TWO_IMAGE_ALGORITHMS:
+                    params["_second_image"] = second_image
+                result = run(image[:, ::-1], params)
             except Exception as exc:
                 failures.append(f"{import_path}: run failed: {exc}")
                 continue
@@ -129,6 +199,8 @@ def test_all_algorithm_files_are_complete_and_runnable() -> None:
                     failures.append(f"{import_path}: missing return key {key}")
             if not isinstance(result.get("result"), np.ndarray):
                 failures.append(f"{import_path}: result image is not ndarray")
+            elif result["result"].dtype != np.uint8:
+                failures.append(f"{import_path}: result dtype is not uint8")
             if not isinstance(result.get("steps"), list) or not result.get("steps"):
                 failures.append(f"{import_path}: steps must be non-empty list")
             else:

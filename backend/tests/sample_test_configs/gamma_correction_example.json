@@ -1,0 +1,9 @@
+{
+  "说明": "伽马校正高级手动测试配置示例。",
+  "algorithm_import_path": "app.algorithms.grayscale_image.gamma_correction",
+  "input_image_path": "data/test_images/anime_test.png",
+  "output_image_path": "data/test_outputs/gamma_correction_result.png",
+  "params": {
+    "gamma": 1.2
+  }
+}

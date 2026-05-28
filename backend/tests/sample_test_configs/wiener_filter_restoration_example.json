@@ -1,0 +1,10 @@
+{
+  "说明": "维纳滤波复原高级手动测试配置示例。",
+  "algorithm_import_path": "app.algorithms.image_restoration.wiener_filter_restoration",
+  "input_image_path": "data/test_images/anime_test.png",
+  "output_image_path": "data/test_outputs/wiener_filter_restoration_result.png",
+  "params": {
+    "k": 0.002,
+    "noise_power": 0.01
+  }
+}

@@ -57,12 +57,15 @@ def run_process(payload: dict[str, Any]) -> dict[str, Any]:
     """从请求数据加载图像、运行算法并返回前端响应。"""
     source_type = str(payload.get("source_type") or "upload")
     image_path = str(payload.get("image_path") or "")
+    second_image_path = payload.get("second_image_path")
     module_name = str(payload.get("module") or "")
     algorithm_name = str(payload.get("algorithm") or "")
-    params = payload.get("params") if isinstance(payload.get("params"), dict) else {}
+    params = dict(payload.get("params") if isinstance(payload.get("params"), dict) else {})
     return_steps = bool(payload.get("return_steps", True))
 
     image = load_image_by_source(source_type, image_path)
+    if second_image_path:
+        params["_second_image"] = load_image_by_source(source_type, str(second_image_path))
     result = run_algorithm(image, module_name, algorithm_name, params)
     algorithm_meta = getattr(get_algorithm(module_name, algorithm_name), "ALGORITHM_META", {})
 

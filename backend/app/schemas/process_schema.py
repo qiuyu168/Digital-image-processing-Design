@@ -11,6 +11,7 @@ class ProcessRequest(BaseModel):
 
     source_type: str
     image_path: str
+    second_image_path: str | None = None
     module: str
     module_display_name: str | None = None
     algorithm: str
@@ -24,6 +25,7 @@ class CategoryProcessRequest(BaseModel):
 
     source_type: str
     image_path: str
+    second_image_path: str | None = None
     algorithm: str
     algorithm_display_name: str | None = None
     params: dict[str, Any] = Field(default_factory=dict)
