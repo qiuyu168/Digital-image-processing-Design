@@ -3,7 +3,9 @@
     <div class="nav-inner">
       <!-- Logo 区域 -->
       <div class="logo-area" @click="goHome">
-        <span class="logo-dot"></span>
+        <div class="logo-icon">
+          <span>✦</span>
+        </div>
         <div class="logo-text">
           <div class="logo-title">动漫图像处理系统</div>
           <div class="logo-subtitle">Anime Image Processing</div>
@@ -75,10 +77,26 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const navItems = [
-  { label: '首页', path: '/home', icon: House },
-  { label: '图像处理', path: '/workspace', icon: MagicStick },
-  { label: '图像库', path: '/library', icon: Picture },
-  { label: '用户个人信息', path: '/profile', icon: UserFilled }
+  {
+    label: '首页',
+    path: '/home',
+    icon: House
+  },
+  {
+    label: '图像处理',
+    path: '/workspace',
+    icon: MagicStick
+  },
+  {
+    label: '图像库',
+    path: '/library',
+    icon: Picture
+  },
+  {
+    label: '用户个人信息',
+    path: '/profile',
+    icon: UserFilled
+  }
 ]
 
 const username = computed(() => {
@@ -108,60 +126,159 @@ function handleLogout() {
 </script>
 
 <style lang="scss" scoped>
+// ========== 变量定义 ==========
+$bg-start: rgba(120, 180, 240, 0.55);
+$bg-mid: rgba(180, 220, 255, 0.6);
+$bg-end: rgba(200, 235, 255, 0.55);
+$text-dark: #0b1e33;
+$text-mid: #1a3350;
+$text-light: #2c4b6e;
+$glow-blue: rgba(79, 172, 254, 0.4);
+$glow-cyan: rgba(0, 242, 254, 0.3);
+$border-light: rgba(79, 172, 254, 0.3);
+
 .header-nav {
-  position: fixed;
+  position: fixed;                // 改为固定定位
   top: 0;
   left: 0;
   width: 100%;
   z-index: 1000;
-  height: 64px;
-  background: rgba(250, 247, 242, 0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--c-line);
+  height: 72px;
+  background: rgba(255, 255, 255, 0.25);   // 半透明白底（后续可按需调整）
+  backdrop-filter: blur(12px);             // 背景模糊
+  -webkit-backdrop-filter: blur(12px);
+  // 其余属性（border-bottom, box-shadow 等）可保留，但建议降低阴影透明度
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+
+  // 水波波纹1
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: ripple1 4s ease-out infinite;
+    pointer-events: none;
+  }
+
+  // 水波波纹2（延迟启动，形成叠加）
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: ripple2 4s ease-out 1.5s infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes ripple1 {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.7;
+  }
+  100% {
+    width: 500px;
+    height: 500px;
+    opacity: 0;
+  }
+}
+
+@keyframes ripple2 {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.5;
+  }
+  100% {
+    width: 400px;
+    height: 400px;
+    opacity: 0;
+  }
 }
 
 .nav-inner {
   height: 100%;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 32px;
   display: flex;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 /* Logo */
 .logo-area {
-  width: 260px;
+  width: 300px;
   display: flex;
   align-items: center;
-  gap: 12px;
   cursor: pointer;
   user-select: none;
 }
 
-.logo-dot {
-  width: 8px;
-  height: 8px;
+.logo-icon {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--c-amber);
-  flex-shrink: 0;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #7ec8f8, #b0e0ff);
+  box-shadow:
+    0 0 16px rgba(79, 172, 254, 0.5),
+    0 0 32px rgba(0, 242, 254, 0.3),
+    inset 0 0 8px rgba(255, 255, 255, 0.6);
+  animation: iconGlow 2s ease-in-out infinite alternate;
+
+  span {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+    animation: spinStar 4s linear infinite;
+  }
+}
+
+@keyframes iconGlow {
+  from {
+    box-shadow: 0 0 16px rgba(79, 172, 254, 0.5), 0 0 32px rgba(0, 242, 254, 0.3), inset 0 0 8px rgba(255,255,255,0.6);
+  }
+  to {
+    box-shadow: 0 0 24px rgba(79, 172, 254, 0.7), 0 0 48px rgba(0, 242, 254, 0.5), inset 0 0 12px rgba(255,255,255,0.8);
+  }
+}
+
+@keyframes spinStar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .logo-title {
-  color: var(--c-ink);
-  font-size: 16px;
+  color: $text-dark;
+  font-size: 19px;
   font-weight: 700;
-  letter-spacing: 0.2px;
-  line-height: 1.2;
+  letter-spacing: 1px;
+  text-shadow: none;
 }
 
 .logo-subtitle {
-  margin-top: 2px;
-  color: var(--c-ink-2);
-  font-size: 11px;
+  margin-top: 3px;
+  color: $text-mid;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.6px;
 }
 
 /* 导航菜单 */
@@ -169,100 +286,88 @@ function handleLogout() {
   flex: 1;
   display: flex;
   justify-content: center;
-  gap: 4px;
+  gap: 14px;
 }
 
 .nav-item {
-  position: relative;
-  height: 64px;
-  padding: 0 16px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: var(--c-ink-2);
-  font-size: 14px;
+  gap: 7px;
+  color: $text-mid;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-standard);
-
-  &::after {
-    content: "";
-    position: absolute;
-    left: 16px;
-    right: 16px;
-    bottom: 14px;
-    height: 2px;
-    border-radius: 2px;
-    background: var(--c-amber);
-    opacity: 0;
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: opacity var(--dur-fast) var(--ease-standard),
-                transform var(--dur-base) var(--ease-decel);
-  }
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
 
   &:hover {
-    color: var(--c-ink);
+    color: $text-dark;
+    background: rgba(255, 255, 255, 0.25);
+    border-color: $border-light;
+    box-shadow: 0 0 10px rgba(79, 172, 254, 0.2);
+    transform: translateY(-2px);
   }
 
   &.active {
-    color: var(--c-ink);
-    font-weight: 600;
-
-    &::after {
-      opacity: 1;
-      transform: scaleX(1);
-    }
+    color: $text-dark;
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(79, 172, 254, 0.5);
+    box-shadow: 0 0 12px rgba(79, 172, 254, 0.3);
   }
 
   .nav-icon {
-    font-size: 15px;
+    font-size: 17px;
+    filter: drop-shadow(0 0 4px rgba(79, 172, 254, 0.4));
   }
 }
 
 /* 用户区域 */
 .user-area {
+  width: 260px;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .user-box {
-  height: 36px;
-  padding: 0 10px 0 4px;
+  height: 44px;
+  padding: 0 14px 0 6px;
   border-radius: 999px;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--c-ink);
+  color: $text-dark;
   cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--c-line);
-  max-width: 36px;
-  overflow: hidden;
-  transition: max-width var(--dur-base) var(--ease-standard),
-              background var(--dur-fast) var(--ease-standard),
-              border-color var(--dur-fast) var(--ease-standard);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid $border-light;
+  box-shadow: 0 0 12px rgba(79, 172, 254, 0.1);
+  transition: all 0.3s ease;
 
   &:hover {
-    max-width: 200px;
-    background: rgba(217, 119, 6, 0.06);
-    border-color: rgba(217, 119, 6, 0.25);
+    background: rgba(255, 255, 255, 0.35);
+    border-color: rgba(79, 172, 254, 0.6);
+    box-shadow: 0 0 18px rgba(79, 172, 254, 0.3);
+    transform: translateY(-2px);
   }
 }
 
 .avatar {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--c-amber);
+  background: linear-gradient(135deg, #7ec8f8, #b0e0ff);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
+  box-shadow: 0 0 12px rgba(79, 172, 254, 0.6);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
 }
 
 .username {
@@ -270,60 +375,72 @@ function handleLogout() {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .arrow-icon {
-  font-size: 12px;
-  color: var(--c-ink-2);
-  transition: transform 0.2s;
+  font-size: 14px;
+  color: $text-mid;
+  transition: transform 0.3s;
 }
 
 .user-box:hover .arrow-icon {
-  transform: translateX(2px);
-  color: var(--c-amber);
+  transform: translateX(3px);
+  color: $text-dark;
 }
 
 .logout-icon {
-  font-size: 16px;
-  color: var(--c-ink-2);
+  font-size: 20px;
+  color: $text-mid;
   cursor: pointer;
+  transition: all 0.3s;
   padding: 6px;
-  border-radius: var(--radius-sm);
-  transition: background 0.18s ease, color 0.18s ease;
+  border-radius: 50%;
 
   &:hover {
-    color: var(--c-amber-2);
-    background: rgba(217, 119, 6, 0.08);
+    color: #0b1e33;
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
   }
 }
 
 .login-register-btn {
-  height: 36px;
-  padding: 0 18px;
+  height: 42px;
+  padding: 0 28px;
   border: none;
-  border-radius: var(--radius-sm);
-  background: var(--c-amber);
-  color: #fff;
-  font-size: 13px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7ec8f8, #b0e0ff);
+  color: #0b1e33;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.3px;
-  transition: background 0.18s ease;
+  letter-spacing: 1px;
+  box-shadow:
+    0 0 16px rgba(79, 172, 254, 0.4),
+    0 0 30px rgba(0, 242, 254, 0.2);
+  transition: all 0.3s ease;
 
   &:hover {
-    background: var(--c-amber-2);
-    color: #fff;
+    background: linear-gradient(135deg, #a0d4fc, #c8eaff);
+    box-shadow:
+      0 0 20px rgba(79, 172, 254, 0.6),
+      0 0 40px rgba(0, 242, 254, 0.3);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
+/* 小屏幕适配 */
 @media (max-width: 900px) {
   .nav-inner {
-    padding: 0 16px;
+    padding: 0 18px;
   }
 
   .logo-area {
-    width: auto;
+    width: 230px;
   }
 
   .logo-subtitle {
@@ -331,12 +448,12 @@ function handleLogout() {
   }
 
   .nav-item {
-    padding: 0 10px;
-    font-size: 13px;
+    padding: 0 12px;
   }
 
   .user-area {
     width: auto;
+    gap: 8px;
   }
 
   .username {

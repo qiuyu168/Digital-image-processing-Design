@@ -1,33 +1,127 @@
 <template>
   <div class="profile-page">
-    <ProfileTabSidebar
-      :active-tab="activeTab"
-      :tabs="tabs"
-      @update:active-tab="activeTab = $event"
-    />
-    <main class="tab-content">
+    <!-- 三个标签按钮 -->
+    <div class="tab-bar">
+      <el-button
+        v-for="tab in tabs"
+        :key="tab.key"
+        :type="activeTab === tab.key ? 'primary' : 'default'"
+        size="large"
+        class="tab-button"
+        @click="activeTab = tab.key"
+      >
+        {{ tab.label }}
+      </el-button>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="tab-content">
+      <!-- 基本资料 -->
       <div v-if="activeTab === 'info'" class="content-panel">
-        <InfoForm
-          :info-form="infoForm"
-          :info-rules="infoRules"
-          @save="handleSaveInfo"
-        />
+        <el-form
+          ref="infoFormRef"
+          :model="infoForm"
+          :rules="infoRules"
+          label-width="100px"
+          size="large"
+          class="info-form"
+        >
+          <el-form-item label="账号" prop="username">
+            <el-input v-model="infoForm.username" disabled />
+          </el-form-item>
+
+          <el-form-item label="昵称" prop="nickname">
+            <el-input v-model="infoForm.nickname" placeholder="请输入昵称" />
+          </el-form-item>
+
+          <el-form-item label="邮箱" prop="email">
+            <el-input v-model="infoForm.email" placeholder="请输入邮箱" />
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="handleSaveInfo">
+              保存修改
+            </el-button>
+          </el-form-item>
+        </el-form>
       </div>
+
+      <!-- 更换头像 -->
       <div v-else-if="activeTab === 'avatar'" class="content-panel avatar-panel">
-        <AvatarForm
-          :avatar-url="avatarUrl"
-          @upload="handleBeforeAvatarUpload"
-          @remove="removeAvatar"
-        />
+        <div class="avatar-preview">
+          <el-avatar :size="120" :src="avatarUrl" />
+          <p>当前头像预览</p>
+        </div>
+
+        <div class="avatar-actions">
+          <el-upload
+            class="avatar-upload"
+            action="#"
+            :show-file-list="false"
+            :before-upload="handleBeforeAvatarUpload"
+            accept="image/*"
+          >
+            <el-button type="primary">选择新头像</el-button>
+          </el-upload>
+          <el-button
+            v-if="avatarUrl"
+            type="danger"
+            plain
+            @click="removeAvatar"
+          >
+            移除头像
+          </el-button>
+        </div>
+
+        <p class="tip">
+          支持 jpg / png 格式，大小不超过 2MB。
+        </p>
       </div>
+
+      <!-- 设置密码 -->
       <div v-else-if="activeTab === 'password'" class="content-panel">
-        <PasswordForm
-          :password-form="passwordForm"
-          :password-rules="passwordRules"
-          @change="handleChangePassword"
-        />
+        <el-form
+          ref="passwordFormRef"
+          :model="passwordForm"
+          :rules="passwordRules"
+          label-width="120px"
+          size="large"
+        >
+          <el-form-item label="旧密码" prop="oldPassword">
+            <el-input
+              v-model="passwordForm.oldPassword"
+              type="password"
+              show-password
+              placeholder="请输入旧密码"
+            />
+          </el-form-item>
+
+          <el-form-item label="新密码" prop="newPassword">
+            <el-input
+              v-model="passwordForm.newPassword"
+              type="password"
+              show-password
+              placeholder="请输入新密码"
+            />
+          </el-form-item>
+
+          <el-form-item label="确认新密码" prop="confirmPassword">
+            <el-input
+              v-model="passwordForm.confirmPassword"
+              type="password"
+              show-password
+              placeholder="请再次输入新密码"
+            />
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="handleChangePassword">
+              修改密码
+            </el-button>
+          </el-form-item>
+        </el-form>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -36,11 +130,8 @@ import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
-import ProfileTabSidebar from '@/components/profile/ProfileTabSidebar.vue'
-import InfoForm from '@/components/profile/InfoForm.vue'
-import AvatarForm from '@/components/profile/AvatarForm.vue'
-import PasswordForm from '@/components/profile/PasswordForm.vue'
 
+// ---------- 三个标签页定义 ----------
 const tabs = [
   { key: 'info', label: '基本资料' },
   { key: 'avatar', label: '更换头像' },
@@ -52,6 +143,7 @@ const activeTab = ref('info')
 const userStore = useAuthStore()
 const router = useRouter()
 
+// ---------- 基本资料 ----------
 const infoFormRef = ref(null)
 const infoForm = reactive({
   username: userStore.userInfo?.username || '',
@@ -84,6 +176,7 @@ function handleSaveInfo() {
   })
 }
 
+// ---------- 更换头像 ----------
 const avatarUrl = ref('')
 
 function handleBeforeAvatarUpload(file) {
@@ -105,14 +198,17 @@ function handleBeforeAvatarUpload(file) {
   reader.readAsDataURL(file)
 
   ElMessage.success('头像已更新（本地预览）')
+  // TODO: 实际上传头像 API
   return false
 }
 
 function removeAvatar() {
   avatarUrl.value = ''
+  // TODO: 调用删除头像 API
   ElMessage.info('头像已移除')
 }
 
+// ---------- 设置密码 ----------
 const passwordFormRef = ref(null)
 const passwordForm = ref({
   oldPassword: '',
@@ -162,6 +258,7 @@ function handleChangePassword() {
   passwordFormRef.value?.validate((valid) => {
     if (valid) {
       ElMessage.success('密码已修改')
+      // 清空表单
       userStore.clearLoginInfo()
       router.push('/login')
     } else {
@@ -173,38 +270,121 @@ function handleChangePassword() {
 
 <style lang="scss" scoped>
 .profile-page {
-  color: var(--c-ink);
-  font-family: var(--font-stack);
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 32px;
-  align-items: flex-start;
+  font-family: 'M PLUS Rounded 1c', 'Quicksand', sans-serif;
+  color: #1a1a1a;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 
-.tab-content {
-  min-width: 0;
+/* 标签按钮栏 */
+.tab-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  justify-content: center;
 }
 
+.tab-button {
+  border-radius: 28px;
+  font-weight: 600;
+  padding: 10px 28px;
+  border: none;
+  background: rgba(255, 255, 255, 0.8);
+  color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.tab-button.el-button--primary {
+  background: #ff6b8b;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(255, 107, 139, 0.3);
+}
+
+/* 内容面板 */
 .content-panel {
   width: 100%;
-  max-width: 640px;
-  padding: 32px 32px;
-  background: #fff;
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2);
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.04);
 }
 
-@media (max-width: 900px) {
-  .profile-page {
-    grid-template-columns: 1fr;
-    gap: 20px;
+.info-form {
+  :deep(.el-input__wrapper) {
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: none;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  :deep(.el-form-item__label) {
+    font-weight: 600;
+    color: #1a1a1a;
   }
 }
 
+/* 头像区域 */
+.avatar-panel {
+  text-align: center;
+}
+
+.avatar-preview {
+  margin-bottom: 24px;
+
+  .el-avatar {
+    border: 4px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  p {
+    margin-top: 12px;
+    color: #666;
+    font-size: 14px;
+  }
+}
+
+.avatar-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tip {
+  color: #999;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 响应式 */
 @media (max-width: 680px) {
+  .tab-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
   .content-panel {
-    padding: 24px 20px;
+    padding: 24px;
+  }
+
+  .info-form :deep(.el-form-item) {
+    display: block;
+    margin-bottom: 16px;
+
+    .el-form-item__label {
+      text-align: left;
+    }
   }
 }
 </style>

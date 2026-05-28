@@ -137,32 +137,7 @@ frontend/
 │   ├── components/
 │   │   ├── AppFooter.vue
 │   │   ├── HeaderNav.vue
-│   │   ├── MainLayout.vue
-│   │   ├── workspace/          # 工作区子组件 (6 个)
-│   │   │   ├── AlgorithmSidebar.vue
-│   │   │   ├── AlgorithmInfoCard.vue
-│   │   │   ├── UploadPanel.vue
-│   │   │   ├── ParamsPanel.vue
-│   │   │   ├── NoParamCard.vue
-│   │   │   └── ResultPanel.vue
-│   │   ├── home/               # 首页子组件 (4 个)
-│   │   │   ├── HeroSection.vue
-│   │   │   ├── FlowSection.vue
-│   │   │   ├── AlgorithmModuleGrid.vue
-│   │   │   └── FeatureSection.vue
-│   │   ├── library/            # 图像库子组件 (4 个)
-│   │   │   ├── CategorySidebar.vue
-│   │   │   ├── LibraryHero.vue
-│   │   │   ├── ImageGrid.vue
-│   │   │   └── MetricsPanel.vue
-│   │   ├── login/              # 登录页子组件 (2 个)
-│   │   │   ├── LoginHero.vue
-│   │   │   └── LoginCard.vue
-│   │   └── profile/            # 个人信息子组件 (4 个)
-│   │       ├── ProfileTabSidebar.vue
-│   │       ├── InfoForm.vue
-│   │       ├── AvatarForm.vue
-│   │       └── PasswordForm.vue
+│   │   └── MainLayout.vue
 │   ├── router/
 │   │   └── index.js
 │   ├── stores/
@@ -220,60 +195,13 @@ frontend/
 
 ### 3. `src/components`
 
-用于存放公共布局组件和按功能区拆分的子组件。
-
-**布局组件：**
+用于存放公共布局组件。
 
 | 组件 | 说明 |
 | --- | --- |
-| `HeaderNav.vue` | 页头导航栏，支持 active underline 滑动动画、用户头像折叠展开 |
-| `AppFooter.vue` | 页脚，水平两行排布（品牌信息 + 团队列表） |
-| `MainLayout.vue` | 主布局，包含全局 WarmDust 粒子背景、页头、路由 fade-up 过渡、页脚 |
-
-**工作区子组件 (`workspace/`)：**
-
-| 组件 | 说明 |
-| --- | --- |
-| `AlgorithmSidebar.vue` | 左侧算法树侧栏，el-menu + 模块图标 + 算法计数徽章 |
-| `AlgorithmInfoCard.vue` | 当前选中算法的名称与描述信息卡 |
-| `UploadPanel.vue` | 图片上传面板，支持预览、遮罩 hover 重上传提示 |
-| `ParamsPanel.vue` | 参数设置面板，动态生成 slider/select/switch/input 控件 |
-| `NoParamCard.vue` | 无可变参数时的占位卡（SVG 插图） |
-| `ResultPanel.vue` | 处理结果展示，原图/结果对比 + 步骤图 + 指标 + 分析 |
-
-**首页子组件 (`home/`)：**
-
-| 组件 | 说明 |
-| --- | --- |
-| `HeroSection.vue` | 首页 Hero 区，左文本 + 右层叠步骤卡片 |
-| `FlowSection.vue` | 功能流程横向步骤指示器（圆形编号 + 连线） |
-| `AlgorithmModuleGrid.vue` | 算法模块展示，主推大卡 + 紧凑卡列表联动 |
-| `FeatureSection.vue` | 项目特色卡片网格 |
-
-**图像库子组件 (`library/`)：**
-
-| 组件 | 说明 |
-| --- | --- |
-| `CategorySidebar.vue` | 左侧分类侧栏，含刷新按钮和骨架加载态 |
-| `LibraryHero.vue` | 图库顶部信息区，分类名 + 图片总数 |
-| `ImageGrid.vue` | 图片网格，hover 时右上角滑入操作图标组（Apple Finder 风格） |
-| `MetricsPanel.vue` | 底部内联抽屉：默认折叠 64px，选图后展开 320px 显示指标 |
-
-**登录页子组件 (`login/`)：**
-
-| 组件 | 说明 |
-| --- | --- |
-| `LoginHero.vue` | 左侧品牌展示区，含层叠步骤卡片 |
-| `LoginCard.vue` | 右侧表单卡片，含登录/注册顶部 tab 切换 + amber focus ring |
-
-**个人信息子组件 (`profile/`)：**
-
-| 组件 | 说明 |
-| --- | --- |
-| `ProfileTabSidebar.vue` | 左侧竖排 tab 侧栏，"Settings" 眉眼文字 + amber active 指示条 |
-| `InfoForm.vue` | 基本资料表单（账号/昵称/邮箱） |
-| `AvatarForm.vue` | 头像更换区，左预览右操作两栏布局 |
-| `PasswordForm.vue` | 密码修改表单，含三段密码强度指示条 |
+| `HeaderNav.vue` | 页头导航栏 |
+| `AppFooter.vue` | 页脚版权信息 |
+| `MainLayout.vue` | 主布局组件，包含页头、页面主体和页脚 |
 
 ### 4. `src/stores`
 
@@ -580,29 +508,38 @@ src/views/LibraryView.vue
 
 ### 2. 工作区 `WorkspaceView.vue`
 
-工作区是图像处理功能的核心页面，采用 **三栏布局**：
+工作区是图像处理功能的核心页面。
 
+主要流程：
+
+```txt
+获取算法列表
+    ↓
+选择算法大类和具体算法
+    ↓
+根据 params 动态生成参数表单
+    ↓
+上传图片
+    ↓
+点击开始处理
+    ↓
+调用对应算法运行接口
+    ↓
+展示处理结果
 ```
-┌──────────┬─────────────────────┬──────────┐
-│ 算法树   │  工作区（信息卡 +    │ 参数面板 │
-│ 侧栏     │   上传 + 结果展示）  │ (sticky) │
-│ 260px    │  1fr                │ 340px    │
-└──────────┴─────────────────────┴──────────┘
-```
 
-**左栏 — AlgorithmSidebar**：sticky 定位，el-menu 树形展示 6 大模块下的所有算法，带算法计数徽章，支持刷新。
+工作区中的算法表单不是写死的，而是根据后端 `/api/algorithms` 返回的参数元数据动态生成。
 
-**中栏 — 工作区**：
-- AlgorithmInfoCard：当前选中算法信息
-- UploadPanel：图片上传（支持预览、hover 遮罩重上传、元数据显示）
-- ResultPanel：原图/结果左右对比 + 步骤图 + 指标 + 分析
+支持的参数控件包括：
 
-**右栏 — ParamsPanel**：sticky 定位，根据参数元数据动态生成控件（slider/select/switch/input），无可变参数时显示 NoParamCard SVG 占位，执行按钮固定在底部。
-
-响应式适配：
-- ≥1280px：三栏
-- 980–1279px：双栏（算法树 + 中栏），参数下移
-- <980px：单列堆叠
+| 参数类型 | 前端控件 |
+| --- | --- |
+| `int` | 数字输入 / 滑块 |
+| `float` | 数字输入 / 滑块 |
+| `odd_int` | 奇数数字输入 / 滑块 |
+| `select` | 下拉选择框 |
+| `bool` | 开关 |
+| 其他类型 | 文本输入框 |
 
 ---
 
@@ -610,24 +547,27 @@ src/views/LibraryView.vue
 
 图像库页面用于浏览后端提供的示例图像。
 
-布局：
+主要流程：
 
+```txt
+获取图像分类
+    ↓
+渲染左侧分类栏
+    ↓
+点击分类
+    ↓
+请求该分类下的图像
+    ↓
+展示图片列表
+    ↓
+点击图片全屏预览
+    ↓
+点击查看参数
+    ↓
+请求并展示图像参数
 ```
-┌──────────┬──────────────────────┐
-│ 分类侧栏 │ LibraryHero（顶部）  │
-│ 220px    ├──────────────────────┤
-│ sticky   │ ImageGrid            │
-│          ├──────────────────────┤
-│          │ MetricsPanel（底部） │
-└──────────┴──────────────────────┘
-```
 
-- **CategorySidebar**：左侧 sticky 分类列表，含刷新按钮和骨架加载态。
-- **LibraryHero**：顶部信息区，显示当前分类名和图片总数。
-- **ImageGrid**：图片网格，hover 时右上角滑入操作图标组（Apple Finder 风格），支持 TransitionGroup stagger 入场。
-- **MetricsPanel**：底部内联抽屉，默认折叠 64px 显示提示文字，选图后展开 320px 横向滚动展示图片指标。
-
-每张图片 hover 时显示：
+每张图片下方提供：
 
 - 查看参数；
 - 获取图片。
@@ -637,10 +577,6 @@ src/views/LibraryView.vue
 ### 4. 登录注册页 `LoginView.vue`
 
 当前登录注册页主要用于前端测试。
-
-页面采用左右分栏布局：
-- **LoginHero**：左侧品牌展示区，含层叠步骤卡片视觉效果
-- **LoginCard**：右侧表单卡片，顶部 登录/注册 tab 切换（fade-up 过渡），输入框 focus 时显示 amber ring
 
 登录逻辑：
 
@@ -655,12 +591,12 @@ src/views/LibraryView.vue
 
 ### 5. 用户个人信息页 `UserProfileView.vue`
 
-用户个人信息页采用左侧 tab 侧栏 + 右侧内容面板布局：
+用户个人信息页用于展示和编辑本地用户信息，包括：
 
-- **ProfileTabSidebar**：左侧竖排 tab 侧栏（"Settings" 眉眼 + amber active 指示条）
-- **InfoForm**：基本资料表单（账号/昵称/邮箱），8pt 网格对齐
-- **AvatarForm**：头像更换区，左 96px 预览 + 右操作按钮两栏布局
-- **PasswordForm**：密码修改表单，含三段密码强度指示条（CSS-only，按新密码长度分段填充），强密码强度检测
+- 基本资料；
+- 头像预览；
+- 密码设置表单；
+- 本地交互提示。
 
 部分功能当前为前端本地模拟，后续可以接入真实用户接口。
 
@@ -674,57 +610,22 @@ src/views/LibraryView.vue
 
 ## 十二、样式说明
 
-项目采用 **Claude 暖色 + Apple HIG 结构骨架** 设计语言。
+项目整体采用偏动漫、清新、半透明玻璃拟态风格。
 
-### 设计 Token（定义于 `src/styles/index.scss`）
+主要样式特点：
 
-**颜色系统 (Claude 暖色调)：**
+- 固定顶部导航栏；
+- 半透明背景；
+- 圆角卡片；
+- 柔和阴影；
+- Element Plus 组件二次美化；
+- 页面中大量使用 `scoped SCSS`，减少样式污染。
 
-| Token | 色值 | 用途 |
-| --- | --- | --- |
-| `--c-cream` | `#faf7f2` | 页面背景 |
-| `--c-cream-2` | `#f4eee5` | 卡片/输入框背景 |
-| `--c-peach` | `#f0d9c2` | 标签/徽章背景 |
-| `--c-amber` | `#d97706` | 主按钮/链接/强调色 |
-| `--c-amber-2` | `#b45309` | hover/按下态 |
-| `--c-ink` | `#2b2419` | 主文字 |
-| `--c-ink-2` | `#5a4f43` | 次要文字 |
-| `--c-line` | `rgba(43,36,25,0.08)` | 边框/分隔线 |
+全局基础样式位于：
 
-**阴影层级：**
-
-| Token | 用途 |
-| --- | --- |
-| `--shadow-1` | 卡片浮起（含 inset 高光） |
-| `--shadow-2` | 中等浮层 |
-| `--shadow-3` | 深层浮层 |
-
-### Apple HIG 动效系统
-
-所有过渡动画使用 Apple 标准缓动曲线和时长：
-
-| Token | 值 | 用途 |
-| --- | --- | --- |
-| `--ease-standard` | `cubic-bezier(0.4, 0, 0.2, 1)` | 常规 hover、状态切换 |
-| `--ease-emphasized` | `cubic-bezier(0.25, 0.1, 0.25, 1)` | 强调入场 |
-| `--ease-decel` | `cubic-bezier(0, 0, 0.2, 1)` | 减速入场（大组件） |
-| `--ease-accel` | `cubic-bezier(0.4, 0, 1, 1)` | 加速出场 |
-| `--dur-fast` | `180ms` | 微交互（hover/active） |
-| `--dur-base` | `240ms` | 面板/tab 切换 |
-| `--dur-slow` | `340ms` | 大组件进场 |
-
-**动效规则：**
-- hover/active：`--dur-fast` + `--ease-standard`，仅动 box-shadow + 1-2px translate，禁用 scale 跳变
-- 路由切换：`<Transition name="route-fade">` 包裹 RouterView，opacity + 6px translateY，240ms
-- 列表入场：`<TransitionGroup>` 子项 stagger（30ms/项，最多 10 项）
-- 全局尊重 `prefers-reduced-motion: reduce`，自动禁用所有动画
-
-**全局装饰：**
-- WarmDust 暖色尘埃粒子漂浮动画（30–50s 周期，极淡）
-- 全局径向渐变背景
-
-**字体：**
-- `--font-stack`: Apple SF 系统字体栈（`-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', system-ui, sans-serif`）
+```txt
+src/styles/index.scss
+```
 
 ---
 
