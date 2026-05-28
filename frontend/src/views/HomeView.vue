@@ -112,7 +112,7 @@
       </div>
 
       <div v-if="modulesLoading" class="module-grid">
-        <div v-for="n in 6" :key="n" class="module-card skeleton-card">
+        <div v-for="n in 6" :key="n" class="module-card">
           <el-skeleton :rows="3" animated />
         </div>
       </div>
@@ -199,7 +199,8 @@ async function loadModules() {
         tags: (Array.isArray(m.algorithms) ? m.algorithms.slice(0, 3) : []).map(function(a) { return a.display_name || a.name })
       }
     })
-  } catch {
+  } catch (err) {
+    console.warn('Failed to load algorithm modules:', err)
     dynamicModules.value = []
   } finally {
     modulesLoading.value = false
