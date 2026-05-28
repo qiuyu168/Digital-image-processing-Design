@@ -76,8 +76,7 @@
             />
 
             <template v-else>
-              <el-scrollbar class="image-scroll">
-                <div class="image-grid">
+              <div class="image-grid">
                   <article
                     v-for="image in images"
                     :key="image.imagePath"
@@ -137,7 +136,6 @@
                     </div>
                   </article>
                 </div>
-              </el-scrollbar>
 
               <div v-if="totalImages > pageSize" class="pagination-wrapper">
                 <el-pagination
@@ -754,8 +752,6 @@ function getCategoryIcon(index) {
 }
 
 .image-scroll {
-  max-height: calc(100vh - 360px);
-  min-height: 360px;
   padding-right: 4px;
 }
 
@@ -1077,8 +1073,7 @@ function getCategoryIcon(index) {
     max-height: none;
   }
 
-  .metrics-scroll,
-  .image-scroll {
+  .metrics-scroll {
     max-height: none;
   }
 }
