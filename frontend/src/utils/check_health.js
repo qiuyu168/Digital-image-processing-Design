@@ -1,3 +1,4 @@
+import { ElMessage } from 'element-plus'
 import { checkHealthService } from "@/api/health"
 
 export const chech_health = async () => {
