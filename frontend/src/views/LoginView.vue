@@ -1,37 +1,3 @@
-<template>
-  <div class="login-page">
-    <div class="login-glow login-glow--pink"></div>
-    <div class="login-glow login-glow--purple"></div>
-    <div class="login-glow login-glow--blue"></div>
-
-    <div class="login-card glass-card">
-      <div class="login-logo">✦</div>
-      <h1 class="login-title">动漫图像处理系统</h1>
-      <p class="login-sub">Interactive Digital Image Processing</p>
-
-      <div class="login-tabs">
-        <button :class="{ active: isLogin }" @click="isLogin = true">登录</button>
-        <button :class="{ active: !isLogin }" @click="isLogin = false">注册</button>
-      </div>
-
-      <form @submit.prevent="handleSubmit" class="login-form">
-        <input v-model="username" class="glass-input" placeholder="用户名" autocomplete="username">
-        <input v-model="password" type="password" class="glass-input" placeholder="密码" autocomplete="current-password">
-        <input v-if="!isLogin" v-model="confirmPassword" type="password" class="glass-input" placeholder="确认密码">
-
-        <button type="submit" class="btn-gradient login-submit">
-          {{ isLogin ? '登 录' : '注 册' }}
-        </button>
-      </form>
-
-      <p class="login-switch">
-        {{ isLogin ? '没有账号？' : '已有账号？' }}
-        <span @click="isLogin = !isLogin">{{ isLogin ? '立即注册' : '立即登录' }}</span>
-      </p>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { useAuthStore } from '@/stores/authStore'
 import { ref, watch, onMounted, onUnmounted } from 'vue'
@@ -133,116 +99,328 @@ const login = async () => {
 onMounted(chech_health)
 </script>
 
+<template>
+  <div class="login-page">
+    <!-- 背景图片轮换层 -->
+    <div class="bg-slider">
+      <img
+        v-for="(img, index) in images"
+        :key="index"
+        :src="img"
+        :class="{ active: index === currentIndex }"
+        class="bg-image"
+      />
+    </div>
+
+    <!-- 表单卡片 -->
+    <div class="form-card">
+      <!-- 注册表单 -->
+      <el-form
+        v-if="isRegister"
+        ref="form"
+        :model="formModel"
+        :rules="rules"
+        size="large"
+        autocomplete="off"
+        class="login-form"
+      >
+        <el-form-item>
+          <h1>注册</h1>
+        </el-form-item>
+
+        <el-form-item prop="username">
+          <el-input
+            v-model="formModel.username"
+            :prefix-icon="User"
+            placeholder="请输入用户名"
+          />
+        </el-form-item>
+
+        <el-form-item prop="password">
+          <el-input
+            v-model="formModel.password"
+            :prefix-icon="Lock"
+            type="password"
+            show-password
+            placeholder="请输入密码"
+          />
+        </el-form-item>
+
+        <el-form-item prop="repassword">
+          <el-input
+            v-model="formModel.repassword"
+            :prefix-icon="Lock"
+            type="password"
+            show-password
+            placeholder="请再次输入密码"
+          />
+        </el-form-item>
+
+        <el-form-item>
+          <el-button
+            class="button"
+            type="primary"
+            auto-insert-space
+            @click="register"
+          >
+            注册
+          </el-button>
+        </el-form-item>
+
+        <el-form-item class="bottom-link">
+          <span>已有账号？</span>
+          <el-link type="info" underline="never" @click="isRegister = false">
+            返回登录
+          </el-link>
+        </el-form-item>
+      </el-form>
+
+      <!-- 登录表单 -->
+      <el-form
+        v-else
+        ref="form"
+        :model="formModel"
+        :rules="rules"
+        size="large"
+        autocomplete="off"
+        class="login-form"
+      >
+        <el-form-item>
+          <h1>登录</h1>
+        </el-form-item>
+
+        <el-form-item prop="username">
+          <el-input
+            v-model="formModel.username"
+            :prefix-icon="User"
+            placeholder="请输入用户名"
+          />
+        </el-form-item>
+
+        <el-form-item prop="password">
+          <el-input
+            v-model="formModel.password"
+            :prefix-icon="Lock"
+            type="password"
+            show-password
+            placeholder="请输入密码"
+          />
+        </el-form-item>
+
+        <el-form-item class="form-options">
+          <div class="option-row">
+            <el-checkbox>记住我</el-checkbox>
+            <el-link type="primary" underline="never">
+              忘记密码？
+            </el-link>
+          </div>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button
+            class="button"
+            type="primary"
+            auto-insert-space
+            @click="login"
+          >
+            登录
+          </el-button>
+        </el-form-item>
+
+        <el-form-item class="bottom-link">
+          <span>还没有账号？</span>
+          <el-link type="info" underline="never" @click="isRegister = true">
+            注册
+          </el-link>
+        </el-form-item>
+      </el-form>
+    </div>
+  </div>
+</template>
+
 <style lang="scss" scoped>
 .login-page {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-primary);
-  position: relative;
   overflow: hidden;
 }
 
-.login-glow {
+.login-page::before {
+  content: "";
   position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.12;
-  pointer-events: none;
-  &--pink { width: 400px; height: 400px; background: var(--accent-pink); top: -100px; left: -100px; animation: glowMove 12s ease-in-out infinite; }
-  &--purple { width: 350px; height: 350px; background: var(--accent-purple); bottom: -80px; right: -80px; animation: glowMove 12s ease-in-out infinite reverse; }
-  &--blue { width: 250px; height: 250px; background: var(--accent-cyan); top: 50%; left: 50%; animation: glowMove 12s ease-in-out infinite 4s; }
+  inset: 0;
+  background: rgba(4, 10, 22, 0.25);
+  z-index: 0;
 }
 
-.login-card {
+.bg-slider {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: #000;
+}
+
+.bg-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.bg-image.active {
+  opacity: 1;
+}
+
+.form-card {
   position: relative;
   z-index: 1;
-  width: 380px;
-  max-width: 90vw;
-  padding: var(--space-2xl) var(--space-xl);
-  text-align: center;
-  animation: cardIn 500ms var(--ease-smooth) both;
-}
-
-.login-logo {
-  font-size: 48px;
-  width: 80px;
-  height: 80px;
-  margin: 0 auto var(--space-md);
-  background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
-  border-radius: 50%;
+  width: 430px;
+  min-height: 500px;
+  padding: 50px 38px 36px;
+  border-radius: 4px;
+  background: rgba(8, 18, 35, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 32px rgba(255, 107, 157, 0.3);
-}
-
-.login-title {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin: 0 0 var(--space-xs);
-}
-
-.login-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin: 0 0 var(--space-xl);
-}
-
-.login-tabs {
-  display: flex;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-lg);
-  button {
-    flex: 1;
-    padding: 8px 0;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 14px;
-    font-family: var(--font-body);
-    cursor: pointer;
-    transition: all var(--dur-fast);
-
-    &.active {
-      background: rgba(255, 107, 157, 0.1);
-      color: var(--accent-pink);
-    }
-  }
 }
 
 .login-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+  width: 100%;
 }
 
-.login-submit {
+h1 {
   width: 100%;
-  padding: 12px 0;
-  margin-top: var(--space-sm);
+  margin: 0 0 18px;
+  text-align: center;
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 24px;
+}
+
+:deep(.el-input__wrapper) {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 14px;
+  min-height: 44px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.75);
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  box-shadow: none;
+  border-bottom-color: #ffffff;
+}
+
+:deep(.el-input__inner) {
+  color: #ffffff;
+  height: 44px;
   font-size: 15px;
 }
 
-.login-switch {
-  margin-top: var(--space-lg);
-  font-size: 13px;
-  color: var(--text-muted);
-  span { color: var(--accent-cyan); cursor: pointer; }
+:deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.88);
 }
 
-@keyframes glowMove {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(30px, -20px); }
-  66% { transform: translate(-20px, 10px); }
+:deep(.el-input__prefix) {
+  color: rgba(255, 255, 255, 0.9);
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
 }
 
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(20px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+:deep(.el-input__suffix) {
+  color: rgba(255, 255, 255, 0.9);
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.el-input__prefix-inner),
+:deep(.el-input__suffix-inner) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.el-input__prefix svg),
+:deep(.el-input__suffix svg) {
+  width: 18px;
+  height: 18px;
+}
+
+:deep(.el-form-item__error) {
+  color: #ffd2d2;
+  padding-top: 5px;
+}
+
+.form-options {
+  margin-bottom: 18px;
+}
+
+.option-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+:deep(.el-checkbox) {
+  color: #ffffff;
+}
+
+:deep(.el-checkbox__label) {
+  color: #ffffff;
+}
+
+:deep(.el-link) {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+:deep(.el-link:hover) {
+  color: #dbeafe;
+}
+
+.button {
+  width: 100%;
+  height: 42px;
+  border: none;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.button:hover,
+.button:focus {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.bottom-link {
+  margin-bottom: 0;
+}
+
+.bottom-link :deep(.el-form-item__content) {
+  justify-content: center;
+  color: #ffffff;
+  font-size: 14px;
+  gap: 6px;
 }
 </style>

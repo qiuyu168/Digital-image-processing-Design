@@ -1,43 +1,127 @@
 <template>
-  <div class="profile-page page-enter">
-    <aside class="profile-sidebar glass-card">
-      <div class="profile-avatar">
-        <div class="avatar-circle">{{ (authStore.userInfo?.username || 'U')[0].toUpperCase() }}</div>
-      </div>
-      <h2 class="profile-name">{{ authStore.userInfo?.username || '用户' }}</h2>
-      <div class="profile-tabs">
-        <button :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">基本资料</button>
-        <button :class="{ active: activeTab === 'avatar' }" @click="activeTab = 'avatar'">更换头像</button>
-        <button :class="{ active: activeTab === 'password' }" @click="activeTab = 'password'">设置密码</button>
-      </div>
-    </aside>
+  <div class="profile-page">
+    <!-- 三个标签按钮 -->
+    <div class="tab-bar">
+      <el-button
+        v-for="tab in tabs"
+        :key="tab.key"
+        :type="activeTab === tab.key ? 'primary' : 'default'"
+        size="large"
+        class="tab-button"
+        @click="activeTab = tab.key"
+      >
+        {{ tab.label }}
+      </el-button>
+    </div>
 
-    <main class="profile-main">
-      <div class="glass-card profile-form">
-        <!-- 基本资料 -->
-        <form v-if="activeTab === 'info'" @submit.prevent="saveInfo">
-          <div class="form-field"><label>昵称</label><input v-model="nickname" class="glass-input"></div>
-          <div class="form-field"><label>邮箱</label><input v-model="email" type="email" class="glass-input"></div>
-          <button type="submit" class="btn-gradient">保存修改</button>
-        </form>
-        <!-- 更换头像 -->
-        <div v-if="activeTab === 'avatar'" class="avatar-upload">
-          <div class="avatar-preview-lg">{{ (authStore.userInfo?.username || 'U')[0].toUpperCase() }}</div>
-          <input type="file" accept="image/*" @change="onAvatarChange" hidden ref="avatarInput">
-          <button class="btn-glass" style="margin-top:12px;" @click="$refs.avatarInput.click()">选择图片</button>
-        </div>
-        <!-- 设置密码 -->
-        <form v-if="activeTab === 'password'" @submit.prevent="savePassword">
-          <div class="form-field"><label>旧密码</label><input v-model="oldPassword" type="password" class="glass-input"></div>
-          <div class="form-field"><label>新密码</label><input v-model="newPassword" type="password" class="glass-input"></div>
-          <div class="form-field"><label>确认密码</label><input v-model="confirmPwd" type="password" class="glass-input"></div>
-          <div class="password-strength">
-            <div class="strength-bar" :style="{ width: passwordStrength + '%', background: strengthColor }"></div>
-          </div>
-          <button type="submit" class="btn-gradient">更新密码</button>
-        </form>
+    <!-- 内容区域 -->
+    <div class="tab-content">
+      <!-- 基本资料 -->
+      <div v-if="activeTab === 'info'" class="content-panel">
+        <el-form
+          ref="infoFormRef"
+          :model="infoForm"
+          :rules="infoRules"
+          label-width="100px"
+          size="large"
+          class="info-form"
+        >
+          <el-form-item label="账号" prop="username">
+            <el-input v-model="infoForm.username" disabled />
+          </el-form-item>
+
+          <el-form-item label="昵称" prop="nickname">
+            <el-input v-model="infoForm.nickname" placeholder="请输入昵称" />
+          </el-form-item>
+
+          <el-form-item label="邮箱" prop="email">
+            <el-input v-model="infoForm.email" placeholder="请输入邮箱" />
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="handleSaveInfo">
+              保存修改
+            </el-button>
+          </el-form-item>
+        </el-form>
       </div>
-    </main>
+
+      <!-- 更换头像 -->
+      <div v-else-if="activeTab === 'avatar'" class="content-panel avatar-panel">
+        <div class="avatar-preview">
+          <el-avatar :size="120" :src="avatarUrl" />
+          <p>当前头像预览</p>
+        </div>
+
+        <div class="avatar-actions">
+          <el-upload
+            class="avatar-upload"
+            action="#"
+            :show-file-list="false"
+            :before-upload="handleBeforeAvatarUpload"
+            accept="image/*"
+          >
+            <el-button type="primary">选择新头像</el-button>
+          </el-upload>
+          <el-button
+            v-if="avatarUrl"
+            type="danger"
+            plain
+            @click="removeAvatar"
+          >
+            移除头像
+          </el-button>
+        </div>
+
+        <p class="tip">
+          支持 jpg / png 格式，大小不超过 2MB。
+        </p>
+      </div>
+
+      <!-- 设置密码 -->
+      <div v-else-if="activeTab === 'password'" class="content-panel">
+        <el-form
+          ref="passwordFormRef"
+          :model="passwordForm"
+          :rules="passwordRules"
+          label-width="120px"
+          size="large"
+        >
+          <el-form-item label="旧密码" prop="oldPassword">
+            <el-input
+              v-model="passwordForm.oldPassword"
+              type="password"
+              show-password
+              placeholder="请输入旧密码"
+            />
+          </el-form-item>
+
+          <el-form-item label="新密码" prop="newPassword">
+            <el-input
+              v-model="passwordForm.newPassword"
+              type="password"
+              show-password
+              placeholder="请输入新密码"
+            />
+          </el-form-item>
+
+          <el-form-item label="确认新密码" prop="confirmPassword">
+            <el-input
+              v-model="passwordForm.confirmPassword"
+              type="password"
+              show-password
+              placeholder="请再次输入新密码"
+            />
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="handleChangePassword">
+              修改密码
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -185,47 +269,122 @@ function handleChangePassword() {
 </script>
 
 <style lang="scss" scoped>
-.profile-page { display: flex; gap: var(--space-md); padding: var(--space-md); max-width: 1000px; margin: 0 auto; min-height: calc(100vh - 64px - 80px); }
-
-.profile-sidebar { width: 220px; padding: var(--space-xl) var(--space-md); text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--space-md); }
-
-.avatar-circle {
-  width: 72px; height: 72px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
-  border: 3px solid rgba(255,107,157,0.3);
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display);
-  font-size: 28px; font-weight: 800; color: #fff;
+.profile-page {
+  font-family: 'M PLUS Rounded 1c', 'Quicksand', sans-serif;
+  color: #1a1a1a;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 
-.profile-name { font-family: var(--font-display); font-size: 16px; margin: 0; }
+/* 标签按钮栏 */
+.tab-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  justify-content: center;
+}
 
-.profile-tabs { display: flex; flex-direction: column; gap: var(--space-xs); width: 100%;
-  button { padding: 10px; border: none; border-radius: 8px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 13px; transition: all var(--dur-fast); font-family: var(--font-body);
-    &:hover { background: rgba(255,255,255,0.04); }
-    &.active { background: rgba(255,107,157,0.1); color: var(--accent-pink); }
+.tab-button {
+  border-radius: 28px;
+  font-weight: 600;
+  padding: 10px 28px;
+  border: none;
+  background: rgba(255, 255, 255, 0.8);
+  color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.tab-button.el-button--primary {
+  background: #ff6b8b;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(255, 107, 139, 0.3);
+}
+
+/* 内容面板 */
+.content-panel {
+  width: 100%;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.04);
+}
+
+.info-form {
+  :deep(.el-input__wrapper) {
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: none;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  :deep(.el-form-item__label) {
+    font-weight: 600;
+    color: #1a1a1a;
   }
 }
 
-.profile-main { flex: 1; }
-
-.profile-form { padding: var(--space-xl); }
-
-.form-field { margin-bottom: var(--space-md);
-  label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: var(--space-xs); font-family: var(--font-body); }
+/* 头像区域 */
+.avatar-panel {
+  text-align: center;
 }
 
-.avatar-upload { text-align: center; }
-.avatar-preview-lg {
-  width: 100px; height: 100px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
-  border: 3px solid rgba(255,107,157,0.3);
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display);
-  font-size: 36px; font-weight: 800; color: #fff;
-  margin: 0 auto var(--space-md);
+.avatar-preview {
+  margin-bottom: 24px;
+
+  .el-avatar {
+    border: 4px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  p {
+    margin-top: 12px;
+    color: #666;
+    font-size: 14px;
+  }
 }
 
-.password-strength { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin: var(--space-sm) 0 var(--space-md); overflow: hidden; }
-.strength-bar { height: 100%; border-radius: 2px; transition: width var(--dur-base) var(--ease-smooth); }
+.avatar-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tip {
+  color: #999;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 响应式 */
+@media (max-width: 680px) {
+  .tab-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .content-panel {
+    padding: 24px;
+  }
+
+  .info-form :deep(.el-form-item) {
+    display: block;
+    margin-bottom: 16px;
+
+    .el-form-item__label {
+      text-align: left;
+    }
+  }
+}
 </style>
