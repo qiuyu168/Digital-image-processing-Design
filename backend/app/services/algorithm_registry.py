@@ -10,25 +10,44 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 MODULE_ORDER = [
+    "basic_operation",
     "grayscale_image",
     "color_image",
     "geometric_transform",
     "spatial_filter",
     "frequency_analysis",
     "frequency_filter",
+    "image_restoration",
 ]
 
 MODULE_DISPLAY_NAMES = {
+    "basic_operation": "图像基本运算类",
     "grayscale_image": "灰度图像类",
     "color_image": "彩色图像类",
     "geometric_transform": "几何变换类",
-    "spatial_filter": "空域滤波类",
+    "spatial_filter": "空间滤波类",
     "frequency_analysis": "频域分析类",
     "frequency_filter": "频域滤波类",
+    "image_restoration": "图像复原与图像修复类",
 }
 
 ALGORITHM_MODULES = {
+    "basic_operation": [
+        "add_operation",
+        "subtract_operation",
+        "multiply_operation",
+        "divide_operation",
+        "and_operation",
+        "or_operation",
+        "not_operation",
+        "xor_operation",
+    ],
     "grayscale_image": [
+        "linear_gray_transform",
+        "gamma_correction",
+        "log_transform",
+        "exponential_transform",
+        "negative_transform",
         "grayscale",
         "binary_threshold",
         "histogram_equalization",
@@ -70,11 +89,20 @@ ALGORITHM_MODULES = {
         "gaussian_low_pass",
         "gaussian_high_pass",
     ],
+    "image_restoration": [
+        "defocus_blur_simulation",
+        "lens_distortion_blur_simulation",
+        "motion_blur_simulation",
+        "atmospheric_turbulence_blur_simulation",
+        "inverse_filter_restoration",
+        "wiener_filter_restoration",
+        "constrained_least_squares_restoration",
+    ],
 }
 
 
 def get_all_algorithms() -> dict[str, Any]:
-    """返回六个算法模块及其所有可导入算法元数据。"""
+    """返回八个算法模块及其所有可导入算法元数据。"""
     modules: list[dict[str, Any]] = []
     flat_algorithms: list[dict[str, Any]] = []
 

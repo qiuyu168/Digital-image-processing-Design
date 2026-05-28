@@ -5,11 +5,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.api.algorithm_modules.basic_operation import router as basic_operation_router
 from app.api.algorithm_modules.color_image import router as color_image_router
 from app.api.algorithm_modules.frequency_analysis import router as frequency_analysis_router
 from app.api.algorithm_modules.frequency_filter import router as frequency_filter_router
 from app.api.algorithm_modules.geometric_transform import router as geometric_transform_router
 from app.api.algorithm_modules.grayscale_image import router as grayscale_image_router
+from app.api.algorithm_modules.image_restoration import router as image_restoration_router
 from app.api.algorithm_modules.spatial_filter import router as spatial_filter_router
 from app.api.algorithms import router as algorithms_router
 from app.api.analysis import router as analysis_router
@@ -37,12 +39,14 @@ app.include_router(algorithms_router)
 app.include_router(process_router)
 app.include_router(analysis_router)
 
+app.include_router(basic_operation_router)
 app.include_router(grayscale_image_router)
 app.include_router(color_image_router)
 app.include_router(geometric_transform_router)
 app.include_router(spatial_filter_router)
 app.include_router(frequency_analysis_router)
 app.include_router(frequency_filter_router)
+app.include_router(image_restoration_router)
 
 
 @app.get("/")

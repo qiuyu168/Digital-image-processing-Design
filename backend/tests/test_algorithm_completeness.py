@@ -16,7 +16,22 @@ if str(BACKEND_ROOT) not in sys.path:
 
 
 ALGORITHM_MODULES = {
+    "basic_operation": [
+        "add_operation",
+        "subtract_operation",
+        "multiply_operation",
+        "divide_operation",
+        "and_operation",
+        "or_operation",
+        "not_operation",
+        "xor_operation",
+    ],
     "grayscale_image": [
+        "linear_gray_transform",
+        "gamma_correction",
+        "log_transform",
+        "exponential_transform",
+        "negative_transform",
         "grayscale",
         "binary_threshold",
         "histogram_equalization",
@@ -50,6 +65,25 @@ ALGORITHM_MODULES = {
         "gaussian_low_pass",
         "gaussian_high_pass",
     ],
+    "image_restoration": [
+        "defocus_blur_simulation",
+        "lens_distortion_blur_simulation",
+        "motion_blur_simulation",
+        "atmospheric_turbulence_blur_simulation",
+        "inverse_filter_restoration",
+        "wiener_filter_restoration",
+        "constrained_least_squares_restoration",
+    ],
+}
+
+TWO_IMAGE_ALGORITHMS = {
+    "add_operation",
+    "subtract_operation",
+    "multiply_operation",
+    "divide_operation",
+    "and_operation",
+    "or_operation",
+    "xor_operation",
 }
 
 
@@ -74,6 +108,7 @@ def default_params(meta: dict[str, Any]) -> dict[str, Any]:
 def test_all_algorithm_files_are_complete_and_runnable() -> None:
     failures: list[str] = []
     image = sample_image()
+    second_image = np.rot90(image).copy()
 
     for module_name, algorithm_names in ALGORITHM_MODULES.items():
         for algorithm_name in algorithm_names:
@@ -116,7 +151,10 @@ def test_all_algorithm_files_are_complete_and_runnable() -> None:
                 continue
 
             try:
-                result = run(image[:, ::-1], default_params(meta))
+                params = default_params(meta)
+                if algorithm_name in TWO_IMAGE_ALGORITHMS:
+                    params["_second_image"] = second_image
+                result = run(image[:, ::-1], params)
             except Exception as exc:
                 failures.append(f"{import_path}: run failed: {exc}")
                 continue
@@ -129,6 +167,8 @@ def test_all_algorithm_files_are_complete_and_runnable() -> None:
                     failures.append(f"{import_path}: missing return key {key}")
             if not isinstance(result.get("result"), np.ndarray):
                 failures.append(f"{import_path}: result image is not ndarray")
+            elif result["result"].dtype != np.uint8:
+                failures.append(f"{import_path}: result dtype is not uint8")
             if not isinstance(result.get("steps"), list) or not result.get("steps"):
                 failures.append(f"{import_path}: steps must be non-empty list")
             else:

@@ -1,6 +1,6 @@
 # 后端 README
 
-> 更新日期：2026-05-27
+> 更新日期：2026-05-28
 
 本文档根据当前本地项目文件扫描生成，面向后端维护者和前端联调人员。后端运行缓存目录 `.pytest_cache/` 不属于业务文件，本文不作为功能文件记录。
 
@@ -45,13 +45,11 @@ http://127.0.0.1:5173
 | 文件 | 功能 |
 |---|---|
 | `app/__init__.py` | 标记 `app` 为 Python 包。 |
-| `app/analysis/.gitkeep` | 保留分析扩展目录，当前暂未放置业务代码。 |
 
 ### 2.3 `app/core/` 核心工具
 
 | 文件 | 功能 |
 |---|---|
-| `app/core/.gitkeep` | 保留核心工具目录占位文件。 |
 | `app/core/__init__.py` | 标记 `core` 为 Python 包。 |
 | `app/core/config.py` | 定义后端根目录、数据目录、上传目录、图库目录、输出目录和测试目录，并提供 `ensure_data_directories()` 自动创建运行目录。 |
 | `app/core/cors.py` | 配置跨域来源，允许 Vite 前端本地开发地址访问后端。 |
@@ -64,7 +62,6 @@ http://127.0.0.1:5173
 
 | 文件 | 功能 |
 |---|---|
-| `app/schemas/.gitkeep` | 保留数据模型目录占位文件。 |
 | `app/schemas/__init__.py` | 标记 `schemas` 为 Python 包。 |
 | `app/schemas/algorithm_schema.py` | 定义算法参数、算法元数据、算法分类和算法列表响应模型。 |
 | `app/schemas/image_schema.py` | 定义上传图片响应、图库分类和图库图片信息模型。 |
@@ -75,9 +72,8 @@ http://127.0.0.1:5173
 
 | 文件 | 功能 |
 |---|---|
-| `app/services/.gitkeep` | 保留服务层目录占位文件。 |
 | `app/services/__init__.py` | 标记 `services` 为 Python 包。 |
-| `app/services/algorithm_registry.py` | 维护六大算法分类、算法顺序和中文名称，动态导入算法文件并生成前端可用的算法元数据。 |
+| `app/services/algorithm_registry.py` | 维护八大算法分类、算法顺序和中文名称，动态导入算法文件并生成前端可用的算法元数据。 |
 | `app/services/analysis_service.py` | 计算图像宽高、通道数、数据类型、均值、标准差、最大最小值和可选直方图。 |
 | `app/services/image_store.py` | 管理上传图片保存、上传图片预览路径、图库分类列表、图库图片列表、图片来源读取和路径安全校验。 |
 | `app/services/process_service.py` | 加载图片、调度算法 `run(image, params)`、校验算法返回结构，并组装前端处理响应。 |
@@ -87,7 +83,6 @@ http://127.0.0.1:5173
 
 | 文件 | 功能 |
 |---|---|
-| `app/api/.gitkeep` | 保留 API 目录占位文件。 |
 | `app/api/__init__.py` | 标记 `api` 为 Python 包。 |
 | `app/api/health.py` | 提供 `GET /api/health` 健康检查接口。 |
 | `app/api/upload.py` | 提供 `POST /api/upload/image` 图片上传接口和 `GET /api/upload/preview/{image_path}` 上传图片预览接口。 |
@@ -101,38 +96,62 @@ http://127.0.0.1:5173
 | 文件 | 功能 |
 |---|---|
 | `app/api/algorithm_modules/__init__.py` | 标记分类算法路由目录为 Python 包。 |
-| `app/api/algorithm_modules/common.py` | 定义六类算法名称、分类中文名、分类算法查询、分类算法运行和算法归属校验逻辑。 |
+| `app/api/algorithm_modules/common.py` | 定义八类算法名称、分类中文名、分类算法查询、分类算法运行和算法归属校验逻辑。 |
+| `app/api/algorithm_modules/basic_operation.py` | 提供图像基本运算类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/grayscale_image.py` | 提供灰度图像类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/color_image.py` | 提供彩色图像类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/geometric_transform.py` | 提供几何变换类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/spatial_filter.py` | 提供空域滤波类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/frequency_analysis.py` | 提供频域分析类算法列表和分类运行接口。 |
 | `app/api/algorithm_modules/frequency_filter.py` | 提供频域滤波类算法列表和分类运行接口。 |
+| `app/api/algorithm_modules/image_restoration.py` | 提供图像复原类算法列表和分类运行接口。 |
 
 分类路由统一格式：
 
 | 分类 | 列表接口 | 执行接口 |
 |---|---|---|
+| 图像基本运算类 | `GET /api/algorithms/basic-operation` | `POST /api/algorithms/basic-operation/run` |
 | 灰度图像类 | `GET /api/algorithms/grayscale-image` | `POST /api/algorithms/grayscale-image/run` |
 | 彩色图像类 | `GET /api/algorithms/color-image` | `POST /api/algorithms/color-image/run` |
 | 几何变换类 | `GET /api/algorithms/geometric-transform` | `POST /api/algorithms/geometric-transform/run` |
 | 空域滤波类 | `GET /api/algorithms/spatial-filter` | `POST /api/algorithms/spatial-filter/run` |
 | 频域分析类 | `GET /api/algorithms/frequency-analysis` | `POST /api/algorithms/frequency-analysis/run` |
 | 频域滤波类 | `GET /api/algorithms/frequency-filter` | `POST /api/algorithms/frequency-filter/run` |
+| 图像复原类 | `GET /api/algorithms/image-restoration` | `POST /api/algorithms/image-restoration/run` |
 
 ### 2.8 `app/algorithms/` 算法文件
 
 | 文件 | 功能 |
 |---|---|
 | `app/algorithms/__init__.py` | 标记算法根目录为 Python 包。 |
+| `app/algorithms/common.py` | 算法共享工具函数（图像格式转换、参数提取、频域工具等）。 |
 | `app/algorithms/算法框架填写说明.md` | 算法文件编写规范，说明 `ALGORITHM_META` 和 `run(image, params)` 要求。 |
 | `app/algorithms/分工文档.md` | 小组算法开发分工与提交要求。 |
+
+#### 图像基本运算类 `app/algorithms/basic_operation/`
+
+| 文件 | 算法 | 参数 |
+|---|---|---|
+| `__init__.py` | 标记图像基本运算类目录为 Python 包。 | - |
+| `add_operation.py` | 图像加法，两张图像加权相加。 | `alpha`、`beta`、`gamma` |
+| `subtract_operation.py` | 图像减法，逐像素差值计算。 | `scale` |
+| `multiply_operation.py` | 图像乘法，归一化相乘增强。 | `scale` |
+| `divide_operation.py` | 图像除法，第一张除以第二张。 | `scale`、`epsilon` |
+| `and_operation.py` | 按位与运算，掩膜提取。 | 无 |
+| `or_operation.py` | 按位或运算，区域合并。 | 无 |
+| `not_operation.py` | 按位取反，负片/反色效果。 | 无 |
+| `xor_operation.py` | 按位异或，差异高亮。 | 无 |
 
 #### 灰度图像类 `app/algorithms/grayscale_image/`
 
 | 文件 | 算法 | 参数 |
 |---|---|---|
 | `__init__.py` | 标记灰度图像类目录为 Python 包。 | - |
+| `linear_gray_transform.py` | 线性灰度变换，g = alpha*f + beta。 | `alpha`、`beta` |
+| `gamma_correction.py` | 伽马校正，幂律变换增强暗部或亮部。 | `gamma` |
+| `log_transform.py` | 对数变换，动态范围压缩。 | `gain` |
+| `exponential_transform.py` | 指数变换，动态范围扩展。 | `gain`、`base` |
+| `negative_transform.py` | 负片变换，灰度反转。 | `keep_color` |
 | `grayscale.py` | 灰度化，将 BGR 彩色图像转换为单通道灰度图。 | 无 |
 | `binary_threshold.py` | 二值化，按固定阈值转换黑白图。 | `threshold` |
 | `histogram_equalization.py` | 直方图均衡化，提升低对比图像明暗层次。 | 无 |
@@ -166,7 +185,6 @@ http://127.0.0.1:5173
 
 | 文件 | 算法 | 参数 |
 |---|---|---|
-| `.gitkeep` | 保留目录占位文件。 | - |
 | `__init__.py` | 标记空域滤波类目录为 Python 包。 | - |
 | `mean_filter.py` | 均值滤波，使用邻域平均值平滑图像。 | `kernel_size` |
 | `gaussian_filter.py` | 高斯滤波，使用高斯核进行自然平滑。 | `kernel_size`、`sigma` |
@@ -187,7 +205,6 @@ http://127.0.0.1:5173
 
 | 文件 | 算法 | 参数 |
 |---|---|---|
-| `.gitkeep` | 保留目录占位文件。 | - |
 | `__init__.py` | 标记频域滤波类目录为 Python 包。 | - |
 | `low_pass_filter.py` | 低通滤波，保留低频信息并抑制高频信息。 | `radius` |
 | `high_pass_filter.py` | 高通滤波，保留高频信息并增强边缘细节。 | `radius` |
@@ -195,6 +212,19 @@ http://127.0.0.1:5173
 | `ideal_high_pass.py` | 理想高通滤波。 | `radius` |
 | `gaussian_low_pass.py` | 高斯低通滤波。 | `radius` |
 | `gaussian_high_pass.py` | 高斯高通滤波。 | `radius` |
+
+#### 图像复原类 `app/algorithms/image_restoration/`
+
+| 文件 | 算法 | 参数 |
+|---|---|---|
+| `__init__.py` | 标记图像复原类目录为 Python 包。 | - |
+| `defocus_blur_simulation.py` | 散焦模糊模拟，使用圆盘 PSF。 | `radius` |
+| `lens_distortion_blur_simulation.py` | 镜头畸变模糊模拟，径向畸变+模糊。 | `distortion_strength`、`blur_kernel_size` |
+| `motion_blur_simulation.py` | 运动模糊模拟，线性 PSF 匀速直线运动。 | `length`、`angle` |
+| `atmospheric_turbulence_blur_simulation.py` | 大气湍流模糊模拟，频域湍流传递函数。 | `k` |
+| `inverse_filter_restoration.py` | 逆滤波复原，频域直接反卷积。 | `k`、`epsilon` |
+| `wiener_filter_restoration.py` | 维纳滤波复原，信噪比自适应最优滤波。 | `k`、`noise_power` |
+| `constrained_least_squares_restoration.py` | 约束最小二乘复原，拉普拉斯正则化。 | `k`、`gamma` |
 
 ### 2.9 `data/` 数据目录
 
@@ -218,18 +248,21 @@ http://127.0.0.1:5173
 | `tests/README.md` | 后端本地算法测试工具说明。 |
 | `tests/算法测试脚本使用说明文档.md` | 简化版手动测试脚本的路径配置示例。 |
 | `tests/manual_test_algorithm.py` | 初学者三路径手动测试脚本，只需配置输入图、输出图、算法导入路径。 |
-| `tests/manual_test_algorithm_advanced.py` | 高级手动测试脚本，支持配置文件和临时参数。 |
 | `tests/test_algorithm_completeness.py` | 自动检查所有算法文件是否可导入、元数据是否完整、`run` 是否可执行。 |
 | `tests/test_backend_framework.py` | 后端框架测试，覆盖上传校验、接口联调、算法注册、分析指标、schema 和目录卫生。 |
-| `tests/sample_test_configs/binary_threshold_example.json` | 二值化高级手动测试配置示例。 |
-| `tests/sample_test_configs/canny_example.json` | Canny 边缘检测高级手动测试配置示例。 |
-| `tests/sample_test_configs/dft_spectrum_example.json` | DFT 频谱高级手动测试配置示例。 |
-| `tests/sample_test_configs/gaussian_filter_example.json` | 高斯滤波高级手动测试配置示例。 |
-| `tests/sample_test_configs/grayscale_example.json` | 灰度化高级手动测试配置示例。 |
-| `tests/sample_test_configs/ideal_high_pass_example.json` | 理想高通滤波高级手动测试配置示例。 |
-| `tests/sample_test_configs/ideal_low_pass_example.json` | 理想低通滤波高级手动测试配置示例。 |
-| `tests/sample_test_configs/saturation_adjust_example.json` | 饱和度调整高级手动测试配置示例。 |
-| `tests/sample_test_configs/sobel_edge_detection_example.json` | Sobel 边缘检测高级手动测试配置示例。 |
+| `tests/sample_test_configs/add_operation_example.json` | 图像加法测试配置示例。 |
+| `tests/sample_test_configs/binary_threshold_example.json` | 二值化测试配置示例。 |
+| `tests/sample_test_configs/canny_example.json` | Canny 边缘检测测试配置示例。 |
+| `tests/sample_test_configs/dft_spectrum_example.json` | DFT 频谱测试配置示例。 |
+| `tests/sample_test_configs/gamma_correction_example.json` | 伽马校正测试配置示例。 |
+| `tests/sample_test_configs/gaussian_filter_example.json` | 高斯滤波测试配置示例。 |
+| `tests/sample_test_configs/grayscale_example.json` | 灰度化测试配置示例。 |
+| `tests/sample_test_configs/ideal_high_pass_example.json` | 理想高通滤波测试配置示例。 |
+| `tests/sample_test_configs/ideal_low_pass_example.json` | 理想低通滤波测试配置示例。 |
+| `tests/sample_test_configs/motion_blur_simulation_example.json` | 运动模糊模拟测试配置示例。 |
+| `tests/sample_test_configs/saturation_adjust_example.json` | 饱和度调整测试配置示例。 |
+| `tests/sample_test_configs/sobel_edge_detection_example.json` | Sobel 边缘检测测试配置示例。 |
+| `tests/sample_test_configs/wiener_filter_restoration_example.json` | 维纳滤波复原测试配置示例。 |
 
 ---
 
@@ -602,12 +635,6 @@ cd backend
 python tests/manual_test_algorithm.py
 ```
 
-高级配置测试使用：
-
-```powershell
-python tests/manual_test_algorithm_advanced.py --config tests/sample_test_configs/canny_example.json
-```
-
 ### 4.6 运行目录和提交规则
 
 以下目录是运行时目录，只提交 `.gitkeep`：
@@ -661,12 +688,13 @@ requirements.txt
 
 1. 算法文件必须放在 `app/algorithms/<module>/` 下。
 2. 算法名必须加入 `app/services/algorithm_registry.py` 与 `app/api/algorithm_modules/common.py` 对应分类列表。
-3. 每个算法文件必须提供 `ALGORITHM_META`。
-4. 每个算法文件必须提供 `run(image, params)`。
-5. `run` 返回值必须是包含 `result`、`steps`、`metrics`、`analysis` 的 `dict`。
-6. `result` 和每个步骤 `image` 必须是 `numpy.ndarray`。
-7. 后端统一把结果图编码为 PNG Base64，算法内部不要返回文件路径。
-8. 不要在算法代码中使用 `cv2.imshow()`，不要写个人电脑绝对路径。
+3. 如需新增算法分类子路由，在 `app/api/algorithm_modules/` 下添加对应文件并在 `main.py` 注册。
+4. 每个算法文件必须提供 `ALGORITHM_META`。
+5. 每个算法文件必须提供 `run(image, params)`。
+6. `run` 返回值必须是包含 `result`、`steps`、`metrics`、`analysis` 的 `dict`。
+7. `result` 和每个步骤 `image` 必须是 `numpy.ndarray`。
+8. 后端统一把结果图编码为 PNG Base64，算法内部不要返回文件路径。
+9. 不要在算法代码中使用 `cv2.imshow()`，不要写个人电脑绝对路径。
 
 ### 5.2 算法文件规范模板
 
