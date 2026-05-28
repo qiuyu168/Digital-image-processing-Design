@@ -7,11 +7,11 @@
         <el-icon class="sidebar-refresh" @click="loadAlgorithms"><Refresh /></el-icon>
       </div>
       <div class="algo-tree">
-        <div v-for="mod in algorithmModules" :key="mod.module"
+        <div v-for="mod in modules" :key="mod.key"
           class="tree-module"
-          :class="{ 'tree-module--active': activeModule === mod.module }"
-          @click="activeModule = mod.module">
-          <span class="tree-module-name">{{ mod.display_name }}</span>
+          :class="{ 'tree-module--active': selectedModuleKey === mod.module }"
+          @click="handleSelectAlgorithm(mod.key + '::' + mod.algorithms[0]?.name)">
+          <span class="tree-module-name">{{ mod.displayName }}</span>
           <span class="tree-badge">{{ mod.algorithms?.length || 0 }}</span>
         </div>
       </div>
@@ -19,10 +19,9 @@
 
     <!-- 中栏：主工作区 -->
     <main class="workspace-main">
-      <!-- 上传区 -->
       <div class="glass-card upload-section">
-        <input ref="fileInput" type="file" accept="image/*" hidden @change="onFileChange">
-        <div v-if="!uploadedImage" class="upload-placeholder" @click="triggerUpload">
+        <input ref="fileInput" type="file" accept="image/*" hidden @change="onFileInputChange">
+        <div v-if="!previewDisplayUrl" class="upload-placeholder" @click="$refs.fileInput?.click()">
           <span class="upload-icon">✦</span>
           <span class="upload-text">拖拽或点击上传图片</span>
           <span class="upload-hint">支持 jpg / png / bmp / webp / tiff</span>
@@ -30,7 +29,7 @@
         <div v-else class="image-compare">
           <div class="compare-pane">
             <span class="compare-label">原图</span>
-            <img :src="uploadedImage" alt="原图" class="compare-image">
+            <img :src="previewDisplayUrl" alt="原图" class="compare-image">
           </div>
           <div class="compare-pane">
             <span class="compare-label">结果</span>
@@ -40,7 +39,6 @@
         </div>
       </div>
 
-      <!-- 分析文本 -->
       <div v-if="resultInfo.analysis" class="glass-card analysis-section">
         <p>{{ resultInfo.analysis }}</p>
       </div>
@@ -49,27 +47,27 @@
     <!-- 右栏：参数面板 -->
     <aside class="workspace-params glass-card">
       <div class="params-header">
-        <span class="params-title">{{ selectedAlgorithm?.display_name || '选择算法' }}</span>
+        <span class="params-title">{{ selectedAlgorithm?.displayName || '选择算法' }}</span>
       </div>
-      <div v-if="selectedAlgorithm?.params && Object.keys(selectedAlgorithm.params).length > 0" class="params-list">
-        <div v-for="(param, key) in selectedAlgorithm.params" :key="key" class="param-item">
+      <div v-if="paramList.length > 0" class="params-list">
+        <div v-for="param in paramList" :key="param.key" class="param-item">
           <label class="param-label">{{ param.label }}</label>
-          <el-slider v-if="param.component === 'slider'" v-model="params[key]"
+          <el-slider v-if="param.component === 'slider'" v-model="paramForm[param.key]"
             :min="param.min" :max="param.max" :step="param.step"
             :show-tooltip="false" />
-          <el-select v-else-if="param.component === 'select'" v-model="params[key]" style="width:100%">
-            <el-option v-for="opt in param.options" :key="opt" :label="opt" :value="opt" />
+          <el-select v-else-if="param.component === 'select'" v-model="paramForm[param.key]" style="width:100%">
+            <el-option v-for="opt in param.options" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
-          <el-switch v-else-if="param.component === 'switch'" v-model="params[key]" />
+          <el-switch v-else-if="param.component === 'switch'" v-model="paramForm[param.key]" />
         </div>
       </div>
       <div v-else class="params-empty">
-        <span>此算法无可调节参数</span>
+        <span>{{ selectedAlgorithm?.displayName ? '此算法无可调节参数' : '请选择算法' }}</span>
       </div>
       <button class="btn-gradient run-btn"
-        :disabled="running"
-        @click="runAlgorithm">
-        <span v-if="running">✦ 处理中...</span>
+        :disabled="processing"
+        @click="handleProcess">
+        <span v-if="processing">✦ 处理中...</span>
         <span v-else>▶ 执行算法</span>
       </button>
     </aside>
@@ -142,6 +140,7 @@ const processing = ref(false)
 const modules = ref([])
 const selectedModuleKey = ref('')
 const selectedAlgorithmKey = ref('')
+const fileInput = ref(null)
 const previewDisplayUrl = ref('')
 const secondPreviewDisplayUrl = ref('')
 
@@ -471,6 +470,12 @@ function normalizeOddIntIfNeeded(param, value) {
   }
 
   return numberValue
+}
+
+function onFileInputChange(e) {
+  const file = e.target?.files?.[0]
+  if (!file) return
+  handleFileChange({ raw: file })
 }
 
 async function handleFileChange(uploadFile) {
