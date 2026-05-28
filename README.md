@@ -982,6 +982,12 @@ GET /api/library/image/{image_path}
 
 ## 12. Windows 11 开发与启动流程
 
+> 所有功能已经封装为.bat批处理文件
+> install_backend.bat用于安装后端依赖，需要拥有python环境
+> install_frontend.bat用于安装前端依赖，需要拥有node.js环境并安装pnpm包管理器
+> run_backend.bat用于运行后端
+> run_frontend.bat用于运行前端
+
 ### 12.0 启动顺序
 
 **必须先启动后端，再启动前端。** 前端启动时会调用 `/api/health` 检查后端连通性。
