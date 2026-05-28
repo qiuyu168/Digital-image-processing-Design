@@ -168,6 +168,33 @@
             </div>
           </section>
 
+            <section v-if="secondImageEnabled" class="panel-card second-image-card">
+              <div class="panel-title">
+                <div class="title-left">
+                  <span class="title-icon">🖼️</span>
+                  <div>
+                    <h3>选择第二张图片</h3>
+                    <p>该算法需要两张图片，从图像库中选择第二张</p>
+                  </div>
+                </div>
+              </div>
+
+              <el-select
+                v-model="selectedSecondImagePath"
+                class="full-control"
+                placeholder="请选择第二张图片"
+                :loading="libraryImagesLoading"
+                clearable
+              >
+                <el-option
+                  v-for="img in libraryImages"
+                  :key="img.image_path"
+                  :label="img.name || img.filename"
+                  :value="img.image_path"
+                />
+              </el-select>
+            </section>
+
           <section class="panel-card params-card">
             <div class="panel-title">
               <div class="title-left">
@@ -465,9 +492,10 @@ import {
   UploadFilled,
   View
 } from '@element-plus/icons-vue'
-import http from '@/api/http'
 import { getAlgorithmService } from '@/api/algorithms'
 import { uploadImageService } from '@/api/upload'
+import { runAlgorithmService } from '@/api/run'
+import { getDetailImageService } from '@/api/library'
 
 const allowedExtensions = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'tif', 'tiff']
 const minFileSize = 10 * 1024
@@ -478,18 +506,37 @@ const maxWidth = 4096
 const maxHeight = 4096
 const moduleIconList = ['🌗', '🎨', '📐', '🫧', '🌌', '⚡', '🌸', '✨']
 
-const moduleRunEndpointMap = {
-  grayscale_image: '/api/algorithms/grayscale-image/run',
-  color_image: '/api/algorithms/color-image/run',
-  geometric_transform: '/api/algorithms/geometric-transform/run',
-  spatial_filter: '/api/algorithms/spatial-filter/run',
-  frequency_analysis: '/api/algorithms/frequency-analysis/run',
-  frequency_filter: '/api/algorithms/frequency-filter/run'
-}
-
 const algorithmLoading = ref(false)
 const uploadLoading = ref(false)
 const processing = ref(false)
+
+const secondImageEnabled = computed(() => {
+  return selectedAlgorithm.value?.module === 'basic_operation'
+})
+
+const libraryImages = ref([])
+const libraryImagesLoading = ref(false)
+const selectedSecondImagePath = ref('')
+
+async function loadLibraryImagesForSecond() {
+  if (!secondImageEnabled.value) return
+  libraryImagesLoading.value = true
+  try {
+    const data = await getDetailImageService({ params: { category: 'anime_character' } })
+    libraryImages.value = Array.isArray(data?.images) ? data.images : []
+  } catch {
+    libraryImages.value = []
+  } finally {
+    libraryImagesLoading.value = false
+  }
+}
+
+watch(secondImageEnabled, (enabled) => {
+  if (enabled) {
+    selectedSecondImagePath.value = ''
+    loadLibraryImagesForSecond()
+  }
+})
 
 const modules = ref([])
 const selectedModuleKey = ref('')
@@ -939,6 +986,10 @@ async function handleProcess() {
     return_steps: true
   }
 
+  if (secondImageEnabled.value && selectedSecondImagePath.value) {
+    payload.second_image_path = selectedSecondImagePath.value
+  }
+
   processing.value = true
   resultInfo.status = 'processing'
   resultInfo.imageUrl = ''
@@ -949,7 +1000,7 @@ async function handleProcess() {
   resultInfo.message = `正在调用 ${endpoint} 运行算法...`
 
   try {
-    const data = await http.post(endpoint, payload)
+    const data = await runAlgorithmService(selectedAlgorithm.value.module, payload)
 
     if (!data?.success) {
       resultInfo.status = 'error'
@@ -1003,13 +1054,7 @@ function castParamValue(param, value) {
 }
 
 function getRunEndpoint(moduleName) {
-  const normalizedModuleName = String(moduleName || '')
-
-  if (moduleRunEndpointMap[normalizedModuleName]) {
-    return moduleRunEndpointMap[normalizedModuleName]
-  }
-
-  return `/api/algorithms/${normalizedModuleName.replaceAll('_', '-')}/run`
+  return '/api/algorithms/' + String(moduleName || '').replaceAll('_', '-') + '/run'
 }
 
 function normalizeResultImageUrl(image) {
@@ -1395,6 +1440,14 @@ function isPlainObject(value) {
   display: grid;
   gap: 22px;
   align-content: start;
+}
+
+.second-image-card {
+  margin-top: 0;
+}
+
+.second-image-card .full-control {
+  margin-top: 8px;
 }
 
 .upload-card,
