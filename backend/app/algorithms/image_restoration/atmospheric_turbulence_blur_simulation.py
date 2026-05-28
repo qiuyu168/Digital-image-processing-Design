@@ -18,6 +18,21 @@ ALGORITHM_META = {
 
 
 def _filter_channel(channel: np.ndarray, transfer: np.ndarray) -> np.ndarray:
+    """Apply the turbulence transfer function to one 2D channel.
+
+    np.fft.fft2 uses the last two axes by default.  The old code passed
+    H x W x 1 arrays produced by np.dsplit(), so fft2 was accidentally
+    applied on the W x 1 axes instead of the H x W image plane.  For
+    non-square images this caused shape-broadcast errors and returned
+    400 Bad Request; for square images it could even expand to a huge
+    intermediate array.  Keeping every channel strictly 2D avoids both
+    problems.
+    """
+    if channel.ndim != 2:
+        channel = np.squeeze(channel)
+    if channel.ndim != 2:
+        raise ValueError("大气湍流模糊模拟仅支持二维单通道滤波")
+
     spectrum = np.fft.fftshift(np.fft.fft2(channel.astype(np.float32)))
     restored = np.fft.ifft2(np.fft.ifftshift(spectrum * transfer))
     return normalize_uint8(np.real(restored))
@@ -28,8 +43,8 @@ def run(image: np.ndarray, params: dict | None = None) -> dict:
     source = to_bgr(image)
     k = slider_value(params, "k", ALGORITHM_META)
     transfer = turbulence_transfer(source.shape[:2], k)
-    channels = [_filter_channel(channel, transfer) for channel in np.dsplit(source, source.shape[2])]
-    result = np.dstack([channel[:, :, 0] for channel in channels]).astype(np.uint8)
+    channels = [_filter_channel(channel, transfer) for channel in np.rollaxis(source, 2)]
+    result = np.dstack(channels).astype(np.uint8)
     return {
         "result": result,
         "steps": [{"name": "原始图像", "image": source}, {"name": "处理结果", "image": result}],

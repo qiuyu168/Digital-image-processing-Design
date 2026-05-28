@@ -82,117 +82,389 @@
         <div class="right-grid">
           <div class="left-workflow">
             <section class="panel-card upload-card">
-            <div class="panel-title">
-              <div class="title-left">
-                <span class="title-icon">📤</span>
-                <div>
-                  <h3>上传图片</h3>
+              <div class="panel-title">
+                <div class="title-left">
+                  <span class="title-icon">📤</span>
+                  <div>
+                    <h3>第一张图片</h3>
+                    <p>第一张图片可本地上传，也可从图像库选择</p>
+                  </div>
+                </div>
+
+                <el-tag class="soft-tag">
+                  {{ firstImageSourceText }}
+                </el-tag>
+              </div>
+
+              <el-radio-group v-model="firstImageSource" class="image-source-tabs">
+                <el-radio-button value="upload">本地上传</el-radio-button>
+                <el-radio-button value="library">图像库选择</el-radio-button>
+              </el-radio-group>
+
+              <div v-if="firstImageSource === 'upload'" class="image-source-panel">
+                <el-upload
+                  class="image-uploader"
+                  action="#"
+                  :auto-upload="false"
+                  :show-file-list="false"
+                  :on-change="handleFileChange"
+                  :disabled="uploadLoading || processing"
+                  accept=".jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff"
+                >
+                  <div class="upload-box" :class="{ 'has-image': previewDisplayUrl }">
+                    <template v-if="previewDisplayUrl">
+                      <div class="image-frame upload-preview-frame">
+                        <el-image
+                          class="preview-image"
+                          :src="previewDisplayUrl"
+                          fit="contain"
+                          :preview-src-list="[previewDisplayUrl]"
+                          :preview-teleported="true"
+                          :z-index="3000"
+                          hide-on-click-modal
+                          @error="handleImagePreviewError"
+                        >
+                          <template #error>
+                            <div class="image-error">
+                              <el-icon><Picture /></el-icon>
+                              <span>图片预览失败</span>
+                            </div>
+                          </template>
+                        </el-image>
+                      </div>
+
+                      <div class="image-mask">
+                        <el-icon><UploadFilled /></el-icon>
+                        <span>点击重新上传第一张图</span>
+                      </div>
+                    </template>
+
+                    <template v-else>
+                      <el-icon class="upload-icon"><UploadFilled /></el-icon>
+                      <h4>上传第一张图片</h4>
+                      <p>支持 jpg、jpeg、png、bmp、webp、tif、tiff，大小 10KB - 5MB</p>
+                    </template>
+                  </div>
+                </el-upload>
+
+                <div v-if="uploadLoading" class="upload-loading">
+                  <el-icon class="is-loading"><Refresh /></el-icon>
+                  正在准备第一张图片...
+                </div>
+
+                <div v-if="uploadedImage.id" class="image-meta">
+                  <div>
+                    <span>文件名</span>
+                    <strong>{{ uploadedImage.name }}</strong>
+                  </div>
+                  <div>
+                    <span>尺寸</span>
+                    <strong>{{ uploadedImageSizeText }}</strong>
+                  </div>
+                  <div>
+                    <span>大小</span>
+                    <strong>{{ formatFileSize(uploadedImage.size) }}</strong>
+                  </div>
+                  <div>
+                    <span>图片路径</span>
+                    <strong>{{ uploadedImage.id }}</strong>
+                  </div>
+                </div>
+
+                <div v-if="uploadedImage.id" class="upload-actions">
+                  <el-button plain class="ghost-btn" @click="clearUploadedImage">
+                    <el-icon><Delete /></el-icon>
+                    移除第一张图
+                  </el-button>
                 </div>
               </div>
-            </div>
 
-            <el-upload
-              class="image-uploader"
-              action="#"
-              :auto-upload="false"
-              :show-file-list="false"
-              :on-change="handleFileChange"
-              :disabled="uploadLoading"
-              accept=".jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff"
-            >
-              <div class="upload-box" :class="{ 'has-image': previewDisplayUrl }">
-                <template v-if="previewDisplayUrl">
+              <div v-else class="image-source-panel library-image-panel">
+                <div class="library-picker-row">
+                  <el-select
+                    v-model="selectedPrimaryLibraryCategory"
+                    class="full-control"
+                    placeholder="选择图片分类"
+                    :loading="primaryLibraryLoading"
+                    @change="handlePrimaryLibraryCategoryChange"
+                  >
+                    <el-option
+                      v-for="category in primaryLibraryCategories"
+                      :key="category.name"
+                      :label="`${category.displayName}（${category.count}）`"
+                      :value="category.name"
+                    />
+                  </el-select>
+
+                  <el-button
+                    class="ghost-btn library-refresh-btn"
+                    plain
+                    :loading="primaryLibraryLoading"
+                    @click="loadPrimaryLibraryCategories(true)"
+                  >
+                    <el-icon><Refresh /></el-icon>
+                    刷新
+                  </el-button>
+                </div>
+
+                <el-select
+                  v-model="selectedPrimaryLibraryImagePath"
+                  class="full-control"
+                  placeholder="请选择图像库中的第一张图片"
+                  :loading="primaryLibraryLoading"
+                  clearable
+                  filterable
+                  @change="handlePrimaryLibraryImageChange"
+                >
+                  <el-option
+                    v-for="img in primaryLibraryImages"
+                    :key="img.imagePath"
+                    :label="img.displayName"
+                    :value="img.imagePath"
+                  />
+                </el-select>
+
+                <div v-if="uploadLoading" class="upload-loading">
+                  <el-icon class="is-loading"><Refresh /></el-icon>
+                  正在准备第一张图片...
+                </div>
+
+                <div v-if="selectedPrimaryLibraryImage" class="selected-library-image">
                   <div class="image-frame upload-preview-frame">
                     <el-image
                       class="preview-image"
-                      :src="previewDisplayUrl"
+                      :src="selectedPrimaryLibraryImage.displayUrl"
                       fit="contain"
-                      :preview-src-list="[previewDisplayUrl]"
+                      :preview-src-list="[selectedPrimaryLibraryImage.displayUrl]"
                       :preview-teleported="true"
                       :z-index="3000"
                       hide-on-click-modal
-                      @error="handleImagePreviewError"
                     >
                       <template #error>
                         <div class="image-error">
                           <el-icon><Picture /></el-icon>
-                          <span>图片预览失败</span>
+                          <span>图库图片预览失败</span>
                         </div>
                       </template>
                     </el-image>
                   </div>
 
-                  <div class="image-mask">
-                    <el-icon><UploadFilled /></el-icon>
-                    <span>点击重新上传</span>
+                  <div class="image-meta">
+                    <div>
+                      <span>图库文件</span>
+                      <strong>{{ selectedPrimaryLibraryImage.filename }}</strong>
+                    </div>
+                    <div>
+                      <span>图库分类</span>
+                      <strong>{{ selectedPrimaryLibraryImage.category }}</strong>
+                    </div>
+                    <div>
+                      <span>图库路径</span>
+                      <strong>{{ selectedPrimaryLibraryImage.imagePath }}</strong>
+                    </div>
+                    <div>
+                      <span>提交方式</span>
+                      <strong>运行时转为上传图路径</strong>
+                    </div>
                   </div>
-                </template>
+                </div>
 
-                <template v-else>
-                  <el-icon class="upload-icon"><UploadFilled /></el-icon>
-                  <h4>选择本地图片</h4>
-                  <p>支持 jpg、jpeg、png、bmp、webp、tif、tiff，大小 10KB - 5MB</p>
-                </template>
+                <el-empty
+                  v-else-if="!primaryLibraryLoading"
+                  description="请选择一张图库图片作为第一张图"
+                  :image-size="90"
+                />
               </div>
-            </el-upload>
-
-            <div v-if="uploadLoading" class="upload-loading">
-              <el-icon class="is-loading"><Refresh /></el-icon>
-              正在上传图片...
-            </div>
-
-            <div v-if="uploadedImage.id" class="image-meta">
-              <div>
-                <span>文件名</span>
-                <strong>{{ uploadedImage.name }}</strong>
-              </div>
-              <div>
-                <span>尺寸</span>
-                <strong>{{ uploadedImageSizeText }}</strong>
-              </div>
-              <div>
-                <span>大小</span>
-                <strong>{{ formatFileSize(uploadedImage.size) }}</strong>
-              </div>
-              <div>
-                <span>图片路径</span>
-                <strong>{{ uploadedImage.id }}</strong>
-              </div>
-            </div>
-
-            <div v-if="uploadedImage.id" class="upload-actions">
-              <el-button plain class="ghost-btn" @click="clearUploadedImage">
-                <el-icon><Delete /></el-icon>
-                移除图片
-              </el-button>
-            </div>
-          </section>
+            </section>
 
             <section v-if="secondImageEnabled" class="panel-card second-image-card">
               <div class="panel-title">
                 <div class="title-left">
                   <span class="title-icon">🖼️</span>
                   <div>
-                    <h3>选择第二张图片</h3>
-                    <p>该算法需要两张图片，从图像库中选择第二张</p>
+                    <h3>第二张图片</h3>
+                    <p>该算法需要两张图片，第二张可本地上传，也可从图像库选择</p>
                   </div>
+                </div>
+
+                <el-tag class="soft-tag">
+                  {{ secondImageSourceText }}
+                </el-tag>
+              </div>
+
+              <el-radio-group v-model="secondImageSource" class="image-source-tabs second-source-tabs">
+                <el-radio-button value="upload">本地上传</el-radio-button>
+                <el-radio-button value="library">图像库选择</el-radio-button>
+              </el-radio-group>
+
+              <div v-if="secondImageSource === 'upload'" class="image-source-panel second-source-panel">
+                <el-upload
+                  class="image-uploader second-image-uploader"
+                  action="#"
+                  :auto-upload="false"
+                  :show-file-list="false"
+                  :on-change="handleSecondFileChange"
+                  :disabled="secondImageLoading || processing"
+                  accept=".jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff"
+                >
+                  <div class="upload-box second-upload-box" :class="{ 'has-image': secondPreviewDisplayUrl }">
+                    <template v-if="secondPreviewDisplayUrl">
+                      <div class="image-frame second-preview-frame">
+                        <el-image
+                          class="preview-image"
+                          :src="secondPreviewDisplayUrl"
+                          fit="contain"
+                          :preview-src-list="[secondPreviewDisplayUrl]"
+                          :preview-teleported="true"
+                          :z-index="3000"
+                          hide-on-click-modal
+                        >
+                          <template #error>
+                            <div class="image-error">
+                              <el-icon><Picture /></el-icon>
+                              <span>图片预览失败</span>
+                            </div>
+                          </template>
+                        </el-image>
+                      </div>
+
+                      <div class="image-mask">
+                        <el-icon><UploadFilled /></el-icon>
+                        <span>点击重新上传第二张图</span>
+                      </div>
+                    </template>
+
+                    <template v-else>
+                      <el-icon class="upload-icon"><UploadFilled /></el-icon>
+                      <h4>上传第二张图片</h4>
+                      <p>支持 jpg、jpeg、png、bmp、webp、tif、tiff，大小 10KB - 5MB</p>
+                    </template>
+                  </div>
+                </el-upload>
+
+                <div v-if="secondImageLoading" class="upload-loading">
+                  <el-icon class="is-loading"><Refresh /></el-icon>
+                  正在准备第二张图片...
+                </div>
+
+                <div v-if="secondUploadedImage.id" class="image-meta second-image-meta">
+                  <div>
+                    <span>文件名</span>
+                    <strong>{{ secondUploadedImage.name }}</strong>
+                  </div>
+                  <div>
+                    <span>尺寸</span>
+                    <strong>{{ secondUploadedImageSizeText }}</strong>
+                  </div>
+                  <div>
+                    <span>大小</span>
+                    <strong>{{ formatFileSize(secondUploadedImage.size) }}</strong>
+                  </div>
+                  <div>
+                    <span>图片路径</span>
+                    <strong>{{ secondUploadedImage.id }}</strong>
+                  </div>
+                </div>
+
+                <div v-if="secondUploadedImage.id" class="upload-actions">
+                  <el-button plain class="ghost-btn" @click="clearSecondUploadedImage">
+                    <el-icon><Delete /></el-icon>
+                    移除第二张图
+                  </el-button>
                 </div>
               </div>
 
-              <el-select
-                v-model="selectedSecondImagePath"
-                class="full-control"
-                placeholder="请选择第二张图片"
-                :loading="libraryImagesLoading"
-                clearable
-              >
-                <el-option
-                  v-for="img in libraryImages"
-                  :key="img.image_path"
-                  :label="img.name || img.filename"
-                  :value="img.image_path"
+              <div v-else class="image-source-panel second-source-panel library-second-panel">
+                <div class="library-picker-row">
+                  <el-select
+                    v-model="selectedSecondLibraryCategory"
+                    class="full-control"
+                    placeholder="选择图片分类"
+                    :loading="secondLibraryLoading"
+                    @change="handleSecondLibraryCategoryChange"
+                  >
+                    <el-option
+                      v-for="category in secondLibraryCategories"
+                      :key="category.name"
+                      :label="`${category.displayName}（${category.count}）`"
+                      :value="category.name"
+                    />
+                  </el-select>
+
+                  <el-button
+                    class="ghost-btn library-refresh-btn"
+                    plain
+                    :loading="secondLibraryLoading"
+                    @click="loadSecondLibraryCategories(true)"
+                  >
+                    <el-icon><Refresh /></el-icon>
+                    刷新
+                  </el-button>
+                </div>
+
+                <el-select
+                  v-model="selectedSecondLibraryImagePath"
+                  class="full-control"
+                  placeholder="请选择图像库中的第二张图片"
+                  :loading="secondLibraryLoading"
+                  clearable
+                  filterable
+                  @change="handleSecondLibraryImageChange"
+                >
+                  <el-option
+                    v-for="img in secondLibraryImages"
+                    :key="img.imagePath"
+                    :label="img.displayName"
+                    :value="img.imagePath"
+                  />
+                </el-select>
+
+                <div v-if="selectedSecondLibraryImage" class="selected-library-image">
+                  <div class="image-frame second-preview-frame">
+                    <el-image
+                      class="preview-image"
+                      :src="selectedSecondLibraryImage.displayUrl"
+                      fit="contain"
+                      :preview-src-list="[selectedSecondLibraryImage.displayUrl]"
+                      :preview-teleported="true"
+                      :z-index="3000"
+                      hide-on-click-modal
+                    >
+                      <template #error>
+                        <div class="image-error">
+                          <el-icon><Picture /></el-icon>
+                          <span>图库图片预览失败</span>
+                        </div>
+                      </template>
+                    </el-image>
+                  </div>
+
+                  <div class="image-meta second-image-meta">
+                    <div>
+                      <span>图库文件</span>
+                      <strong>{{ selectedSecondLibraryImage.filename }}</strong>
+                    </div>
+                    <div>
+                      <span>图库分类</span>
+                      <strong>{{ selectedSecondLibraryImage.category }}</strong>
+                    </div>
+                    <div>
+                      <span>图库路径</span>
+                      <strong>{{ selectedSecondLibraryImage.imagePath }}</strong>
+                    </div>
+                    <div>
+                      <span>提交方式</span>
+                      <strong>运行时转为上传图路径</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <el-empty
+                  v-else-if="!secondLibraryLoading"
+                  description="请选择一张图库图片作为第二张图"
+                  :image-size="90"
                 />
-              </el-select>
+              </div>
             </section>
 
           <section class="panel-card params-card">
@@ -325,7 +597,7 @@
 
             <div v-if="!previewDisplayUrl" class="result-empty">
               <el-icon><Picture /></el-icon>
-              <p>上传图片后，将在这里显示原图与处理结果。</p>
+              <p>选择第一张图片后，将在这里显示原图与处理结果。</p>
             </div>
 
             <div v-else class="result-content">
@@ -391,7 +663,7 @@
                 <span>
                   {{
                     resultInfo.message ||
-                    '选择算法并上传图片后，点击“开始处理”即可调用后端算法运行接口。'
+                    '选择算法和第一张图片后，点击“开始处理”即可调用后端算法运行接口。'
                   }}
                 </span>
               </div>
@@ -410,8 +682,12 @@
                   <strong>{{ selectedRunEndpoint }}</strong>
                 </div>
                 <div>
-                  <span>图像来源</span>
-                  <strong>upload</strong>
+                  <span>第一张图</span>
+                  <strong>{{ firstImageSourceText }}</strong>
+                </div>
+                <div v-if="secondImageEnabled">
+                  <span>第二张图</span>
+                  <strong>{{ secondImageSourceText }}</strong>
                 </div>
               </div>
 
@@ -495,7 +771,7 @@ import {
 import { getAlgorithmService } from '@/api/algorithms'
 import { uploadImageService } from '@/api/upload'
 import { runAlgorithmService } from '@/api/run'
-import { getDetailImageService } from '@/api/library'
+import { getCategoriesService, getDetailImageService } from '@/api/library'
 
 const allowedExtensions = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'tif', 'tiff']
 const minFileSize = 10 * 1024
@@ -505,6 +781,16 @@ const minHeight = 128
 const maxWidth = 4096
 const maxHeight = 4096
 const moduleIconList = ['🌗', '🎨', '📐', '🫧', '🌌', '⚡', '🌸', '✨']
+const twoImageAlgorithmNames = new Set([
+  'add_operation',
+  'subtract_operation',
+  'multiply_operation',
+  'divide_operation',
+  'and_operation',
+  'or_operation',
+  'xor_operation',
+  'histogram_matching'
+])
 
 const algorithmLoading = ref(false)
 const uploadLoading = ref(false)
@@ -514,6 +800,12 @@ const modules = ref([])
 const selectedModuleKey = ref('')
 const selectedAlgorithmKey = ref('')
 const previewDisplayUrl = ref('')
+const firstImageSource = ref('upload')
+const primaryLibraryLoading = ref(false)
+const primaryLibraryCategories = ref([])
+const primaryLibraryImages = ref([])
+const selectedPrimaryLibraryCategory = ref('')
+const selectedPrimaryLibraryImagePath = ref('')
 
 const paramForm = reactive({})
 
@@ -525,6 +817,11 @@ const uploadedImage = reactive({
   size: 0,
   width: 0,
   height: 0
+})
+
+const primaryLibraryUploadCache = reactive({
+  sourceImagePath: '',
+  uploadImagePath: ''
 })
 
 const resultInfo = reactive({
@@ -546,33 +843,86 @@ const selectedAlgorithm = computed(() => {
   return selectedModule.value.algorithms.find((item) => item.key === selectedAlgorithmKey.value) || null
 })
 
-const secondImageEnabled = computed(() => {
-  return selectedAlgorithm.value?.module === 'basic_operation'
+const selectedPrimaryLibraryImage = computed(() => {
+  return primaryLibraryImages.value.find((item) => item.imagePath === selectedPrimaryLibraryImagePath.value) || null
 })
 
-const libraryImages = ref([])
-const libraryImagesLoading = ref(false)
-const selectedSecondImagePath = ref('')
+const hasPrimaryImageForProcess = computed(() => {
+  if (firstImageSource.value === 'upload') return Boolean(uploadedImage.id)
+  return Boolean(selectedPrimaryLibraryImage.value)
+})
 
-async function loadLibraryImagesForSecond() {
-  libraryImagesLoading.value = true
-  try {
-    const data = await getDetailImageService({ params: { category: 'anime_character' } })
-    libraryImages.value = Array.isArray(data?.images) ? data.images : []
-  } catch (err) {
-    console.error('Failed to load library images:', err)
-    libraryImages.value = []
-  } finally {
-    libraryImagesLoading.value = false
+const firstImageSourceText = computed(() => {
+  return firstImageSource.value === 'library' ? '图像库' : '本地上传'
+})
+
+const secondImageEnabled = computed(() => {
+  const algorithm = selectedAlgorithm.value
+  return Boolean(algorithm && twoImageAlgorithmNames.has(algorithm.name))
+})
+
+const secondImageSource = ref('upload')
+const secondImageLoading = ref(false)
+const secondPreviewDisplayUrl = ref('')
+const secondLibraryLoading = ref(false)
+const secondLibraryCategories = ref([])
+const secondLibraryImages = ref([])
+const selectedSecondLibraryCategory = ref('')
+const selectedSecondLibraryImagePath = ref('')
+
+const secondUploadedImage = reactive({
+  id: '',
+  localUrl: '',
+  serverPreviewUrl: '',
+  name: '',
+  size: 0,
+  width: 0,
+  height: 0
+})
+
+const secondLibraryUploadCache = reactive({
+  sourceImagePath: '',
+  uploadImagePath: ''
+})
+
+const selectedSecondLibraryImage = computed(() => {
+  return secondLibraryImages.value.find((item) => item.imagePath === selectedSecondLibraryImagePath.value) || null
+})
+
+const hasSecondImageForProcess = computed(() => {
+  if (!secondImageEnabled.value) return true
+  if (secondImageSource.value === 'upload') return Boolean(secondUploadedImage.id)
+  return Boolean(selectedSecondLibraryImage.value)
+})
+
+const secondImageSourceText = computed(() => {
+  return secondImageSource.value === 'library' ? '图像库' : '本地上传'
+})
+
+watch(firstImageSource, (source) => {
+  resetPrimaryImageSelection({ keepSource: true })
+  resetResult()
+
+  if (source === 'library') {
+    loadPrimaryLibraryCategories()
   }
-}
+})
 
 watch(secondImageEnabled, (enabled) => {
   if (enabled) {
-    selectedSecondImagePath.value = ''
-    loadLibraryImagesForSecond()
+    secondImageSource.value = 'upload'
+    resetSecondImageSelection()
   } else {
-    selectedSecondImagePath.value = ''
+    resetSecondImageSelection()
+  }
+})
+
+watch(secondImageSource, (source) => {
+  resetSecondImageSelection({ keepSource: true })
+  resetResult()
+
+  if (source === 'library') {
+    loadSecondLibraryCategories()
   }
 })
 
@@ -593,17 +943,23 @@ const selectedRunEndpoint = computed(() => {
 const canProcess = computed(() => {
   return Boolean(
     selectedAlgorithm.value &&
-      uploadedImage.id &&
+      hasPrimaryImageForProcess.value &&
       previewDisplayUrl.value &&
       !uploadLoading.value &&
+      !secondImageLoading.value &&
       !processing.value &&
-      (!secondImageEnabled.value || selectedSecondImagePath.value)
+      hasSecondImageForProcess.value
   )
 })
 
 const uploadedImageSizeText = computed(() => {
   if (!uploadedImage.width || !uploadedImage.height) return '已上传'
   return `${uploadedImage.width} × ${uploadedImage.height}`
+})
+
+const secondUploadedImageSizeText = computed(() => {
+  if (!secondUploadedImage.width || !secondUploadedImage.height) return '已上传'
+  return `${secondUploadedImage.width} × ${secondUploadedImage.height}`
 })
 
 const parameterSummary = computed(() => {
@@ -634,6 +990,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   revokeLocalPreviewUrl()
+  revokeSecondLocalPreviewUrl()
 })
 
 async function loadAlgorithms() {
@@ -872,6 +1229,7 @@ async function handleFileChange(uploadFile) {
     }
 
     revokeLocalPreviewUrl()
+    clearPrimaryLibrarySelection()
 
     uploadedImage.id = imagePath
     uploadedImage.localUrl = URL.createObjectURL(file)
@@ -953,6 +1311,14 @@ function handleImagePreviewError() {
 }
 
 function clearUploadedImage() {
+  clearUploadedImageWithoutMessage()
+  clearPrimaryLibraryUploadCache()
+
+  resetResult()
+  ElMessage.info('已移除第一张图片')
+}
+
+function clearUploadedImageWithoutMessage() {
   revokeLocalPreviewUrl()
 
   uploadedImage.id = ''
@@ -963,9 +1329,494 @@ function clearUploadedImage() {
   uploadedImage.width = 0
   uploadedImage.height = 0
   previewDisplayUrl.value = ''
+}
 
+function resetPrimaryImageSelection(options = {}) {
+  if (!options.keepSource) {
+    firstImageSource.value = 'upload'
+  }
+
+  clearUploadedImageWithoutMessage()
+  clearPrimaryLibrarySelection()
+  clearPrimaryLibraryUploadCache()
+}
+
+function clearPrimaryLibrarySelection() {
+  selectedPrimaryLibraryImagePath.value = ''
+  clearPrimaryLibraryUploadCache()
+}
+
+function clearPrimaryLibraryUploadCache() {
+  primaryLibraryUploadCache.sourceImagePath = ''
+  primaryLibraryUploadCache.uploadImagePath = ''
+}
+
+async function loadPrimaryLibraryCategories(force = false) {
+  if (!force && primaryLibraryCategories.value.length > 0) {
+    if (!selectedPrimaryLibraryCategory.value) {
+      selectedPrimaryLibraryCategory.value = getDefaultLibraryCategoryName(primaryLibraryCategories.value)
+    }
+    if (selectedPrimaryLibraryCategory.value && primaryLibraryImages.value.length === 0) {
+      await loadPrimaryLibraryImages(selectedPrimaryLibraryCategory.value)
+    }
+    return
+  }
+
+  primaryLibraryLoading.value = true
+
+  try {
+    const data = await getCategoriesService()
+
+    if (!data?.success) {
+      ElMessage.error('获取图像库分类失败')
+      return
+    }
+
+    primaryLibraryCategories.value = normalizeLibraryCategories(data.categories)
+    selectedPrimaryLibraryCategory.value = getDefaultLibraryCategoryName(primaryLibraryCategories.value)
+    primaryLibraryImages.value = []
+    clearPrimaryLibrarySelection()
+  } finally {
+    primaryLibraryLoading.value = false
+  }
+
+  if (selectedPrimaryLibraryCategory.value) {
+    await loadPrimaryLibraryImages(selectedPrimaryLibraryCategory.value)
+  }
+}
+
+async function handlePrimaryLibraryCategoryChange(categoryName) {
+  primaryLibraryImages.value = []
+  clearPrimaryLibrarySelection()
+  previewDisplayUrl.value = ''
   resetResult()
-  ElMessage.info('已移除当前图片')
+  await loadPrimaryLibraryImages(categoryName)
+}
+
+function handlePrimaryLibraryImageChange() {
+  clearUploadedImageWithoutMessage()
+  clearPrimaryLibraryUploadCache()
+  previewDisplayUrl.value = selectedPrimaryLibraryImage.value?.displayUrl || ''
+  resetResult()
+}
+
+async function loadPrimaryLibraryImages(categoryName) {
+  if (!categoryName) return
+
+  primaryLibraryLoading.value = true
+
+  try {
+    const data = await getDetailImageService({
+      params: {
+        category: categoryName,
+        page: 1,
+        page_size: 100
+      }
+    })
+
+    if (!data?.success) {
+      ElMessage.error('获取图像库图片失败')
+      primaryLibraryImages.value = []
+      return
+    }
+
+    primaryLibraryImages.value = normalizeLibraryImages(data.images, categoryName)
+  } finally {
+    primaryLibraryLoading.value = false
+  }
+}
+
+async function resolvePrimaryImagePathForProcess() {
+  if (firstImageSource.value === 'upload') {
+    if (!uploadedImage.id) {
+      ElMessage.warning('请上传第一张图片')
+      return ''
+    }
+    return uploadedImage.id
+  }
+
+  const libraryImage = selectedPrimaryLibraryImage.value
+  if (!libraryImage) {
+    ElMessage.warning('请选择图像库中的第一张图片')
+    return ''
+  }
+
+  if (
+    primaryLibraryUploadCache.sourceImagePath === libraryImage.imagePath &&
+    primaryLibraryUploadCache.uploadImagePath
+  ) {
+    return primaryLibraryUploadCache.uploadImagePath
+  }
+
+  uploadLoading.value = true
+
+  try {
+    const file = await createFileFromLibraryImage(libraryImage, 'library_primary_image')
+    const formData = new FormData()
+    formData.append('file', file, file.name)
+
+    const data = await uploadImageService(formData)
+
+    if (!data?.success) {
+      ElMessage.error(data?.message || '第一张图库图片转为上传图片失败')
+      return ''
+    }
+
+    const imagePath = data.image_path || data.image_id || data.filename
+    if (!imagePath) {
+      ElMessage.error('第一张图库图片已提交，但后端未返回 image_path')
+      return ''
+    }
+
+    primaryLibraryUploadCache.sourceImagePath = libraryImage.imagePath
+    primaryLibraryUploadCache.uploadImagePath = imagePath
+    return imagePath
+  } catch (error) {
+    console.error('Failed to prepare primary library image:', error)
+    ElMessage.error(extractErrorMessage(error) || '第一张图库图片准备失败，请改用本地上传')
+    return ''
+  } finally {
+    uploadLoading.value = false
+  }
+}
+
+async function handleSecondFileChange(uploadFile) {
+  const file = uploadFile.raw
+  if (!file) return
+
+  const checkResult = await validateImageFile(file)
+  if (!checkResult.valid) {
+    ElMessage.error(checkResult.message)
+    return
+  }
+
+  secondImageLoading.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('file', file, file.name)
+
+    const data = await uploadImageService(formData)
+
+    if (!data?.success) {
+      ElMessage.error(data?.message || '第二张图片上传失败')
+      return
+    }
+
+    const imagePath = data.image_path || data.image_id || data.filename
+    if (!imagePath) {
+      ElMessage.error('第二张图片上传成功，但后端未返回 image_path')
+      return
+    }
+
+    revokeSecondLocalPreviewUrl()
+    clearSecondLibrarySelection()
+
+    secondUploadedImage.id = imagePath
+    secondUploadedImage.localUrl = URL.createObjectURL(file)
+    secondUploadedImage.serverPreviewUrl = normalizePreviewUrl(data.preview_url)
+    secondUploadedImage.name = data.original_filename || file.name
+    secondUploadedImage.size = file.size
+    secondUploadedImage.width = Number(data.width) || checkResult.width
+    secondUploadedImage.height = Number(data.height) || checkResult.height
+    secondPreviewDisplayUrl.value = secondUploadedImage.serverPreviewUrl || secondUploadedImage.localUrl
+
+    await nextTick()
+    resetResult()
+    ElMessage.success('第二张图片上传成功')
+  } finally {
+    secondImageLoading.value = false
+  }
+}
+
+function clearSecondUploadedImage() {
+  revokeSecondLocalPreviewUrl()
+  secondUploadedImage.id = ''
+  secondUploadedImage.localUrl = ''
+  secondUploadedImage.serverPreviewUrl = ''
+  secondUploadedImage.name = ''
+  secondUploadedImage.size = 0
+  secondUploadedImage.width = 0
+  secondUploadedImage.height = 0
+  secondPreviewDisplayUrl.value = ''
+  clearSecondLibraryUploadCache()
+  resetResult()
+  ElMessage.info('已移除第二张图片')
+}
+
+function resetSecondImageSelection(options = {}) {
+  if (!options.keepSource) {
+    secondImageSource.value = 'upload'
+  }
+
+  clearSecondUploadedImageWithoutMessage()
+  clearSecondLibrarySelection()
+  clearSecondLibraryUploadCache()
+}
+
+function clearSecondUploadedImageWithoutMessage() {
+  revokeSecondLocalPreviewUrl()
+  secondUploadedImage.id = ''
+  secondUploadedImage.localUrl = ''
+  secondUploadedImage.serverPreviewUrl = ''
+  secondUploadedImage.name = ''
+  secondUploadedImage.size = 0
+  secondUploadedImage.width = 0
+  secondUploadedImage.height = 0
+  secondPreviewDisplayUrl.value = ''
+}
+
+function clearSecondLibrarySelection() {
+  selectedSecondLibraryImagePath.value = ''
+  clearSecondLibraryUploadCache()
+}
+
+function clearSecondLibraryUploadCache() {
+  secondLibraryUploadCache.sourceImagePath = ''
+  secondLibraryUploadCache.uploadImagePath = ''
+}
+
+async function loadSecondLibraryCategories(force = false) {
+  if (!secondImageEnabled.value) return
+  if (!force && secondLibraryCategories.value.length > 0) {
+    if (!selectedSecondLibraryCategory.value) {
+      selectedSecondLibraryCategory.value = getDefaultLibraryCategoryName(secondLibraryCategories.value)
+    }
+    if (selectedSecondLibraryCategory.value && secondLibraryImages.value.length === 0) {
+      await loadSecondLibraryImages(selectedSecondLibraryCategory.value)
+    }
+    return
+  }
+
+  secondLibraryLoading.value = true
+
+  try {
+    const data = await getCategoriesService()
+
+    if (!data?.success) {
+      ElMessage.error('获取图像库分类失败')
+      return
+    }
+
+    secondLibraryCategories.value = normalizeLibraryCategories(data.categories)
+    selectedSecondLibraryCategory.value = getDefaultLibraryCategoryName(secondLibraryCategories.value)
+    secondLibraryImages.value = []
+    clearSecondLibrarySelection()
+  } finally {
+    secondLibraryLoading.value = false
+  }
+
+  if (selectedSecondLibraryCategory.value) {
+    await loadSecondLibraryImages(selectedSecondLibraryCategory.value)
+  }
+}
+
+async function handleSecondLibraryCategoryChange(categoryName) {
+  secondLibraryImages.value = []
+  clearSecondLibrarySelection()
+  resetResult()
+  await loadSecondLibraryImages(categoryName)
+}
+
+function handleSecondLibraryImageChange() {
+  clearSecondUploadedImageWithoutMessage()
+  clearSecondLibraryUploadCache()
+  resetResult()
+}
+
+async function loadSecondLibraryImages(categoryName) {
+  if (!categoryName) return
+
+  secondLibraryLoading.value = true
+
+  try {
+    const data = await getDetailImageService({
+      params: {
+        category: categoryName,
+        page: 1,
+        page_size: 100
+      }
+    })
+
+    if (!data?.success) {
+      ElMessage.error('获取图像库图片失败')
+      secondLibraryImages.value = []
+      return
+    }
+
+    secondLibraryImages.value = normalizeLibraryImages(data.images, categoryName)
+  } finally {
+    secondLibraryLoading.value = false
+  }
+}
+
+async function resolveSecondImagePathForProcess() {
+  if (!secondImageEnabled.value) return ''
+
+  if (secondImageSource.value === 'upload') {
+    if (!secondUploadedImage.id) {
+      ElMessage.warning('请上传第二张图片')
+      return ''
+    }
+    return secondUploadedImage.id
+  }
+
+  const libraryImage = selectedSecondLibraryImage.value
+  if (!libraryImage) {
+    ElMessage.warning('请选择图像库中的第二张图片')
+    return ''
+  }
+
+  if (
+    secondLibraryUploadCache.sourceImagePath === libraryImage.imagePath &&
+    secondLibraryUploadCache.uploadImagePath
+  ) {
+    return secondLibraryUploadCache.uploadImagePath
+  }
+
+  secondImageLoading.value = true
+
+  try {
+    const file = await createFileFromLibraryImage(libraryImage)
+    const formData = new FormData()
+    formData.append('file', file, file.name)
+
+    const data = await uploadImageService(formData)
+
+    if (!data?.success) {
+      ElMessage.error(data?.message || '图库图片转为上传图片失败')
+      return ''
+    }
+
+    const imagePath = data.image_path || data.image_id || data.filename
+    if (!imagePath) {
+      ElMessage.error('图库图片已提交，但后端未返回 image_path')
+      return ''
+    }
+
+    secondLibraryUploadCache.sourceImagePath = libraryImage.imagePath
+    secondLibraryUploadCache.uploadImagePath = imagePath
+    return imagePath
+  } catch (error) {
+    console.error('Failed to prepare library image:', error)
+    ElMessage.error(extractErrorMessage(error) || '图库图片准备失败，请改用本地上传')
+    return ''
+  } finally {
+    secondImageLoading.value = false
+  }
+}
+
+async function createFileFromLibraryImage(libraryImage, fallbackName = 'library_second_image') {
+  const fetchUrl = libraryImage.fetchUrl || buildSameOriginApiUrl(libraryImage.previewUrl || libraryImage.displayUrl)
+
+  const response = await fetch(fetchUrl, {
+    credentials: 'same-origin'
+  })
+
+  if (!response.ok) {
+    throw new Error(`无法读取图库图片，HTTP 状态码：${response.status}`)
+  }
+
+  const blob = await response.blob()
+  const contentType = response.headers.get('content-type') || blob.type || ''
+
+  if (contentType && !contentType.startsWith('image/')) {
+    throw new Error('读取图库图片失败：请确认 Vite 代理已生效，/api 请求没有被前端页面接管')
+  }
+
+  const extension = getFileExtension(libraryImage.filename) || getFileExtensionFromMime(blob.type) || 'png'
+  const filename = libraryImage.filename || `${fallbackName}.${extension}`
+  return new File([blob], filename, { type: blob.type || getMimeByExtension(extension) })
+}
+
+function normalizeLibraryCategories(rawCategories) {
+  if (!Array.isArray(rawCategories)) return []
+
+  return rawCategories
+    .filter((item) => item && item.name)
+    .map((item) => ({
+      name: String(item.name),
+      displayName: item.display_name || item.displayName || item.name,
+      count: Number.isFinite(Number(item.count)) ? Number(item.count) : 0
+    }))
+}
+
+function getDefaultLibraryCategoryName(categories) {
+  const target = categories.find((item) => item.count > 0) || categories[0]
+  return target?.name || ''
+}
+
+function normalizeLibraryImages(rawImages, categoryName) {
+  if (!Array.isArray(rawImages)) return []
+
+  return rawImages
+    .filter((item) => item && item.image_path)
+    .map((item) => {
+      const imagePath = String(item.image_path)
+      const previewUrl = buildLibraryPreviewUrl(imagePath, item.preview_url)
+
+      return {
+        name: item.name || imagePath,
+        displayName: item.display_name || item.displayName || item.name || item.filename || imagePath,
+        filename: item.filename || imagePath.split('/').pop(),
+        category: item.category || categoryName,
+        imagePath,
+        previewUrl,
+        displayUrl: normalizePreviewUrl(previewUrl),
+        fetchUrl: buildSameOriginApiUrl(previewUrl)
+      }
+    })
+}
+
+function buildLibraryPreviewUrl(imagePath, previewUrl) {
+  const rawUrl = previewUrl || `/api/library/image/${imagePath}`
+  const marker = '/api/library/image/'
+  const markerIndex = rawUrl.indexOf(marker)
+
+  if (markerIndex < 0) return rawUrl
+
+  const prefix = rawUrl.slice(0, markerIndex + marker.length)
+  const relativePath = rawUrl.slice(markerIndex + marker.length)
+  const encodedPath = relativePath
+    .split('/')
+    .map((part) => encodeURIComponent(safeDecodeURIComponent(part)))
+    .join('/')
+
+  return `${prefix}${encodedPath}`
+}
+
+function safeDecodeURIComponent(value) {
+  try {
+    return decodeURIComponent(value)
+  } catch (error) {
+    return value
+  }
+}
+
+
+function buildSameOriginApiUrl(url) {
+  if (!url) return ''
+
+  if (url.startsWith('data:') || url.startsWith('blob:')) {
+    return url
+  }
+
+  try {
+    const parsedUrl = new URL(url, window.location.origin)
+    if (parsedUrl.pathname.startsWith('/api/')) {
+      return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`
+    }
+  } catch (error) {
+    // 如果 URL 无法被解析，则继续走下面的兜底路径拼接
+  }
+
+  return url.startsWith('/') ? url : `/${url}`
+}
+
+function revokeSecondLocalPreviewUrl() {
+  if (secondUploadedImage.localUrl) {
+    URL.revokeObjectURL(secondUploadedImage.localUrl)
+  }
 }
 
 async function handleProcess() {
@@ -974,23 +1825,24 @@ async function handleProcess() {
     return
   }
 
-  if (!uploadedImage.id) {
-    ElMessage.warning('请先上传图片')
-    return
-  }
+  const primaryImagePath = await resolvePrimaryImagePathForProcess()
+  if (!primaryImagePath) return
+
+  const secondImagePath = await resolveSecondImagePathForProcess()
+  if (secondImageEnabled.value && !secondImagePath) return
 
   const endpoint = getRunEndpoint(selectedAlgorithm.value.module)
   const payload = {
     source_type: 'upload',
-    image_path: uploadedImage.id,
+    image_path: primaryImagePath,
     algorithm: selectedAlgorithm.value.name,
     algorithm_display_name: selectedAlgorithm.value.displayName,
     params: buildProcessParams(),
     return_steps: true
   }
 
-  if (secondImageEnabled.value && selectedSecondImagePath.value) {
-    payload.second_image_path = selectedSecondImagePath.value
+  if (secondImagePath) {
+    payload.second_image_path = secondImagePath
   }
 
   processing.value = true
@@ -1214,6 +2066,32 @@ function getPrecision(step) {
 
 function getFileExtension(filename) {
   return filename.split('.').pop()?.toLowerCase() || ''
+}
+
+function getFileExtensionFromMime(mimeType) {
+  const mimeMap = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/bmp': 'bmp',
+    'image/webp': 'webp',
+    'image/tiff': 'tiff'
+  }
+
+  return mimeMap[String(mimeType || '').toLowerCase()] || ''
+}
+
+function getMimeByExtension(extension) {
+  const mimeMap = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    bmp: 'image/bmp',
+    webp: 'image/webp',
+    tif: 'image/tiff',
+    tiff: 'image/tiff'
+  }
+
+  return mimeMap[String(extension || '').toLowerCase()] || 'image/png'
 }
 
 function formatFileSize(size) {
@@ -1449,8 +2327,62 @@ function isPlainObject(value) {
   margin-top: 0;
 }
 
-.second-image-card .full-control {
-  margin-top: 8px;
+.image-source-tabs {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.image-source-tabs :deep(.el-radio-button) {
+  flex: 1;
+}
+
+.image-source-tabs :deep(.el-radio-button__inner) {
+  width: 100%;
+  border-color: rgba(255, 107, 139, 0.2);
+  color: #ff5277;
+  font-weight: 700;
+}
+
+.image-source-tabs :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  border-color: #ff6b8b;
+  background: #ff6b8b;
+  box-shadow: -1px 0 0 0 #ff6b8b;
+}
+
+.image-source-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.second-upload-box {
+  min-height: 220px;
+  max-height: 320px;
+}
+
+.second-preview-frame {
+  min-height: 180px;
+  height: clamp(180px, 24vw, 260px);
+  max-height: 260px;
+}
+
+.library-picker-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.library-refresh-btn {
+  height: 32px;
+}
+
+.selected-library-image {
+  display: grid;
+  gap: 14px;
+}
+
+.second-image-meta {
+  margin-top: 0;
 }
 
 .upload-card,
@@ -2008,6 +2940,14 @@ function isPlainObject(value) {
   .image-meta,
   .task-summary {
     grid-template-columns: 1fr;
+  }
+
+  .library-picker-row {
+    grid-template-columns: 1fr;
+  }
+
+  .library-refresh-btn {
+    width: 100%;
   }
 
   .process-actions {
