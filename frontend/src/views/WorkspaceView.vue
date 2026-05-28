@@ -1,456 +1,78 @@
 <template>
-  <div class="workspace-page">
-    <section class="workspace-shell">
-      <aside class="algorithm-sidebar">
-        <div class="sidebar-header">
-          <div>
-            <h2>算法模块</h2>
-          </div>
-
-          <el-button
-            class="refresh-btn"
-            circle
-            :loading="algorithmLoading"
-            @click="loadAlgorithms"
-          >
-            <el-icon><Refresh /></el-icon>
-          </el-button>
+  <div class=”workspace-page page-enter”>
+    <!-- 左栏：算法树 -->
+    <aside class=”workspace-sidebar glass-card”>
+      <div class=”sidebar-header”>
+        <span class=”sidebar-title”>✦ 算法分类</span>
+        <el-icon class=”sidebar-refresh” @click=”loadAlgorithms”><Refresh /></el-icon>
+      </div>
+      <div class=”algo-tree”>
+        <div v-for=”mod in algorithmModules” :key=”mod.module”
+          class=”tree-module”
+          :class=”{ 'tree-module--active': activeModule === mod.module }”
+          @click=”activeModule = mod.module”>
+          <span class=”tree-module-name”>{{ mod.display_name }}</span>
+          <span class=”tree-badge”>{{ mod.algorithms?.length || 0 }}</span>
         </div>
+      </div>
+    </aside>
 
-        <el-skeleton v-if="algorithmLoading" :rows="9" animated />
-
-        <el-empty
-          v-else-if="modules.length === 0"
-          description="暂无算法数据，请检查后端接口"
-          :image-size="96"
-        />
-
-        <el-scrollbar v-else class="menu-scroll">
-          <el-menu
-            class="algorithm-menu"
-            :default-active="activeMenuKey"
-            :default-openeds="openModuleKeys"
-            @select="handleSelectAlgorithm"
-          >
-            <el-sub-menu
-              v-for="(moduleItem, moduleIndex) in modules"
-              :key="moduleItem.key"
-              :index="moduleItem.key"
-            >
-              <template #title>
-                <span class="module-title">
-                  <span class="module-icon">{{ getModuleIcon(moduleIndex) }}</span>
-                  <span class="module-name">{{ moduleItem.displayName }}</span>
-                  <span class="module-count">{{ moduleItem.algorithms.length }}</span>
-                </span>
-              </template>
-
-              <el-menu-item
-                v-for="algorithm in moduleItem.algorithms"
-                :key="algorithm.key"
-                :index="`${moduleItem.key}::${algorithm.key}`"
-              >
-                <span class="algorithm-name">{{ algorithm.displayName }}</span>
-              </el-menu-item>
-            </el-sub-menu>
-          </el-menu>
-        </el-scrollbar>
-      </aside>
-
-      <main class="workspace-main">
-        <section class="panel-card algorithm-info-card">
-          <div class="panel-title">
-            <div class="title-left">
-              <span class="title-icon">🪄</span>
-              <div>
-                <h3>{{ selectedAlgorithm?.displayName || '请选择算法' }}</h3>
-                <p>
-                  {{
-                    selectedAlgorithm?.description ||
-                    '请从左侧选择一个具体算法。'
-                  }}
-                </p>
-              </div>
-            </div>
-
-            <el-tag v-if="selectedModule" class="soft-tag">
-              {{ selectedModule.displayName }}
-            </el-tag>
-          </div>
-        </section>
-
-        <div class="right-grid">
-          <div class="left-workflow">
-            <section class="panel-card upload-card">
-            <div class="panel-title">
-              <div class="title-left">
-                <span class="title-icon">📤</span>
-                <div>
-                  <h3>上传图片</h3>
-                </div>
-              </div>
-            </div>
-
-            <el-upload
-              class="image-uploader"
-              action="#"
-              :auto-upload="false"
-              :show-file-list="false"
-              :on-change="handleFileChange"
-              :disabled="uploadLoading"
-              accept=".jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff"
-            >
-              <div class="upload-box" :class="{ 'has-image': previewDisplayUrl }">
-                <template v-if="previewDisplayUrl">
-                  <div class="image-frame upload-preview-frame">
-                    <el-image
-                      class="preview-image"
-                      :src="previewDisplayUrl"
-                      fit="contain"
-                      :preview-src-list="[previewDisplayUrl]"
-                      :preview-teleported="true"
-                      :z-index="3000"
-                      hide-on-click-modal
-                      @error="handleImagePreviewError"
-                    >
-                      <template #error>
-                        <div class="image-error">
-                          <el-icon><Picture /></el-icon>
-                          <span>图片预览失败</span>
-                        </div>
-                      </template>
-                    </el-image>
-                  </div>
-
-                  <div class="image-mask">
-                    <el-icon><UploadFilled /></el-icon>
-                    <span>点击重新上传</span>
-                  </div>
-                </template>
-
-                <template v-else>
-                  <el-icon class="upload-icon"><UploadFilled /></el-icon>
-                  <h4>选择本地图片</h4>
-                  <p>支持 jpg、jpeg、png、bmp、webp、tif、tiff，大小 10KB - 5MB</p>
-                </template>
-              </div>
-            </el-upload>
-
-            <div v-if="uploadLoading" class="upload-loading">
-              <el-icon class="is-loading"><Refresh /></el-icon>
-              正在上传图片...
-            </div>
-
-            <div v-if="uploadedImage.id" class="image-meta">
-              <div>
-                <span>文件名</span>
-                <strong>{{ uploadedImage.name }}</strong>
-              </div>
-              <div>
-                <span>尺寸</span>
-                <strong>{{ uploadedImageSizeText }}</strong>
-              </div>
-              <div>
-                <span>大小</span>
-                <strong>{{ formatFileSize(uploadedImage.size) }}</strong>
-              </div>
-              <div>
-                <span>图片路径</span>
-                <strong>{{ uploadedImage.id }}</strong>
-              </div>
-            </div>
-
-            <div v-if="uploadedImage.id" class="upload-actions">
-              <el-button plain class="ghost-btn" @click="clearUploadedImage">
-                <el-icon><Delete /></el-icon>
-                移除图片
-              </el-button>
-            </div>
-          </section>
-
-          <section class="panel-card params-card">
-            <div class="panel-title">
-              <div class="title-left">
-                <span class="title-icon">🎚️</span>
-                <div>
-                  <h3>参数设置</h3>
-                </div>
-              </div>
-
-              <el-button
-                v-if="paramList.length > 0"
-                class="reset-btn"
-                plain
-                @click="resetParamForm"
-              >
-                重置
-              </el-button>
-            </div>
-
-            <el-empty
-              v-if="!selectedAlgorithm"
-              description="请先选择算法"
-              :image-size="92"
-            />
-
-            <el-empty
-              v-else-if="paramList.length === 0"
-              description="该算法没有参数"
-              :image-size="92"
-            />
-
-            <el-form v-else class="params-form" label-position="top">
-              <el-form-item
-                v-for="param in paramList"
-                :key="param.key"
-                class="param-item"
-              >
-                <template #label>
-                  <div class="param-label">
-                    <span>{{ param.label }}</span>
-                    <em>{{ getParamTypeText(param.type) }}</em>
-                  </div>
-                </template>
-
-                <el-slider
-                  v-if="param.component === 'slider'"
-                  v-model="paramForm[param.key]"
-                  :min="param.min"
-                  :max="param.max"
-                  :step="param.step"
-                  :precision="param.type === 'float' ? getPrecision(param.step) : 0"
-                  show-input
-                  @change="handleParamChange(param)"
-                />
-
-                <el-select
-                  v-else-if="param.component === 'select'"
-                  v-model="paramForm[param.key]"
-                  class="full-control"
-                  placeholder="请选择"
-                >
-                  <el-option
-                    v-for="option in param.options"
-                    :key="String(option.value)"
-                    :label="option.label"
-                    :value="option.value"
-                  />
-                </el-select>
-
-                <el-switch
-                  v-else-if="param.component === 'switch'"
-                  v-model="paramForm[param.key]"
-                  active-text="开启"
-                  inactive-text="关闭"
-                />
-
-                <el-input-number
-                  v-else-if="isNumberType(param.type)"
-                  v-model="paramForm[param.key]"
-                  class="full-control"
-                  :min="param.min"
-                  :max="param.max"
-                  :step="param.step"
-                  @change="handleParamChange(param)"
-                />
-
-                <el-input
-                  v-else
-                  v-model="paramForm[param.key]"
-                  class="full-control"
-                  placeholder="请输入参数值"
-                />
-              </el-form-item>
-            </el-form>
-
-            <div class="process-actions">
-              <el-button
-                class="process-btn"
-                type="primary"
-                :disabled="!canProcess"
-                :loading="processing"
-                @click="handleProcess"
-              >
-                <el-icon><MagicStick /></el-icon>
-                开始处理
-              </el-button>
-            </div>
-          </section>
-          </div>
-
-          <section class="panel-card result-card">
-            <div class="panel-title">
-              <div class="title-left">
-                <span class="title-icon">🖼️</span>
-                <div>
-                  <h3>结果展示</h3>
-                </div>
-              </div>
-
-              <el-tag
-                v-if="resultInfo.status !== 'idle'"
-                class="soft-tag"
-                :type="getResultTagType(resultInfo.status)"
-              >
-                {{ getResultStatusText(resultInfo.status) }}
-              </el-tag>
-            </div>
-
-            <div v-if="!previewDisplayUrl" class="result-empty">
-              <el-icon><Picture /></el-icon>
-              <p>上传图片后，将在这里显示原图与处理结果。</p>
-            </div>
-
-            <div v-else class="result-content">
-              <div class="compare-box">
-                <div class="compare-item">
-                  <div class="compare-title">原图</div>
-                  <div class="image-frame result-image-frame">
-                    <el-image
-                      class="compare-image"
-                      :src="previewDisplayUrl"
-                      fit="contain"
-                      :preview-src-list="[previewDisplayUrl]"
-                      :preview-teleported="true"
-                      :z-index="3000"
-                      hide-on-click-modal
-                      @error="handleImagePreviewError"
-                    >
-                      <template #error>
-                        <div class="image-error">
-                          <el-icon><Picture /></el-icon>
-                          <span>图片预览失败</span>
-                        </div>
-                      </template>
-                    </el-image>
-                  </div>
-                </div>
-
-                <div class="compare-item result-preview">
-                  <div class="compare-title">处理结果</div>
-
-                  <template v-if="resultInfo.status === 'done' && resultInfo.imageUrl">
-                    <div class="image-frame result-image-frame">
-                      <el-image
-                        class="compare-image"
-                        :src="resultInfo.imageUrl"
-                        fit="contain"
-                        :preview-src-list="[resultInfo.imageUrl]"
-                        :preview-teleported="true"
-                        :z-index="3000"
-                        hide-on-click-modal
-                      >
-                        <template #error>
-                          <div class="image-error">
-                            <el-icon><Picture /></el-icon>
-                            <span>图片预览失败</span>
-                          </div>
-                        </template>
-                      </el-image>
-                    </div>
-                  </template>
-
-                  <template v-else>
-                    <div class="waiting-result">
-                      <el-icon><View /></el-icon>
-                      <p>点击“开始处理”后调用后端运行接口</p>
-                    </div>
-                  </template>
-                </div>
-              </div>
-
-              <div class="result-message">
-                <strong>说明：</strong>
-                <span>
-                  {{
-                    resultInfo.message ||
-                    '选择算法并上传图片后，点击“开始处理”即可调用后端算法运行接口。'
-                  }}
-                </span>
-              </div>
-
-              <div v-if="selectedAlgorithm" class="task-summary">
-                <div>
-                  <span>算法大类</span>
-                  <strong>{{ selectedModule?.displayName }}</strong>
-                </div>
-                <div>
-                  <span>选择算法</span>
-                  <strong>{{ selectedAlgorithm.displayName }}</strong>
-                </div>
-                <div>
-                  <span>运行接口</span>
-                  <strong>{{ selectedRunEndpoint }}</strong>
-                </div>
-                <div>
-                  <span>图像来源</span>
-                  <strong>upload</strong>
-                </div>
-              </div>
-
-              <div v-if="parameterSummary.length > 0" class="params-summary">
-                <div
-                  v-for="item in parameterSummary"
-                  :key="item.key"
-                  class="summary-item"
-                >
-                  <span>{{ item.label }}</span>
-                  <strong>{{ item.value }}</strong>
-                </div>
-              </div>
-
-              <div v-if="resultInfo.analysis" class="analysis-box">
-                <div class="section-title">处理分析</div>
-                <p>{{ resultInfo.analysis }}</p>
-              </div>
-
-              <div v-if="metricSummary.length > 0" class="metrics-summary">
-                <div
-                  v-for="metric in metricSummary"
-                  :key="metric.key"
-                  class="summary-item"
-                >
-                  <span>{{ metric.key }}</span>
-                  <strong>{{ metric.value }}</strong>
-                </div>
-              </div>
-
-              <div v-if="resultInfo.steps.length > 0" class="steps-block">
-                <div class="section-title">处理步骤</div>
-                <div class="steps-list">
-                  <div
-                    v-for="(step, index) in resultInfo.steps"
-                    :key="`${step.name}_${index}`"
-                    class="step-item"
-                  >
-                    <div class="compare-title">{{ index + 1 }}. {{ step.name }}</div>
-                    <div v-if="step.image" class="image-frame step-image-frame">
-                      <el-image
-                        class="compare-image"
-                        :src="step.image"
-                        fit="contain"
-                        :preview-src-list="[step.image]"
-                        :preview-teleported="true"
-                        :z-index="3000"
-                        hide-on-click-modal
-                      >
-                        <template #error>
-                          <div class="image-error">
-                            <el-icon><Picture /></el-icon>
-                            <span>步骤图片预览失败</span>
-                          </div>
-                        </template>
-                      </el-image>
-                    </div>
-                    <div v-else-if="step.error" class="step-error">{{ step.error }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+    <!-- 中栏：主工作区 -->
+    <main class=”workspace-main”>
+      <!-- 上传区 -->
+      <div class=”glass-card upload-section”>
+        <input ref=”fileInput” type=”file” accept=”image/*” hidden @change=”onFileChange”>
+        <div v-if=”!uploadedImage” class=”upload-placeholder” @click=”triggerUpload”>
+          <span class=”upload-icon”>✦</span>
+          <span class=”upload-text”>拖拽或点击上传图片</span>
+          <span class=”upload-hint”>支持 jpg / png / bmp / webp / tiff</span>
         </div>
-      </main>
-    </section>
+        <div v-else class=”image-compare”>
+          <div class=”compare-pane”>
+            <span class=”compare-label”>原图</span>
+            <img :src=”uploadedImage” alt=”原图” class=”compare-image”>
+          </div>
+          <div class=”compare-pane”>
+            <span class=”compare-label”>结果</span>
+            <img v-if=”resultInfo.imageUrl” :src=”resultInfo.imageUrl” alt=”结果” class=”compare-image result-image”>
+            <div v-else class=”compare-empty”>等待处理...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分析文本 -->
+      <div v-if=”resultInfo.analysis” class=”glass-card analysis-section”>
+        <p>{{ resultInfo.analysis }}</p>
+      </div>
+    </main>
+
+    <!-- 右栏：参数面板 -->
+    <aside class=”workspace-params glass-card”>
+      <div class=”params-header”>
+        <span class=”params-title”>{{ selectedAlgorithm?.display_name || '选择算法' }}</span>
+      </div>
+      <div v-if=”selectedAlgorithm?.params && Object.keys(selectedAlgorithm.params).length > 0” class=”params-list”>
+        <div v-for=”(param, key) in selectedAlgorithm.params” :key=”key” class=”param-item”>
+          <label class=”param-label”>{{ param.label }}</label>
+          <el-slider v-if=”param.component === 'slider'” v-model=”params[key]”
+            :min=”param.min” :max=”param.max” :step=”param.step”
+            :show-tooltip=”false” />
+          <el-select v-else-if=”param.component === 'select'” v-model=”params[key]” style=”width:100%”>
+            <el-option v-for=”opt in param.options” :key=”opt” :label=”opt” :value=”opt” />
+          </el-select>
+          <el-switch v-else-if=”param.component === 'switch'” v-model=”params[key]” />
+        </div>
+      </div>
+      <div v-else class=”params-empty”>
+        <span>此算法无可调节参数</span>
+      </div>
+      <button class=”btn-gradient run-btn”
+        :disabled=”running”
+        @click=”runAlgorithm”>
+        <span v-if=”running”>✦ 处理中...</span>
+        <span v-else>▶ 执行算法</span>
+      </button>
+    </aside>
   </div>
 </template>
 
@@ -476,29 +98,66 @@ const minWidth = 128
 const minHeight = 128
 const maxWidth = 4096
 const maxHeight = 4096
-const moduleIconList = ['🌗', '🎨', '📐', '🫧', '🌌', '⚡', '🌸', '✨']
+const moduleIconList = ['🧮', '🌗', '🎨', '📐', '🫧', '🌌', '⚡', '🌸', '✨']
+const moduleIconMap = {
+  basic_operation: '🧮',
+  grayscale_image: '🌗',
+  color_image: '🎨',
+  geometric_transform: '📐',
+  spatial_filter: '🫧',
+  frequency_analysis: '🌌',
+  frequency_filter: '⚡',
+  image_restoration: '🌸',
+  edge_shape_detection: '✨'
+}
+
+const twoImageAlgorithmNames = new Set([
+  'add_operation',
+  'subtract_operation',
+  'multiply_operation',
+  'divide_operation',
+  'and_operation',
+  'or_operation',
+  'xor_operation',
+  'histogram_matching'
+])
 
 const moduleRunEndpointMap = {
+  basic_operation: '/api/algorithms/basic-operation/run',
   grayscale_image: '/api/algorithms/grayscale-image/run',
   color_image: '/api/algorithms/color-image/run',
   geometric_transform: '/api/algorithms/geometric-transform/run',
   spatial_filter: '/api/algorithms/spatial-filter/run',
   frequency_analysis: '/api/algorithms/frequency-analysis/run',
-  frequency_filter: '/api/algorithms/frequency-filter/run'
+  frequency_filter: '/api/algorithms/frequency-filter/run',
+  image_restoration: '/api/algorithms/image-restoration/run',
+  edge_shape_detection: '/api/algorithms/edge-shape-detection/run'
 }
 
 const algorithmLoading = ref(false)
 const uploadLoading = ref(false)
+const secondUploadLoading = ref(false)
 const processing = ref(false)
 
 const modules = ref([])
 const selectedModuleKey = ref('')
 const selectedAlgorithmKey = ref('')
 const previewDisplayUrl = ref('')
+const secondPreviewDisplayUrl = ref('')
 
 const paramForm = reactive({})
 
 const uploadedImage = reactive({
+  id: '',
+  localUrl: '',
+  serverPreviewUrl: '',
+  name: '',
+  size: 0,
+  width: 0,
+  height: 0
+})
+
+const secondUploadedImage = reactive({
   id: '',
   localUrl: '',
   serverPreviewUrl: '',
@@ -529,6 +188,10 @@ const selectedAlgorithm = computed(() => {
 
 const paramList = computed(() => selectedAlgorithm.value?.paramsList || [])
 
+const requiresSecondImage = computed(() => {
+  return Boolean(selectedAlgorithm.value && twoImageAlgorithmNames.has(selectedAlgorithm.value.name))
+})
+
 const activeMenuKey = computed(() => {
   if (!selectedModuleKey.value || !selectedAlgorithmKey.value) return ''
   return `${selectedModuleKey.value}::${selectedAlgorithmKey.value}`
@@ -546,7 +209,9 @@ const canProcess = computed(() => {
     selectedAlgorithm.value &&
       uploadedImage.id &&
       previewDisplayUrl.value &&
+      (!requiresSecondImage.value || secondUploadedImage.id) &&
       !uploadLoading.value &&
+      !secondUploadLoading.value &&
       !processing.value
   )
 })
@@ -554,6 +219,19 @@ const canProcess = computed(() => {
 const uploadedImageSizeText = computed(() => {
   if (!uploadedImage.width || !uploadedImage.height) return '已上传'
   return `${uploadedImage.width} × ${uploadedImage.height}`
+})
+
+const secondUploadedImageSizeText = computed(() => {
+  if (!secondUploadedImage.width || !secondUploadedImage.height) return '已上传'
+  return `${secondUploadedImage.width} × ${secondUploadedImage.height}`
+})
+
+const processHintText = computed(() => {
+  if (requiresSecondImage.value) {
+    return '选择算法并上传主图与参考图后，点击“开始处理”即可调用后端算法运行接口。'
+  }
+
+  return '选择算法并上传图片后，点击“开始处理”即可调用后端算法运行接口。'
 })
 
 const parameterSummary = computed(() => {
@@ -576,6 +254,9 @@ const metricSummary = computed(() => {
 watch(selectedAlgorithm, () => {
   resetParamForm()
   resetResult()
+  if (!requiresSecondImage.value) {
+    clearSecondUploadedImage({ silent: true })
+  }
 })
 
 onMounted(() => {
@@ -583,7 +264,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  revokeLocalPreviewUrl()
+  revokeLocalPreviewUrl(uploadedImage)
+  revokeLocalPreviewUrl(secondUploadedImage)
 })
 
 async function loadAlgorithms() {
@@ -792,7 +474,33 @@ function normalizeOddIntIfNeeded(param, value) {
 }
 
 async function handleFileChange(uploadFile) {
-  const file = uploadFile.raw 
+  await uploadSelectedFile({
+    uploadFile,
+    imageRecord: uploadedImage,
+    previewRef: previewDisplayUrl,
+    loadingRef: uploadLoading,
+    successMessage: '主图上传成功'
+  })
+}
+
+async function handleSecondFileChange(uploadFile) {
+  await uploadSelectedFile({
+    uploadFile,
+    imageRecord: secondUploadedImage,
+    previewRef: secondPreviewDisplayUrl,
+    loadingRef: secondUploadLoading,
+    successMessage: '参考图上传成功'
+  })
+}
+
+async function uploadSelectedFile({
+  uploadFile,
+  imageRecord,
+  previewRef,
+  loadingRef,
+  successMessage
+}) {
+  const file = uploadFile.raw
   if (!file) return
 
   const checkResult = await validateImageFile(file)
@@ -801,7 +509,7 @@ async function handleFileChange(uploadFile) {
     return
   }
 
-  uploadLoading.value = true
+  loadingRef.value = true
 
   try {
     const formData = new FormData()
@@ -809,35 +517,34 @@ async function handleFileChange(uploadFile) {
 
     const data = await uploadImageService(formData)
 
-
     if (!data?.success) {
       ElMessage.error(data?.message || '图片上传失败')
       return
     }
 
-    const imagePath = data.image_path || data.image_id || data.filename
+    const imagePath = data.image_path
     if (!imagePath) {
       ElMessage.error('图片上传成功，但后端未返回 image_path')
       return
     }
 
-    revokeLocalPreviewUrl()
+    revokeLocalPreviewUrl(imageRecord)
 
-    uploadedImage.id = imagePath
-    uploadedImage.localUrl = URL.createObjectURL(file)
-    uploadedImage.serverPreviewUrl = normalizePreviewUrl(data.preview_url)
-    uploadedImage.name = data.original_filename || file.name
-    uploadedImage.size = file.size
-    uploadedImage.width = Number(data.width) || checkResult.width
-    uploadedImage.height = Number(data.height) || checkResult.height
+    imageRecord.id = imagePath
+    imageRecord.localUrl = URL.createObjectURL(file)
+    imageRecord.serverPreviewUrl = normalizePreviewUrl(data.preview_url)
+    imageRecord.name = data.original_filename || file.name
+    imageRecord.size = file.size
+    imageRecord.width = Number(data.width) || checkResult.width
+    imageRecord.height = Number(data.height) || checkResult.height
 
-    previewDisplayUrl.value = uploadedImage.serverPreviewUrl || uploadedImage.localUrl
+    previewRef.value = imageRecord.serverPreviewUrl || imageRecord.localUrl
 
     await nextTick()
     resetResult()
-    ElMessage.success('图片上传成功')
+    ElMessage.success(successMessage)
   } finally {
-    uploadLoading.value = false
+    loadingRef.value = false
   }
 }
 
@@ -902,20 +609,41 @@ function handleImagePreviewError() {
   }
 }
 
+function handleSecondImagePreviewError() {
+  if (
+    secondPreviewDisplayUrl.value !== secondUploadedImage.localUrl &&
+    secondUploadedImage.localUrl
+  ) {
+    secondPreviewDisplayUrl.value = secondUploadedImage.localUrl
+  }
+}
+
 function clearUploadedImage() {
-  revokeLocalPreviewUrl()
-
-  uploadedImage.id = ''
-  uploadedImage.localUrl = ''
-  uploadedImage.serverPreviewUrl = ''
-  uploadedImage.name = ''
-  uploadedImage.size = 0
-  uploadedImage.width = 0
-  uploadedImage.height = 0
-  previewDisplayUrl.value = ''
-
+  clearImageRecord(uploadedImage, previewDisplayUrl)
   resetResult()
   ElMessage.info('已移除当前图片')
+}
+
+function clearSecondUploadedImage(options = {}) {
+  clearImageRecord(secondUploadedImage, secondPreviewDisplayUrl)
+  resetResult()
+
+  if (!options.silent) {
+    ElMessage.info('已移除参考图')
+  }
+}
+
+function clearImageRecord(imageRecord, previewRef) {
+  revokeLocalPreviewUrl(imageRecord)
+
+  imageRecord.id = ''
+  imageRecord.localUrl = ''
+  imageRecord.serverPreviewUrl = ''
+  imageRecord.name = ''
+  imageRecord.size = 0
+  imageRecord.width = 0
+  imageRecord.height = 0
+  previewRef.value = ''
 }
 
 async function handleProcess() {
@@ -929,6 +657,11 @@ async function handleProcess() {
     return
   }
 
+  if (requiresSecondImage.value && !secondUploadedImage.id) {
+    ElMessage.warning('当前算法需要先上传参考图')
+    return
+  }
+
   const endpoint = getRunEndpoint(selectedAlgorithm.value.module)
   const payload = {
     source_type: 'upload',
@@ -937,6 +670,10 @@ async function handleProcess() {
     algorithm_display_name: selectedAlgorithm.value.displayName,
     params: buildProcessParams(),
     return_steps: true
+  }
+
+  if (requiresSecondImage.value) {
+    payload.second_image_path = secondUploadedImage.id
   }
 
   processing.value = true
@@ -1085,9 +822,9 @@ function resetResult() {
   processing.value = false
 }
 
-function revokeLocalPreviewUrl() {
-  if (uploadedImage.localUrl) {
-    URL.revokeObjectURL(uploadedImage.localUrl)
+function revokeLocalPreviewUrl(imageRecord) {
+  if (imageRecord.localUrl) {
+    URL.revokeObjectURL(imageRecord.localUrl)
   }
 }
 
@@ -1174,8 +911,8 @@ function formatFileSize(size) {
   return `${(size / 1024 / 1024).toFixed(2)} MB`
 }
 
-function getModuleIcon(index) {
-  return moduleIconList[index % moduleIconList.length]
+function getModuleIcon(moduleName, index) {
+  return moduleIconMap[moduleName] || moduleIconList[index % moduleIconList.length]
 }
 
 function createStableKey(value, index) {
@@ -1198,768 +935,153 @@ function isPlainObject(value) {
 </script>
 
 <style lang="scss" scoped>
-.workspace-shell {
-  display: grid;
-  grid-template-columns: 290px 1fr;
-  gap: 22px;
-  align-items: start;
+.workspace-page {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  height: calc(100vh - 64px - 80px);
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
-.algorithm-sidebar,
-.panel-card {
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.algorithm-sidebar {
-  position: sticky;
-  top: 96px;
-  min-height: 680px;
-  padding: 20px 14px;
-  overflow: hidden;
+.workspace-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  padding: var(--space-md);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 .sidebar-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 4px 8px 18px;
 }
 
-.sidebar-header h2 {
-  margin: 0 0 6px;
-  font-size: 22px;
-  font-weight: 800;
+.sidebar-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-purple);
 }
 
-.sidebar-header p,
-.panel-title p {
-  margin: 0;
-  color: #555;
-  font-size: 13px;
-  line-height: 1.6;
+.sidebar-refresh {
+  color: var(--text-muted);
+  cursor: pointer;
+  &:hover { color: var(--accent-cyan); }
 }
 
-.refresh-btn {
-  flex-shrink: 0;
-  color: #ff6b8b;
-  background: rgba(255, 107, 139, 0.08);
-  border-color: rgba(255, 107, 139, 0.2);
-}
-
-.menu-scroll {
-  height: 580px;
-}
-
-.algorithm-menu {
-  border-right: none;
-  background: transparent;
-}
-
-.module-title {
-  width: 100%;
+.tree-module {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  transition: all var(--dur-fast) var(--ease-smooth);
+  font-size: 13px;
+  color: var(--text-secondary);
+
+  &:hover { background: rgba(255,255,255,0.04); }
+  &--active { background: rgba(255,107,157,0.1); color: var(--accent-pink); }
 }
 
-.module-icon {
-  width: 30px;
-  height: 30px;
+.tree-badge {
+  font-size: 11px;
+  padding: 2px 8px;
   border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 107, 139, 0.1);
-}
-
-.module-name {
-  flex: 1;
-  font-weight: 700;
-}
-
-.module-count {
-  min-width: 24px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #ff5277;
-  font-size: 12px;
-  background: rgba(255, 82, 119, 0.1);
-}
-
-.algorithm-name {
-  font-size: 14px;
-}
-
-:deep(.el-menu) {
-  background: transparent;
-}
-
-:deep(.el-sub-menu__title) {
-  height: 48px;
-  padding: 0 12px !important;
-  border-radius: 16px;
-  color: #1a1a1a;
-}
-
-:deep(.el-sub-menu__title:hover) {
-  background: rgba(255, 107, 139, 0.08);
-}
-
-:deep(.el-menu-item) {
-  height: 42px;
-  margin: 4px 0;
-  padding-left: 44px !important;
-  border-radius: 14px;
-  color: #333;
-}
-
-:deep(.el-menu-item:hover),
-:deep(.el-menu-item.is-active) {
-  color: #ff5277;
-  background: rgba(255, 107, 139, 0.1);
-}
-
-:deep(.el-menu-item.is-active) {
-  font-weight: 700;
+  background: rgba(255,255,255,0.06);
 }
 
 .workspace-main {
-  min-width: 0;
-}
-
-.algorithm-info-card {
-  margin-bottom: 22px;
-}
-
-.panel-card {
-  padding: 22px;
-}
-
-.panel-title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.title-left {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.title-icon {
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  background: rgba(255, 107, 139, 0.1);
-}
-
-.panel-title h3 {
-  margin: 0 0 6px;
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.soft-tag {
-  border: none;
-  color: #ff5277;
-  background: rgba(255, 82, 119, 0.1);
-}
-
-.right-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.95fr);
-  gap: 22px;
-  align-items: start;
-}
-
-.left-workflow {
-  min-width: 0;
-  display: grid;
-  gap: 22px;
-  align-content: start;
-}
-
-.upload-card,
-.params-card,
-.result-card {
-  min-width: 0;
-}
-
-.result-card {
-  position: sticky;
-  top: 96px;
-  max-height: calc(100vh - 118px);
-  overflow: hidden;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
 }
 
-.result-card > .panel-title {
-  flex-shrink: 0;
-}
-
-.image-uploader {
-  width: 100%;
-}
-
-.upload-box {
-  position: relative;
-  min-height: 300px;
-  max-height: 430px;
-  border-radius: 20px;
-  border: 2px dashed rgba(255, 107, 139, 0.28);
-  background: radial-gradient(circle at 20% 10%, rgba(255, 182, 193, 0.18), transparent 35%), rgba(255, 255, 255, 0.58);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.upload-box:hover {
-  border-color: rgba(255, 82, 119, 0.48);
-  background: rgba(255, 255, 255, 0.72);
-  transform: translateY(-2px);
-}
-
-.upload-box.has-image {
-  border-style: solid;
-  padding: 10px;
-}
-
-.image-frame {
-  width: 100%;
-  border-radius: 16px;
-  overflow: hidden;
+.upload-section {
+  flex: 1;
+  padding: var(--space-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.72);
 }
 
-.upload-preview-frame {
-  min-height: 220px;
-  height: clamp(220px, 34vw, 360px);
-  max-height: 360px;
-}
-
-.result-image-frame {
-  min-height: 200px;
-  height: clamp(200px, 28vw, 300px);
-  max-height: 300px;
-}
-
-.preview-image,
-.compare-image {
-  width: 100%;
-  height: 100%;
-}
-
-:deep(.preview-image .el-image__inner),
-:deep(.compare-image .el-image__inner) {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.upload-icon {
-  color: #ff6b8b;
-  font-size: 54px;
-}
-
-.upload-box h4 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.upload-box p {
-  max-width: 360px;
-  margin: 0;
-  color: #666;
-  font-size: 13px;
-  line-height: 1.7;
+.upload-placeholder {
   text-align: center;
+  cursor: pointer;
 }
 
-.image-mask {
-  position: absolute;
-  inset: 10px;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: #fff;
-  font-weight: 700;
-  background: rgba(0, 0, 0, 0.35);
-  opacity: 0;
-  transition: opacity 0.25s;
-}
+.upload-icon { font-size: 40px; display: block; margin-bottom: var(--space-sm); color: var(--accent-pink); }
+.upload-text { color: var(--text-secondary); font-size: 14px; }
+.upload-hint { color: var(--text-muted); font-size: 12px; display: block; margin-top: var(--space-xs); }
 
-.image-mask .el-icon {
-  font-size: 34px;
-}
+.image-compare { display: flex; gap: var(--space-md); width: 100%; height: 100%; }
+.compare-pane { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.compare-label { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-sm); }
+.compare-image { max-width: 100%; max-height: 300px; border-radius: 8px; object-fit: contain; }
+.result-image { border: 1px solid rgba(56,189,248,0.3); box-shadow: 0 0 12px rgba(56,189,248,0.1); }
+.compare-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 13px; }
 
-.upload-box.has-image:hover .image-mask {
-  opacity: 1;
-}
-
-.image-error {
-  width: 100%;
-  height: 100%;
-  min-height: 180px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: #888;
-  font-size: 14px;
-}
-
-.image-error .el-icon {
-  color: #ff9aae;
-  font-size: 42px;
-}
-
-.upload-loading {
-  margin-top: 12px;
-  color: #ff5277;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.image-meta,
-.task-summary {
-  margin-top: 16px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.image-meta div,
-.task-summary div {
-  min-width: 0;
-  padding: 12px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.image-meta span,
-.task-summary span {
-  display: block;
-  margin-bottom: 5px;
-  color: #777;
-  font-size: 12px;
-}
-
-.image-meta strong,
-.task-summary strong {
-  display: block;
-  color: #1a1a1a;
+.analysis-section {
+  padding: var(--space-md);
   font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
 
-.upload-actions {
-  margin-top: 16px;
+.workspace-params {
+  width: 240px;
+  flex-shrink: 0;
+  padding: var(--space-md);
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 
-.ghost-btn,
-.reset-btn {
-  color: #ff5277;
-  border-color: rgba(255, 82, 119, 0.28);
-  background: rgba(255, 255, 255, 0.72);
+.params-header {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-purple);
 }
 
-.ghost-btn:hover,
-.reset-btn:hover {
-  color: #fff;
-  border-color: #ff6b8b;
-  background: #ff6b8b;
-}
-
-.params-form {
-  padding-top: 4px;
-}
-
-.param-item {
-  padding: 16px;
-  margin-bottom: 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+.params-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 
 .param-label {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.param-label span {
-  font-weight: 700;
-}
-
-.param-label em {
-  padding: 2px 9px;
-  border-radius: 999px;
-  color: #ff5277;
-  font-style: normal;
+  display: block;
   font-size: 12px;
-  background: rgba(255, 82, 119, 0.1);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
 }
 
-.full-control {
-  width: 100%;
-}
-
-.process-actions {
+.params-empty {
+  flex: 1;
   display: flex;
-  justify-content: flex-end;
-  padding-top: 4px;
-}
-
-.process-btn {
-  min-width: 150px;
-  height: 42px;
-  border: none;
-  border-radius: 999px;
-  color: #fff;
-  font-weight: 800;
-  background: #ff6b8b;
-  box-shadow: 0 6px 16px rgba(255, 107, 139, 0.35);
-}
-
-.process-btn:hover,
-.process-btn:focus {
-  color: #fff;
-  background: #ff5277;
-  box-shadow: 0 8px 20px rgba(255, 82, 119, 0.45);
-}
-
-.process-btn.is-disabled {
-  background: #f3b8c4;
-  box-shadow: none;
-}
-
-.result-empty {
-  min-height: 520px;
-  border-radius: 20px;
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  color: #888;
-  background: rgba(255, 255, 255, 0.58);
-  border: 1px dashed rgba(255, 107, 139, 0.25);
-}
-
-.result-empty .el-icon {
-  color: #ff9aae;
-  font-size: 58px;
-}
-
-.result-empty p {
-  margin: 0;
-  font-size: 14px;
-}
-
-.result-content {
-  min-height: 0;
-  overflow-y: auto;
-  display: grid;
-  gap: 16px;
-  padding-right: 6px;
-}
-
-.result-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.result-content::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(255, 107, 139, 0.35);
-}
-
-.result-content::-webkit-scrollbar-track {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.45);
-}
-
-.compare-box {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
-
-.compare-item {
-  padding: 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.64);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.compare-title {
-  margin-bottom: 10px;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.waiting-result {
-  min-height: 200px;
-  height: clamp(200px, 28vw, 300px);
-  max-height: 300px;
-  border-radius: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: #888;
-  background: radial-gradient(circle at 30% 10%, rgba(255, 182, 193, 0.16), transparent 38%), rgba(255, 255, 255, 0.72);
-}
-
-.waiting-result .el-icon {
-  color: #ff9aae;
-  font-size: 42px;
-}
-
-.waiting-result p {
-  margin: 0;
-  font-size: 14px;
-}
-
-.result-message {
-  padding: 14px 16px;
-  border-radius: 16px;
-  color: #444;
-  font-size: 14px;
-  line-height: 1.7;
-  background: rgba(255, 107, 139, 0.08);
-  border: 1px solid rgba(255, 107, 139, 0.12);
-}
-
-.result-message strong {
-  color: #ff5277;
-}
-
-.params-summary,
-.metrics-summary {
-  display: grid;
-  gap: 10px;
-}
-
-.analysis-box,
-.steps-block {
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.section-title {
-  margin-bottom: 10px;
-  color: #ff5277;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.analysis-box p {
-  margin: 0;
-  color: #444;
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-.steps-list {
-  display: grid;
-  gap: 14px;
-}
-
-.step-item {
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-.step-image-frame {
-  min-height: 160px;
-  height: clamp(160px, 24vw, 260px);
-  max-height: 260px;
-}
-
-.step-error {
-  color: #d84b65;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
-.summary-item {
-  padding: 12px 14px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.summary-item span {
-  color: #666;
-  font-size: 13px;
-}
-
-.summary-item strong {
-  color: #1a1a1a;
-  font-size: 14px;
-}
-
-:deep(.el-slider__bar) {
-  background-color: #ff6b8b;
-}
-
-:deep(.el-slider__button) {
-  border-color: #ff6b8b;
-}
-
-:deep(.el-input__wrapper),
-:deep(.el-select__wrapper) {
-  border-radius: 12px;
-  box-shadow: 0 0 0 1px rgba(255, 107, 139, 0.15) inset;
-}
-
-:deep(.el-input__wrapper.is-focus),
-:deep(.el-select__wrapper.is-focused) {
-  box-shadow: 0 0 0 1px rgba(255, 82, 119, 0.45) inset;
-}
-
-:deep(.el-switch.is-checked .el-switch__core) {
-  border-color: #ff6b8b;
-  background-color: #ff6b8b;
-}
-
-:deep(.el-form-item__label) {
+.run-btn {
   width: 100%;
-  padding-bottom: 8px;
-}
+  padding: 12px 0;
+  font-size: 15px;
 
-@media (max-width: 1200px) {
-  .workspace-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .algorithm-sidebar {
-    position: relative;
-    top: 0;
-    min-height: auto;
-  }
-
-  .menu-scroll {
-    height: 360px;
-  }
-}
-
-@media (max-width: 980px) {
-  .workspace-banner {
-    padding: 36px 32px;
-  }
-
-  .banner-card {
-    display: none;
-  }
-
-  .right-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .left-workflow {
-    gap: 22px;
-  }
-
-  .upload-card,
-  .params-card,
-  .result-card {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .result-card {
-    position: relative;
-    top: auto;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .result-content {
-    overflow: visible;
-    padding-right: 0;
-  }
-}
-
-@media (max-width: 680px) {
-  .workspace-banner {
-    padding: 28px 22px;
-  }
-
-  .banner-content h1 {
-    font-size: 28px;
-  }
-
-  .banner-content p {
-    font-size: 14px;
-  }
-
-  .panel-card {
-    padding: 18px;
-  }
-
-  .panel-title {
-    flex-direction: column;
-  }
-
-  .image-meta,
-  .task-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .process-actions {
-    justify-content: stretch;
-  }
-
-  .process-btn {
-    width: 100%;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 </style>
