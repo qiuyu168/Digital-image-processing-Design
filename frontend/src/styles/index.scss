@@ -121,7 +121,8 @@ html, body {
   font-weight: 500;
   cursor: pointer;
   transition: border-color var(--dur-fast) var(--ease-smooth),
-              background var(--dur-fast) var(--ease-smooth);
+              background var(--dur-fast) var(--ease-smooth),
+              transform var(--dur-fast) var(--ease-smooth);
 
   &:hover {
     border-color: var(--border-active);
