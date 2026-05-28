@@ -527,6 +527,36 @@ const selectedAlgorithm = computed(() => {
   return selectedModule.value.algorithms.find((item) => item.key === selectedAlgorithmKey.value) || null
 })
 
+const secondImageEnabled = computed(() => {
+  return selectedAlgorithm.value?.module === 'basic_operation'
+})
+
+const libraryImages = ref([])
+const libraryImagesLoading = ref(false)
+const selectedSecondImagePath = ref('')
+
+async function loadLibraryImagesForSecond() {
+  libraryImagesLoading.value = true
+  try {
+    const data = await getDetailImageService({ params: { category: 'anime_character' } })
+    libraryImages.value = Array.isArray(data?.images) ? data.images : []
+  } catch (err) {
+    console.error('Failed to load library images:', err)
+    libraryImages.value = []
+  } finally {
+    libraryImagesLoading.value = false
+  }
+}
+
+watch(secondImageEnabled, (enabled) => {
+  if (enabled) {
+    selectedSecondImagePath.value = ''
+    loadLibraryImagesForSecond()
+  } else {
+    selectedSecondImagePath.value = ''
+  }
+})
+
 const paramList = computed(() => selectedAlgorithm.value?.paramsList || [])
 
 const activeMenuKey = computed(() => {
