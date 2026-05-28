@@ -1148,7 +1148,7 @@ function normalizePreviewUrl(url) {
     return url
   }
 
-  const baseURL = String(http.defaults.baseURL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+  const baseURL = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
   if (baseURL.startsWith('http://') || baseURL.startsWith('https://')) {
     const origin = new URL(baseURL).origin
