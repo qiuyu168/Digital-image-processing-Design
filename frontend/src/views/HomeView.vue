@@ -108,12 +108,18 @@
       <div class="section-title">
         <span class="title-icon">🌸</span>
         <h2>算法模块</h2>
-        <p>六大图像处理方向，覆盖数字图像处理核心算法</p>
+        <p>{{ dynamicModules.length > 0 ? dynamicModules.length + '大图像处理方向，覆盖数字图像处理核心算法' : '六大图像处理方向，覆盖数字图像处理核心算法' }}</p>
       </div>
 
-      <div class="module-grid">
+      <div v-if="modulesLoading" class="module-grid">
+        <div v-for="n in 6" :key="n" class="module-card skeleton-card">
+          <el-skeleton :rows="3" animated />
+        </div>
+      </div>
+
+      <div v-else class="module-grid">
         <div
-          v-for="item in algorithmModules"
+          v-for="item in displayModules"
           :key="item.title"
           class="module-card"
           @click="goWorkspace"
@@ -171,12 +177,43 @@
 
 <script setup>
 import { chech_health } from '@/utils/check_health'
-import { onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-
-onMounted(chech_health)
+import { getAlgorithmService } from '@/api/algorithms'
 
 const router = useRouter()
+
+const dynamicModules = ref([])
+const modulesLoading = ref(false)
+
+async function loadModules() {
+  modulesLoading.value = true
+  try {
+    const data = await getAlgorithmService()
+    const rawModules = Array.isArray(data?.modules) ? data.modules : []
+    dynamicModules.value = rawModules.map(function(m) {
+      return {
+        icon: '\u{1F338}',
+        title: m.display_name || m.module,
+        desc: '共 ' + (Array.isArray(m.algorithms) ? m.algorithms.length : 0) + ' 个算法',
+        tags: (Array.isArray(m.algorithms) ? m.algorithms.slice(0, 3) : []).map(function(a) { return a.display_name || a.name })
+      }
+    })
+  } catch {
+    dynamicModules.value = []
+  } finally {
+    modulesLoading.value = false
+  }
+}
+
+const displayModules = computed(function() {
+  return dynamicModules.value.length > 0 ? dynamicModules.value : algorithmModules
+})
+
+onMounted(function() {
+  chech_health()
+  loadModules()
+})
 
 const carouselList = [
   {
