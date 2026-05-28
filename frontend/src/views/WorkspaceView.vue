@@ -519,12 +519,12 @@ const libraryImagesLoading = ref(false)
 const selectedSecondImagePath = ref('')
 
 async function loadLibraryImagesForSecond() {
-  if (!secondImageEnabled.value) return
   libraryImagesLoading.value = true
   try {
     const data = await getDetailImageService({ params: { category: 'anime_character' } })
     libraryImages.value = Array.isArray(data?.images) ? data.images : []
-  } catch {
+  } catch (err) {
+    console.error('Failed to load library images:', err)
     libraryImages.value = []
   } finally {
     libraryImagesLoading.value = false
@@ -535,6 +535,8 @@ watch(secondImageEnabled, (enabled) => {
   if (enabled) {
     selectedSecondImagePath.value = ''
     loadLibraryImagesForSecond()
+  } else {
+    selectedSecondImagePath.value = ''
   }
 })
 
@@ -594,7 +596,8 @@ const canProcess = computed(() => {
       uploadedImage.id &&
       previewDisplayUrl.value &&
       !uploadLoading.value &&
-      !processing.value
+      !processing.value &&
+      (!secondImageEnabled.value || selectedSecondImagePath.value)
   )
 })
 
