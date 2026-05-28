@@ -367,7 +367,7 @@ Digital-image-processing-Design/
       │  ├─ upload.js                      # POST /api/upload/image 图片上传
       │  ├─ algorithms.js                  # GET /api/algorithms 算法列表
       │  ├─ library.js                     # GET /api/library/* 图像库接口
-      │  └─ run.js                         # POST /api/process/run 算法执行
+      │  └─ run.js                         # POST /api/algorithms/{slug}/run 算法执行（动态端点，支持全部 9 模块）
       ├─ assets/
       │  ├─ .gitkeep
       │  ├─ background/                    # 登录页轮播背景图片（4 张）
@@ -376,35 +376,10 @@ Digital-image-processing-Design/
       │  │  ├─ bg3.jpg
       │  │  └─ bg4.jpg
       │  └─ home_bg.jpg                    # 首页背景
-      ├─ components/                        # 公共组件（3 布局 + 22 功能区子组件）
-      │  ├─ HeaderNav.vue                  # 顶部导航栏（underline 滑动 + 用户头像折叠）
-      │  ├─ MainLayout.vue                 # 主布局（WarmDust + Header + route-fade + Footer）
-      │  ├─ AppFooter.vue                  # 页脚组件（水平两行排布）
-      │  ├─ workspace/                     # 工作区子组件（6 个）
-      │  │  ├─ AlgorithmSidebar.vue
-      │  │  ├─ AlgorithmInfoCard.vue
-      │  │  ├─ UploadPanel.vue
-      │  │  ├─ ParamsPanel.vue
-      │  │  ├─ NoParamCard.vue
-      │  │  └─ ResultPanel.vue
-      │  ├─ home/                          # 首页子组件（4 个）
-      │  │  ├─ HeroSection.vue
-      │  │  ├─ FlowSection.vue
-      │  │  ├─ AlgorithmModuleGrid.vue
-      │  │  └─ FeatureSection.vue
-      │  ├─ library/                       # 图像库子组件（4 个）
-      │  │  ├─ CategorySidebar.vue
-      │  │  ├─ LibraryHero.vue
-      │  │  ├─ ImageGrid.vue
-      │  │  └─ MetricsPanel.vue
-      │  ├─ login/                         # 登录页子组件（2 个）
-      │  │  ├─ LoginHero.vue
-      │  │  └─ LoginCard.vue
-      │  └─ profile/                       # 个人信息子组件（4 个）
-      │     ├─ ProfileTabSidebar.vue
-      │     ├─ InfoForm.vue
-      │     ├─ AvatarForm.vue
-      │     └─ PasswordForm.vue
+      ├─ components/                        # 公共布局组件（3 个）
+      │  ├─ HeaderNav.vue                  # 顶部导航栏
+      │  ├─ MainLayout.vue                 # 主布局
+      │  ├─ AppFooter.vue                  # 页脚组件
       ├─ router/
       │  └─ index.js                       # 路由：/home /workspace /library /profile /login（懒加载）
       ├─ stores/
@@ -926,10 +901,10 @@ GET /api/library/image/{image_path}
 
 | 页面 | 文件 | 功能描述 |
 |---|---|---|
-| 首页 | `HomeView.vue` | Hero 层叠步骤卡 + Flow 横向步骤指示器 + 主推大卡联动紧凑卡网格 + 项目特色展示，加载时调用健康检查 |
+| 首页 | `HomeView.vue` | Hero 轮播 + Flow 步骤指示器 + 动态算法模块网格（从后端 API 实时加载 9 模块，含 skeleton loading + 硬编码 fallback）+ 项目特色 |
 | 登录页 | `LoginView.vue` | 左右分栏（LoginHero 品牌展示 + LoginCard 表单），顶 tab 登录/注册切换（fade-up），amber focus ring，生成测试 Token |
 | 个人中心 | `UserProfileView.vue` | 左 tab 侧栏 + 右内容面板，基本资料/头像/密码三表单，含三段密码强度指示条 |
-| 工作区 | `WorkspaceView.vue` | **三栏布局**：算法树侧栏（9 模块 75 算法 + 计数徽章 + 刷新）+ 中栏（信息卡/上传/原图结果对比）+ 右栏参数面板（动态控件 + 执行按钮固定底部），含无可变参数 SVG 占位卡 |
+| 工作区 | `WorkspaceView.vue` | 三栏布局：算法树侧栏（9 模块 75 算法，动态端点计算 + 刷新）+ 中栏（上传/双图选择/参数表单/结果对比）+ 右侧结果面板（步骤图/指标/分析），basic_operation 模块支持从图像库选择第二张图片 |
 | 图像库 | `LibraryView.vue` | 左分类侧栏 + 中图片网格（hover Finder 风格操作图标）+ **底部内联指标抽屉**（折叠 64px / 展开 320px 横滚），选图后查看指标 |
 | 404 页面 | `NotFoundView.vue` | Apple HIG stagger 入场动画（404 数字 fade-up + accent line scaleX 延迟入场） |
 
