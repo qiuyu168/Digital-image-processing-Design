@@ -108,18 +108,12 @@
       <div class="section-title">
         <span class="title-icon">🌸</span>
         <h2>算法模块</h2>
-        <p>{{ dynamicModules.length > 0 ? dynamicModules.length + '大图像处理方向，覆盖数字图像处理核心算法' : '六大图像处理方向，覆盖数字图像处理核心算法' }}</p>
+        <p>九大图像处理方向，覆盖数字图像处理核心算法</p>
       </div>
 
-      <div v-if="modulesLoading" class="module-grid">
-        <div v-for="n in 6" :key="n" class="module-card">
-          <el-skeleton :rows="3" animated />
-        </div>
-      </div>
-
-      <div v-else class="module-grid">
+      <div class="module-grid">
         <div
-          v-for="item in displayModules"
+          v-for="item in algorithmModules"
           :key="item.title"
           class="module-card"
           @click="goWorkspace"
@@ -177,44 +171,12 @@
 
 <script setup>
 import { chech_health } from '@/utils/check_health'
-import { ref, computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getAlgorithmService } from '@/api/algorithms'
+
+onMounted(chech_health)
 
 const router = useRouter()
-
-const dynamicModules = ref([])
-const modulesLoading = ref(false)
-
-async function loadModules() {
-  modulesLoading.value = true
-  try {
-    const data = await getAlgorithmService()
-    const rawModules = Array.isArray(data?.modules) ? data.modules : []
-    dynamicModules.value = rawModules.map(function(m) {
-      return {
-        icon: '\u{1F338}',
-        title: m.display_name || m.module,
-        desc: '共 ' + (Array.isArray(m.algorithms) ? m.algorithms.length : 0) + ' 个算法',
-        tags: (Array.isArray(m.algorithms) ? m.algorithms.slice(0, 3) : []).map(function(a) { return a.display_name || a.name })
-      }
-    })
-  } catch (err) {
-    console.warn('Failed to load algorithm modules:', err)
-    dynamicModules.value = []
-  } finally {
-    modulesLoading.value = false
-  }
-}
-
-const displayModules = computed(function() {
-  return dynamicModules.value.length > 0 ? dynamicModules.value : algorithmModules
-})
-
-onMounted(function() {
-  chech_health()
-  loadModules()
-})
 
 const carouselList = [
   {
@@ -299,6 +261,24 @@ const algorithmModules = [
     title: '频域滤波类',
     desc: '通过低通、高通、理想滤波和高斯滤波实现频域增强与平滑。',
     tags: ['低通', '高通', '高斯频域']
+  },
+  {
+    icon: '🧮',
+    title: '图像的基本运算',
+    desc: '用于完成图像加减乘除、加权融合、逻辑运算和掩膜处理等基础运算。',
+    tags: ['图像融合', '逻辑运算', '掩膜处理']
+  },
+  {
+    icon: '🩹',
+    title: '图像复原与图像修复',
+    desc: '用于退化图像复原、噪声抑制、划痕修复和目标区域移除等处理。',
+    tags: ['维纳滤波', '图像修复', '目标移除']
+  },
+  {
+    icon: '🔎',
+    title: '边缘与形状检测',
+    desc: '用于提取图像边缘、检测直线圆形和识别角点等结构特征。',
+    tags: ['Canny', '霍夫变换', '角点检测']
   }
 ]
 

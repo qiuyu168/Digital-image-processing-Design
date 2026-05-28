@@ -178,7 +178,7 @@ frontend/
 | `algorithms.js` | 获取后端算法元数据 |
 | `upload.js` | 上传图片接口 |
 | `library.js` | 图像库分类、图像列表、图像参数接口 |
-| `run.js` | 算法运行接口（`runAlgorithmService`，动态转换模块名为端点 slug 并 POST 到 `/api/algorithms/{slug}/run`） |
+| `run.js` | 预留的运行接口文件 |
 
 ### 2. `src/views`
 
@@ -385,21 +385,16 @@ jpg, jpeg, png, bmp, webp, tif, tiff
 
 ### 4. 运行算法
 
-工作区会根据算法所属大类的模块名，通过 `runAlgorithmService` 动态计算调用接口（下划线自动转为短横线），支持全部 9 个算法模块：
+工作区会根据算法所属大类调用不同接口。
 
-| 算法大类 | 接口（动态端点） |
+| 算法大类 | 接口 |
 | --- | --- |
-| 图像基本运算类 | `/api/algorithms/basic-operation/run` |
 | 灰度图像类 | `/api/algorithms/grayscale-image/run` |
 | 彩色图像类 | `/api/algorithms/color-image/run` |
 | 几何变换类 | `/api/algorithms/geometric-transform/run` |
 | 空域滤波类 | `/api/algorithms/spatial-filter/run` |
 | 频域分析类 | `/api/algorithms/frequency-analysis/run` |
 | 频域滤波类 | `/api/algorithms/frequency-filter/run` |
-| 图像复原类 | `/api/algorithms/image-restoration/run` |
-| 边缘与形状检测类 | `/api/algorithms/edge-shape-detection/run` |
-
-图像基本运算类的 8 个算法需要两张图片，前端会在选择该类算法时显示第二张图片选择器（从图像库中选择）。
 
 请求体示例：
 
@@ -504,7 +499,7 @@ src/views/LibraryView.vue
 
 - 轮播欢迎区；
 - 功能流程；
-- 动态算法模块网格（从后端 API 实时获取 9 模块数据，含 skeleton loading 状态 + 硬编码数据 fallback）；
+- 六大算法模块；
 - 项目特色。
 
 首页中的按钮可以跳转到图像处理工作区或个人信息页面。
@@ -513,27 +508,27 @@ src/views/LibraryView.vue
 
 ### 2. 工作区 `WorkspaceView.vue`
 
-工作区是图像处理功能的核心页面，支持全部 9 个算法模块（75 个算法），端点通过模块名动态计算。
+工作区是图像处理功能的核心页面。
 
 主要流程：
 
 ```txt
-获取算法列表（9 模块 75 算法）
+获取算法列表
     ↓
 选择算法大类和具体算法
     ↓
 根据 params 动态生成参数表单
     ↓
-上传图片（basic_operation 模块额外显示第二张图片选择器，从图像库选取）
+上传图片
     ↓
 点击开始处理
     ↓
-通过 runAlgorithmService 动态计算端点并调用算法
+调用对应算法运行接口
     ↓
-展示处理结果、步骤图、指标、分析
+展示处理结果
 ```
 
-工作区中的算法表单不是写死的，而是根据后端 `/api/algorithms` 返回的参数元数据动态生成。端点不再使用硬编码映射表，而是通过模块名自动转换（下划线 → 短横线）为 `/api/algorithms/{slug}/run`。
+工作区中的算法表单不是写死的，而是根据后端 `/api/algorithms` 返回的参数元数据动态生成。
 
 支持的参数控件包括：
 
