@@ -31,7 +31,7 @@
           <h4 class="team-category">后端设计(不分先后)</h4>
           <div class="team-members">
             <span class="member-tag">毛思涵</span>
-            <span class="member-tag">周恩承</span>
+            <span class="member-tag">周恩丞</span>
             <span class="member-tag">任可</span>
             <span class="member-tag">高艳阳</span>
             <span class="member-tag">雍晨</span>
