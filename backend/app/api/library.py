@@ -19,15 +19,16 @@ async def get_library_categories() -> dict:
 @router.get("/images")
 async def get_library_images(
     category: str = Query(default="anime_character", description="内置图片分类名称"),
+    page: int = Query(default=1, ge=1, description="页码"),
+    page_size: int = Query(default=6, ge=1, le=100, description="每页数量"),
 ) -> dict:
-    """返回指定内置分类下的图片列表。"""
+    """返回指定内置分类下的图片列表（分页）。"""
     from app.services.image_store import list_library_images
 
     try:
-        images = list_library_images(category)
+        return list_library_images(category, page=page, page_size=page_size)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return {"success": True, "category": category, "images": images}
 
 
 @router.get("/image/{image_path:path}")

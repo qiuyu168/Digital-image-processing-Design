@@ -66,30 +66,32 @@ def get_library_image_path(image_path: str) -> Path:
 
 
 def list_library_categories() -> list[dict[str, Any]]:
-    """列出内置图库分类和每个分类下的图片数量。"""
+    """列出内置图库分类和每个分类下的图片数量（排除 other 分类）。"""
     ensure_data_directories()
     categories: list[dict[str, Any]] = []
     for name, display_name in LIBRARY_CATEGORIES:
+        if name == "other":
+            continue
         category_dir = LIBRARY_DIR / name
         count = len([path for path in category_dir.iterdir() if _is_supported_image(path)])
         categories.append({"name": name, "display_name": display_name, "count": count})
     return categories
 
 
-def list_library_images(category: str) -> list[dict[str, str]]:
-    """列出指定内置图库分类下的图片。"""
+def list_library_images(category: str, page: int = 1, page_size: int = 6) -> dict[str, Any]:
+    """列出指定内置图库分类下的图片（支持分页）。"""
     ensure_data_directories()
     category_names = {name for name, _ in LIBRARY_CATEGORIES}
     if category not in category_names:
         raise FileNotFoundError(f"图库分类不存在：{category}")
 
     category_dir = LIBRARY_DIR / category
-    images: list[dict[str, str]] = []
+    all_images: list[dict[str, str]] = []
     for image_path in sorted(category_dir.iterdir()):
         if not _is_supported_image(image_path):
             continue
         relative_path = image_path.relative_to(LIBRARY_DIR).as_posix()
-        images.append(
+        all_images.append(
             {
                 "name": image_path.stem,
                 "filename": image_path.name,
@@ -98,7 +100,19 @@ def list_library_images(category: str) -> list[dict[str, str]]:
                 "preview_url": f"/api/library/image/{relative_path}",
             }
         )
-    return images
+
+    total = len(all_images)
+    start = (page - 1) * page_size
+    end = start + page_size
+
+    return {
+        "success": True,
+        "category": category,
+        "images": all_images[start:end],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
 
 
 def load_image_by_source(source_type: str, image_path: str) -> np.ndarray:
