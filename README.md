@@ -136,8 +136,9 @@ Digital-image-processing-Design/
 │  ├─ CHANGELOG02.md
 │  ├─ CHANGELOG03.md
 │  ├─ CHANGELOG04.md
-│  ├─ CHANGELOG05.md
 │  ├─ CHANGELOG06.md
+│  ├─ CHANGELOG07.md
+│  ├─ CHANGELOG08.md
 │  ├─ prompts/
 │  │  └─ algorithm_improvement_prompts_7_models/
 │  │     ├─ chatgpt_algorithm_improvement_slider_prompt.md
@@ -1224,7 +1225,7 @@ def imread_unicode(path: str, flags=cv2.IMREAD_COLOR):
 
 ### 14.6 后端文档与运行产物
 
-1. 本次前端重写更新记录见 `docs/CHANGELOG06.md`，历史后端更新记录见 `docs/CHANGELOG01.md` ~ `docs/CHANGELOG05.md`。
+1. 最近更新记录：前后端适配 + 图像库分页见 `docs/CHANGELOG08.md`，后端算法分类重构见 `docs/CHANGELOG07.md`，前端组件重写见 `docs/CHANGELOG06.md`，历史后端更新记录见 `docs/CHANGELOG01.md` ~ `docs/CHANGELOG04.md`。
 2. 算法完善提示词已归档到 `docs/prompts/algorithm_improvement_prompts_7_models/`，不再放在后端算法源码目录中。
 3. `backend/data/uploads/`、`backend/data/outputs/`、`backend/data/test_outputs/` 是运行时目录，只保留 `.gitkeep` 占位文件。
 4. 后端测试建议使用 `PYTHONDONTWRITEBYTECODE=1`，避免重新生成 `__pycache__` 和 `.pyc` 文件。
