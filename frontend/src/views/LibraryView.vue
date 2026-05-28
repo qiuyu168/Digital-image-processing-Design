@@ -67,26 +67,6 @@
         <div class="content-grid">
           <!-- 图片列表 -->
           <section class="panel-card image-list-card">
-            <div class="panel-title compact-title">
-              <div class="title-left">
-                <span class="title-icon">🌸</span>
-                <div>
-                  <h3>图片列表</h3>
-                  <p>点击图片全屏预览，按钮用于查看参数或下载图片</p>
-                </div>
-              </div>
-
-              <el-button
-                class="refresh-btn small-refresh"
-                circle
-                :disabled="!activeCategoryName"
-                :loading="imageLoading"
-                @click="loadImages(activeCategoryName)"
-              >
-                <el-icon><Refresh /></el-icon>
-              </el-button>
-            </div>
-
             <el-skeleton v-if="imageLoading" :rows="10" animated />
 
             <el-empty
@@ -774,14 +754,14 @@ function getCategoryIcon(index) {
 }
 
 .image-scroll {
-  max-height: calc(100vh - 260px);
-  min-height: 520px;
+  max-height: calc(100vh - 360px);
+  min-height: 360px;
   padding-right: 4px;
 }
 
 .image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
@@ -1113,7 +1093,7 @@ function getCategoryIcon(index) {
   }
 
   .image-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>
